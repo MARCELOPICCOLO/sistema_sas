@@ -1,5 +1,5 @@
 // components/TabelaComandas.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFilter, faClipboardList } from "@fortawesome/free-solid-svg-icons";
 
@@ -48,12 +48,14 @@ export const TabelaComandas: React.FC<TabelaComandasProps> = ({
   isMobile = false,
   formatCurrency,
 }) => {
+  const hoje = new Date().toISOString().split("T")[0];
+
   const [filtroVenda, setFiltroVenda] = useState<
     "todas" | "abertas" | "fechadas" | "pendentes"
   >("abertas");
 
-  const [dataInicio, setDataInicio] = useState("");
-  const [dataFim, setDataFim] = useState("");
+  const [dataInicio, setDataInicio] = useState(hoje);
+  const [dataFim, setDataFim] = useState(hoje);
   const [showFiltroData, setShowFiltroData] = useState(false);
 
   // Obter nome do ponto de venda pelo table_id
@@ -76,7 +78,7 @@ export const TabelaComandas: React.FC<TabelaComandasProps> = ({
     return new Date(dateString).toLocaleDateString("pt-BR");
   };
 
-  // Filtrar vendas
+  // Filtrar vendas - agora por padrão apenas data atual
   const vendasFiltradas = vendas.filter((venda) => {
     // Abertas
     if (filtroVenda === "abertas" && venda.status !== "aberto") {
@@ -96,7 +98,7 @@ export const TabelaComandas: React.FC<TabelaComandasProps> = ({
       return false;
     }
 
-    // Filtro de data
+    // Filtro de data - POR PADRÃO APENAS DATA ATUAL
     if (dataInicio || dataFim) {
       const dataVenda = venda.created_at
         ? new Date(venda.created_at).toISOString().split("T")[0]
@@ -115,8 +117,10 @@ export const TabelaComandas: React.FC<TabelaComandasProps> = ({
   });
 
   const limparFiltroData = () => {
-    setDataInicio("");
-    setDataFim("");
+    // Volta para a data atual quando limpar
+    const hoje = new Date().toISOString().split("T")[0];
+    setDataInicio(hoje);
+    setDataFim(hoje);
     setShowFiltroData(false);
   };
 
@@ -260,7 +264,7 @@ export const TabelaComandas: React.FC<TabelaComandasProps> = ({
           Filtrar por Data
         </button>
 
-        {(dataInicio || dataFim) && (
+        {(dataInicio !== hoje || dataFim !== hoje) && (
           <button
             onClick={limparFiltroData}
             style={{
@@ -397,7 +401,7 @@ export const TabelaComandas: React.FC<TabelaComandasProps> = ({
                     style={{ fontSize: 48, marginBottom: 12 }}
                   />
 
-                  <p>Nenhuma venda encontrada</p>
+                  <p>Nenhuma venda para {formatDate(hoje)}</p>
                 </div>
               </td>
             </tr>
@@ -510,76 +514,94 @@ export const TabelaComandas: React.FC<TabelaComandasProps> = ({
         </thead>
 
         <tbody>
-          {vendasFiltradas.map((venda, index) => {
-            const status = getStatusVenda(venda);
-
-            return (
-              <tr
-                key={venda.id}
-                onClick={() => onVendaClick(venda)}
-                style={{
-                  cursor: "pointer",
-                  borderBottom:
-                    index < vendasFiltradas.length - 1
-                      ? "1px solid #e5e7eb"
-                      : "none",
-                  backgroundColor:
-                    vendaSelecionada?.id === venda.id
-                      ? "#f0fdf4"
-                      : index % 2 === 0
-                        ? "#fff"
-                        : "#fafafa",
-                }}
-              >
-                <td style={mobileTdStyle}>{formatDate(venda.created_at)}</td>
-
-                <td style={mobileTdStyle}>
-                  {getNomePontoVenda(venda.table_id)}
-                </td>
-
-                <td style={mobileTdStyle}>
-                  <div style={{ fontWeight: 500, fontSize: 13 }}>
-                    {venda.customer_name}
-                  </div>
-
-                  <div style={{ fontSize: 10, color: "#9ca3af" }}>
-                    #{venda.id}
-                  </div>
-                </td>
-
-                <td
+          {vendasFiltradas.length === 0 ? (
+            <tr>
+              <td colSpan={5}>
+                <div
                   style={{
-                    ...mobileTdStyle,
-                    textAlign: "right",
-                    fontWeight: 600,
-                    color: "#059669",
-                  }}
-                >
-                  {formatCurrency(venda.total || 0)}
-                </td>
-
-                <td
-                  style={{
-                    ...mobileTdStyle,
                     textAlign: "center",
+                    padding: "40px 20px",
+                    color: "#9ca3af",
                   }}
                 >
-                  <span
+                  <p style={{ fontSize: 14 }}>
+                    Nenhuma venda para {formatDate(hoje)}
+                  </p>
+                </div>
+              </td>
+            </tr>
+          ) : (
+            vendasFiltradas.map((venda, index) => {
+              const status = getStatusVenda(venda);
+
+              return (
+                <tr
+                  key={venda.id}
+                  onClick={() => onVendaClick(venda)}
+                  style={{
+                    cursor: "pointer",
+                    borderBottom:
+                      index < vendasFiltradas.length - 1
+                        ? "1px solid #e5e7eb"
+                        : "none",
+                    backgroundColor:
+                      vendaSelecionada?.id === venda.id
+                        ? "#f0fdf4"
+                        : index % 2 === 0
+                          ? "#fff"
+                          : "#fafafa",
+                  }}
+                >
+                  <td style={mobileTdStyle}>{formatDate(venda.created_at)}</td>
+
+                  <td style={mobileTdStyle}>
+                    {getNomePontoVenda(venda.table_id)}
+                  </td>
+
+                  <td style={mobileTdStyle}>
+                    <div style={{ fontWeight: 500, fontSize: 13 }}>
+                      {venda.customer_name}
+                    </div>
+
+                    <div style={{ fontSize: 10, color: "#9ca3af" }}>
+                      #{venda.id}
+                    </div>
+                  </td>
+
+                  <td
                     style={{
-                      display: "inline-block",
-                      padding: "2px 8px",
-                      borderRadius: 20,
-                      fontSize: 10,
-                      background: status.background,
-                      color: status.color,
+                      ...mobileTdStyle,
+                      textAlign: "right",
+                      fontWeight: 600,
+                      color: "#059669",
                     }}
                   >
-                    {status.label}
-                  </span>
-                </td>
-              </tr>
-            );
-          })}
+                    {formatCurrency(venda.total || 0)}
+                  </td>
+
+                  <td
+                    style={{
+                      ...mobileTdStyle,
+                      textAlign: "center",
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: "inline-block",
+                        padding: "2px 8px",
+                        borderRadius: 20,
+                        fontSize: 10,
+                        background: status.background,
+                        color: status.color,
+                      }}
+                    >
+                      {status.label}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })
+          )}
         </tbody>
       </table>
     </div>

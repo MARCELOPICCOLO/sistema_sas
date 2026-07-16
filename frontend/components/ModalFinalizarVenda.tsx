@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTimes } from "@fortawesome/free-solid-svg-icons";
+import { faTimes, faClock } from "@fortawesome/free-solid-svg-icons";
 
 interface VendaItem {
   id: number;
@@ -115,9 +115,10 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
   };
 
   const handleComandaNaoPaga = () => {
-    onConfirm("pendente", undefined, true);
-
-    resetEstados();
+    if (window.confirm("Confirmar que esta comanda não será paga agora?")) {
+      onConfirm("pendente", undefined, true);
+      resetEstados();
+    }
   };
 
   const handleClose = () => {
@@ -342,70 +343,95 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
           style={{
             display: "flex",
             gap: 12,
-            flexWrap: "wrap",
+            flexDirection: "column",
           }}
         >
-          <button
-            onClick={handleClose}
-            style={{
-              flex: 1,
-              padding: "10px",
-              borderRadius: 8,
-              border: "1px solid #e5e7eb",
-              background: "#fff",
-              color: "#374151",
-              cursor: "pointer",
-            }}
-          >
-            Cancelar
-          </button>
-
+          {/* Botão Comanda Não Paga - DESTAQUE */}
           <button
             onClick={handleComandaNaoPaga}
             style={{
-              flex: 1,
-              padding: "10px",
+              width: "100%",
+              padding: "12px",
               borderRadius: 8,
-              border: "none",
-              background: "#f59e0b",
-              color: "#fff",
+              border: "2px solid #f59e0b",
+              background: "#fffbeb",
+              color: "#92400e",
               cursor: "pointer",
-              fontWeight: 500,
+              fontWeight: 600,
+              fontSize: 14,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "#fef3c7";
+              e.currentTarget.style.borderColor = "#d97706";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "#fffbeb";
+              e.currentTarget.style.borderColor = "#f59e0b";
             }}
           >
-            Comanda Não Paga
+            <FontAwesomeIcon icon={faClock} />
+            Comanda Não Paga (Pagar Depois)
           </button>
 
-          <button
-            onClick={handleConfirm}
-            disabled={
-              !formaPagamento ||
-              (formaPagamento === "dinheiro" &&
-                (!valorRecebido || parseFloat(valorRecebido) < total))
-            }
+          {/* Botões Inferiores */}
+          <div
             style={{
-              flex: 1,
-              padding: "10px",
-              borderRadius: 8,
-              border: "none",
-              background:
-                !formaPagamento ||
-                (formaPagamento === "dinheiro" &&
-                  (!valorRecebido || parseFloat(valorRecebido) < total))
-                  ? "#9ca3af"
-                  : "#10b981",
-              color: "#fff",
-              cursor:
-                !formaPagamento ||
-                (formaPagamento === "dinheiro" &&
-                  (!valorRecebido || parseFloat(valorRecebido) < total))
-                  ? "not-allowed"
-                  : "pointer",
-              fontWeight: 500,
+              display: "flex",
+              gap: 12,
             }}
           >
-            Finalizar
-          </button>
+            <button
+              onClick={handleClose}
+              style={{
+                flex: 1,
+                padding: "10px",
+                borderRadius: 8,
+                border: "1px solid #e5e7eb",
+                background: "#fff",
+                color: "#374151",
+                cursor: "pointer",
+                fontWeight: 500,
+              }}
+            >
+              Cancelar
+            </button>
+
+            <button
+              onClick={handleConfirm}
+              disabled={
+                !formaPagamento ||
+                (formaPagamento === "dinheiro" &&
+                  (!valorRecebido || parseFloat(valorRecebido) < total))
+              }
+              style={{
+                flex: 2,
+                padding: "10px",
+                borderRadius: 8,
+                border: "none",
+                background:
+                  !formaPagamento ||
+                  (formaPagamento === "dinheiro" &&
+                    (!valorRecebido || parseFloat(valorRecebido) < total))
+                    ? "#9ca3af"
+                    : "#10b981",
+                color: "#fff",
+                cursor:
+                  !formaPagamento ||
+                  (formaPagamento === "dinheiro" &&
+                    (!valorRecebido || parseFloat(valorRecebido) < total))
+                    ? "not-allowed"
+                    : "pointer",
+                fontWeight: 500,
+              }}
+            >
+              Finalizar
+            </button>
+          </div>
         </div>
       </div>
     </div>

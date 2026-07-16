@@ -28,20 +28,19 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validar número da comanda
+    // Validar número da comanda - obrigatório
     if (numeroComanda === "" || numeroComanda <= 0) {
       alert("Digite um número de terminal válido (maior que 0)");
       return;
     }
 
-    if (!nomeCliente.trim()) {
-      alert("Digite o nome do cliente");
-      return;
-    }
+    // Se nome do cliente estiver vazio, usar "Venda Rápida"
+    const clienteFinal =
+      nomeCliente.trim() === "" ? "Venda Rápida" : nomeCliente.trim();
 
     setLoading(true);
     try {
-      await onConfirm(Number(numeroComanda), nomeCliente.trim(), dataComanda);
+      await onConfirm(Number(numeroComanda), clienteFinal, dataComanda);
       setNumeroComanda("");
       setNomeCliente("");
       setDataComanda(hoje);
@@ -125,7 +124,6 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
                 outline: "none",
               }}
               onKeyDown={(e) => {
-                // Impedir caracteres não numéricos
                 if (
                   e.key === "e" ||
                   e.key === "E" ||
@@ -141,7 +139,7 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
             </p>
           </div>
 
-          {/* Campo: Nome do Cliente */}
+          {/* Campo: Nome do Cliente - OPCIONAL */}
           <div style={{ marginBottom: 16 }}>
             <label
               style={{
@@ -152,13 +150,14 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
                 color: "#374151",
               }}
             >
-              Nome do Cliente <span style={{ color: "#dc2626" }}>*</span>
+              Nome do Cliente{" "}
+              <span style={{ color: "#9ca3af", fontSize: 12 }}>(opcional)</span>
             </label>
             <input
               type="text"
               value={nomeCliente}
               onChange={(e) => setNomeCliente(e.target.value)}
-              placeholder="Ex: João, Maria, Família Silva..."
+              placeholder="Deixe em branco para 'Venda Rápida'"
               style={{
                 width: "100%",
                 padding: "10px",
@@ -168,6 +167,9 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
                 outline: "none",
               }}
             />
+            <p style={{ fontSize: 11, color: "#6b7280", marginTop: 4 }}>
+              * Se não preenchido, será usado "Venda Rápida"
+            </p>
           </div>
 
           {/* Campo: Data da Comanda */}

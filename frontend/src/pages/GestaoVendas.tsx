@@ -170,22 +170,13 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
     fetchVendas();
   }, [fetchProdutos, fetchVendas, fetchPontosVenda]);
 
-  // Abrir nova venda com ModalAbrirComanda - CORRIGIDO
+  // Abrir nova venda
   const abrirVenda = async (
     numeroComanda: number,
     nomeCliente: string,
     dataComanda: string,
   ) => {
     try {
-      console.log("=== ENVIANDO PARA API ===");
-      console.log({
-        restaurant_id: 1,
-        order_number: String(numeroComanda),
-        order_date: dataComanda, // 👈 CORRETO: order_date
-        customer_name: nomeCliente.trim(),
-        status: "aberto",
-      });
-
       const response = await fetch("http://localhost:8000/api/orders", {
         method: "POST",
         headers: {
@@ -195,10 +186,9 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
         body: JSON.stringify({
           restaurant_id: 1,
           order_number: String(numeroComanda),
-          order_date: dataComanda, // 👈 CAMPO CORRETO
-          customer_name: nomeCliente.trim(),
+          order_date: dataComanda,
+          customer_name: nomeCliente,
           status: "aberto",
-          // closed_at NÃO DEVE SER ENVIADO
         }),
       });
 
@@ -212,7 +202,12 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
       await fetchVendas();
       setVendaSelecionada(novaVenda);
       setShowModalNovaVenda(false);
-      alert(`Comanda #${numeroComanda} - ${nomeCliente} aberta com sucesso!`);
+
+      const mensagem =
+        nomeCliente === "Venda Rápida"
+          ? `Comanda #${numeroComanda} aberta com sucesso!`
+          : `Comanda #${numeroComanda} - ${nomeCliente} aberta com sucesso!`;
+      alert(mensagem);
     } catch (error) {
       console.error("Erro ao abrir comanda:", error);
       alert("Erro ao conectar com o servidor");
@@ -402,6 +397,43 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
     }
   };
 
+  // Finalizar venda
+  const finalizarVenda = async (
+    vendaId: number,
+    formaPagamento: string,
+    valorRecebido?: number,
+  ) => {
+    try {
+      const response = await fetch(
+        `http://localhost:8000/api/orders/${vendaId}/close`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            payment_method: formaPagamento,
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        alert(error.message || "Erro ao finalizar venda");
+        return;
+      }
+
+      setVendaSelecionada(null);
+      await fetchVendas();
+      setShowModalFecharVenda(false);
+      alert("Venda finalizada com sucesso!");
+    } catch (error) {
+      console.error("Erro ao finalizar venda:", error);
+      alert("Erro ao conectar com o servidor");
+    }
+  };
+
   const vendasAbertas = vendas.filter((v) => v.status === "aberto");
 
   // Versão Desktop
@@ -468,7 +500,6 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
           />
         </div>
 
-        {/* Modal usando o componente ModalAbrirComanda */}
         <ModalAbrirComanda
           showModal={showModalNovaVenda}
           onClose={() => setShowModalNovaVenda(false)}
@@ -479,40 +510,22 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
           <ModalFinalizarVenda
             isOpen={showModalFecharVenda}
             venda={vendaSelecionada}
-            onClose={() => {
-              setShowModalFecharVenda(false);
-            }}
-            onConfirm={async (formaPagamento, valorRecebido) => {
+            onClose={() => setShowModalFecharVenda(false)}
+            onConfirm={async (
+              formaPagamento,
+              valorRecebido,
+              comandaNaoPaga,
+            ) => {
               if (!vendaSelecionada) return;
 
-              try {
-                const response = await fetch(
-                  `http://localhost:8000/api/orders/${vendaSelecionada.id}/close`,
-                  {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                      Accept: "application/json",
-                    },
-                    body: JSON.stringify({
-                      payment_method: formaPagamento,
-                    }),
-                  },
+              if (comandaNaoPaga) {
+                await marcarNaoPaga(vendaSelecionada.id);
+              } else {
+                await finalizarVenda(
+                  vendaSelecionada.id,
+                  formaPagamento,
+                  valorRecebido,
                 );
-
-                if (!response.ok) {
-                  const error = await response.json();
-                  alert(error.message || "Erro ao finalizar venda");
-                  return;
-                }
-
-                setVendaSelecionada(null);
-                await fetchVendas();
-                setShowModalFecharVenda(false);
-                alert("Venda finalizada com sucesso!");
-              } catch (error) {
-                console.error("Erro ao finalizar venda:", error);
-                alert("Erro ao conectar com o servidor");
               }
             }}
             formatCurrency={formatCurrency}
@@ -807,7 +820,6 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
         )}
       </div>
 
-      {/* Modal usando o componente ModalAbrirComanda */}
       <ModalAbrirComanda
         showModal={showModalNovaVenda}
         onClose={() => setShowModalNovaVenda(false)}
@@ -818,40 +830,18 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
         <ModalFinalizarVenda
           isOpen={showModalFecharVenda}
           venda={vendaSelecionada}
-          onClose={() => {
-            setShowModalFecharVenda(false);
-          }}
-          onConfirm={async (formaPagamento, valorRecebido) => {
+          onClose={() => setShowModalFecharVenda(false)}
+          onConfirm={async (formaPagamento, valorRecebido, comandaNaoPaga) => {
             if (!vendaSelecionada) return;
 
-            try {
-              const response = await fetch(
-                `http://localhost:8000/api/orders/${vendaSelecionada.id}/close`,
-                {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                    Accept: "application/json",
-                  },
-                  body: JSON.stringify({
-                    payment_method: formaPagamento,
-                  }),
-                },
+            if (comandaNaoPaga) {
+              await marcarNaoPaga(vendaSelecionada.id);
+            } else {
+              await finalizarVenda(
+                vendaSelecionada.id,
+                formaPagamento,
+                valorRecebido,
               );
-
-              if (!response.ok) {
-                const error = await response.json();
-                alert(error.message || "Erro ao finalizar venda");
-                return;
-              }
-
-              setVendaSelecionada(null);
-              await fetchVendas();
-              setShowModalFecharVenda(false);
-              alert("Venda finalizada com sucesso!");
-            } catch (error) {
-              console.error("Erro ao finalizar venda:", error);
-              alert("Erro ao conectar com o servidor");
             }
           }}
           formatCurrency={formatCurrency}
