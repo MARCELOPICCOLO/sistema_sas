@@ -149,7 +149,7 @@ export default function Caixa({ setTela }: CaixaProps) {
     }
   }, []);
 
-  // Buscar entradas (vendas do PDV) - COM FILTRO DE DATA
+  // Buscar entradas (vendas do PDV) - COM FILTRO DE DATA E STATUS
   const fetchEntradas = useCallback(async () => {
     try {
       // Datas do mês selecionado
@@ -166,15 +166,21 @@ export default function Caixa({ setTela }: CaixaProps) {
 
       const orders: Order[] = await response.json();
 
-      // Filtrar apenas as fechadas E dentro do período selecionado
+      // 🔥 CORREÇÃO: Incluir "fechado" E "pendente"
       const ordensFiltradas = orders.filter((order) => {
-        if (order.status !== "fechado") return false;
+        // Inclui fechados e pendentes (não pagas)
+        if (order.status !== "fechado" && order.status !== "pendente")
+          return false;
+
+        if (!order.closed_at) return false;
 
         const orderDate = order.closed_at.split("T")[0];
         return orderDate >= startDate && orderDate <= endDate;
       });
 
-      console.log(`Vendas no período: ${ordensFiltradas.length}`);
+      console.log(
+        `Vendas no período (fechadas + pendentes): ${ordensFiltradas.length}`,
+      );
 
       const extrairData = (dataCompleta: string): string => {
         if (!dataCompleta) return "";
@@ -188,11 +194,11 @@ export default function Caixa({ setTela }: CaixaProps) {
           id: order.id,
           description: `Venda - ${order.customer_name || `Mesa ${order.table_id}`}`,
           amount: Number(order.total) || 0,
-          date: orderDate,
+          date: orderDate || new Date().toISOString().split("T")[0],
           category_id: 0,
           type: "entrada",
           category: undefined,
-          notes: `Pagamento: ${order.payment_method}`,
+          notes: `Status: ${order.status} | Pagamento: ${order.payment_method || "N/A"}`,
           source: "pdv",
         };
       });
@@ -203,7 +209,7 @@ export default function Caixa({ setTela }: CaixaProps) {
       console.error("Erro ao buscar vendas:", error);
       return [];
     }
-  }, [anoSelecionado, mesSelecionado]); // Mantém as dependências
+  }, [anoSelecionado, mesSelecionado]);
 
   // Buscar saídas (gastos)
   const fetchSaidas = useCallback(async () => {
@@ -227,7 +233,9 @@ export default function Caixa({ setTela }: CaixaProps) {
           id: item.id,
           description: item.description,
           amount: Number(item.amount) || 0,
-          date: item.expense_date.split("T")[0],
+          date: item.expense_date
+            ? item.expense_date.split("T")[0]
+            : new Date().toISOString().split("T")[0],
           category_id: item.category_id,
           type: "saida",
           category: categoria,
@@ -242,7 +250,7 @@ export default function Caixa({ setTela }: CaixaProps) {
       console.error("Erro ao buscar saídas:", error);
       return [];
     }
-  }, [anoSelecionado, mesSelecionado, categorias]); // Adicione categorias como dependência
+  }, [anoSelecionado, mesSelecionado, categorias]);
 
   // Buscar todas as transações
   const fetchTransacoes = useCallback(async () => {
@@ -286,7 +294,6 @@ export default function Caixa({ setTela }: CaixaProps) {
     }
   }, [fetchEntradas, fetchSaidas]);
 
-  // Efeito para carregar categorias uma vez
   // Efeito para carregar categorias uma vez
   useEffect(() => {
     fetchCategorias();
@@ -335,7 +342,6 @@ export default function Caixa({ setTela }: CaixaProps) {
   };
 
   // Processar arquivo CSV
-  // Processar arquivo CSV com detecção automática de delimitador
   const processCSV = (file: File, callback: (data: any[]) => void) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -347,20 +353,16 @@ export default function Caixa({ setTela }: CaixaProps) {
         return;
       }
 
-      // DETECTAR DELIMITADOR (; ou ,)
       const firstLine = lines[0];
       let delimiter = ",";
 
-      // Contar ocorrências de ; e ,
       const commaCount = (firstLine.match(/,/g) || []).length;
       const semicolonCount = (firstLine.match(/;/g) || []).length;
 
-      // Se ponto e vírgula for mais comum, usar ele
       if (semicolonCount > commaCount) {
         delimiter = ";";
       }
 
-      // Verificar se é um cabeçalho válido (contém palavras-chave)
       const firstLineLower = firstLine.toLowerCase();
       const hasHeader =
         firstLineLower.includes("descricao") ||
@@ -373,7 +375,6 @@ export default function Caixa({ setTela }: CaixaProps) {
       let headers: string[] = [];
       let startRow = 0;
 
-      // Função para parsear linha respeitando aspas
       const parseRow = (line: string): string[] => {
         const result: string[] = [];
         let inQuotes = false;
@@ -393,7 +394,6 @@ export default function Caixa({ setTela }: CaixaProps) {
         }
         result.push(currentValue.trim());
 
-        // Remover aspas extras do início e fim
         return result.map((v) => v.replace(/^"|"$/g, "").replace(/""/g, '"'));
       };
 
@@ -401,7 +401,6 @@ export default function Caixa({ setTela }: CaixaProps) {
         headers = parseRow(lines[0]);
         startRow = 1;
       } else {
-        // Se não tem cabeçalho, criar padrão
         const firstRowData = parseRow(lines[0]);
         if (firstRowData.length === 3) {
           headers = ["data", "descricao", "valor"];
@@ -413,7 +412,6 @@ export default function Caixa({ setTela }: CaixaProps) {
         startRow = 0;
       }
 
-      // Mapear índices para os nomes esperados (case insensitive)
       const dataIndex = headers.findIndex(
         (h) => h.toLowerCase() === "data" || h.toLowerCase() === "date",
       );
@@ -445,7 +443,6 @@ export default function Caixa({ setTela }: CaixaProps) {
         if (valorIndex !== -1) row.valor = values[valorIndex] || "";
         if (categoriaIndex !== -1) row.categoria = values[categoriaIndex] || "";
 
-        // Se não encontrou pelos headers, tenta por posição
         if (Object.keys(row).length === 0 && values.length >= 3) {
           row.data = values[0];
           row.descricao = values[1];
@@ -506,13 +503,11 @@ export default function Caixa({ setTela }: CaixaProps) {
       let sucesso = 0;
       let erros = 0;
 
-      // Começa da linha 1 (pula o cabeçalho)
       for (let i = 1; i < linhas.length; i++) {
         const linha = linhas[i];
 
         if (!linha.trim()) continue;
 
-        // Divide a linha por ponto e vírgula
         const partes = linha.split(";");
 
         if (partes.length < 3) {
@@ -530,7 +525,6 @@ export default function Caixa({ setTela }: CaixaProps) {
           continue;
         }
 
-        // Limpa o valor (remove R$ e converte vírgula para ponto)
         valor = valor.replace("R$", "").replace(",", ".").trim();
         const valorNumerico = parseFloat(valor);
 
@@ -539,7 +533,6 @@ export default function Caixa({ setTela }: CaixaProps) {
           continue;
         }
 
-        // Converte a data se necessário
         let dataFormatada = data;
         if (data.includes("/")) {
           const [dia, mes, ano] = data.split("/");
@@ -606,12 +599,10 @@ export default function Caixa({ setTela }: CaixaProps) {
         return;
       }
 
-      // Lê o cabeçalho
       const cabecalho = linhas[0]
         .split(";")
         .map((col) => col.trim().toLowerCase());
 
-      // Mapeia os índices
       let idxData = cabecalho.findIndex((h) => h === "data" || h === "date");
       let idxCliente = cabecalho.findIndex(
         (h) => h === "cliente" || h === "customer" || h === "customer_name",
@@ -623,7 +614,6 @@ export default function Caixa({ setTela }: CaixaProps) {
         (h) => h === "pagamento" || h === "payment" || h === "payment_method",
       );
 
-      // Valores padrão
       if (idxData === -1) idxData = 0;
       if (idxValor === -1) idxValor = 1;
 
@@ -655,17 +645,11 @@ export default function Caixa({ setTela }: CaixaProps) {
           continue;
         }
 
-        // ========== CORREÇÃO DA CONVERSÃO DO VALOR ==========
         let valorNumerico = 0;
-
-        // Remove R$ e espaços
         let valorLimpo = valorRaw.replace(/R\$\s*/g, "").trim();
 
-        // Verifica se tem vírgula (formato brasileiro: 269,71)
         if (valorLimpo.includes(",")) {
-          // Remove pontos de milhar (ex: 1.269,71 -> 1269,71)
           valorLimpo = valorLimpo.replace(/\./g, "");
-          // Troca vírgula por ponto
           valorLimpo = valorLimpo.replace(",", ".");
         }
 
@@ -681,7 +665,6 @@ export default function Caixa({ setTela }: CaixaProps) {
           continue;
         }
 
-        // Converte a data para YYYY-MM-DD
         let dataFormatada = dataOriginal;
         if (dataOriginal.includes("/")) {
           const [dia, mes, ano] = dataOriginal.split("/");
@@ -770,13 +753,11 @@ export default function Caixa({ setTela }: CaixaProps) {
 
       if (linhas.length === 0) return;
 
-      // Lê o cabeçalho (primeira linha)
       const cabecalho = linhas[0]
         .split(";")
         .map((col) => col.trim().toLowerCase());
       console.log("Cabeçalho detectado:", cabecalho);
 
-      // Mapeia os índices das colunas
       let idxData = cabecalho.findIndex((h) => h === "data" || h === "date");
       let idxCliente = cabecalho.findIndex(
         (h) => h === "cliente" || h === "customer" || h === "customer_name",
@@ -788,13 +769,11 @@ export default function Caixa({ setTela }: CaixaProps) {
         (h) => h === "pagamento" || h === "payment" || h === "payment_method",
       );
 
-      // Se não encontrou, tenta por posição padrão
       if (idxData === -1) idxData = 0;
       if (idxValor === -1) idxValor = 1;
 
       const preview = [];
 
-      // Lê as próximas 5 linhas
       for (let i = 1; i < Math.min(linhas.length, 6); i++) {
         const linha = linhas[i];
         if (!linha.trim()) continue;
@@ -1209,7 +1188,7 @@ export default function Caixa({ setTela }: CaixaProps) {
           setImportFile={setImportFile}
           importPreview={importPreview}
           importing={importing}
-          previewCSV={previewCSV}
+          previewCSV={previewVendasCSV}
           importarVendasCSV={importarVendasCSV}
         />
       </div>
@@ -1592,7 +1571,7 @@ export default function Caixa({ setTela }: CaixaProps) {
         setImportFile={setImportFile}
         importPreview={importPreview}
         importing={importing}
-        previewCSV={previewVendasCSV} // <-- Use previewVendasCSV, não a genérica
+        previewCSV={previewVendasCSV}
         importarVendasCSV={importarVendasCSV}
       />
     </div>

@@ -11,6 +11,8 @@ import {
   faConciergeBell,
   faArrowRight,
   faThLarge,
+  faSignOutAlt,
+  faUserCircle,
 } from "@fortawesome/free-solid-svg-icons";
 
 interface CardProps {
@@ -24,9 +26,11 @@ interface CardProps {
 
 interface DashboardProps {
   setTela: (tela: string) => void;
+  user?: { id: number; login: string; email: string } | null;
+  onLogout?: () => void;
 }
 
-export default function Dashboard({ setTela }: DashboardProps) {
+export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [isTablet, setIsTablet] = useState(
     window.innerWidth >= 768 && window.innerWidth < 1024,
@@ -42,15 +46,6 @@ export default function Dashboard({ setTela }: DashboardProps) {
   }, []);
 
   const cards: CardProps[] = [
-    // {
-    //   id: "pontos_venda",
-    //   titulo: "Gestão de Pontos de Venda",
-    //   descricao:
-    //     "Gerencie seus pontos de atendimento, caixas e terminais de venda",
-    //   icon: faStore,
-    //   cor: "#10b981",
-    //   tela: "gestao_pontos",
-    // },
     {
       id: "estoque",
       titulo: "Gestão de Estoque",
@@ -58,7 +53,7 @@ export default function Dashboard({ setTela }: DashboardProps) {
         "Controle de entradas, saídas, níveis de estoque e movimentações",
       icon: faBoxes,
       cor: "#3b82f6",
-      tela: "produtos", // Direciona para a página de produtos (que gerencia estoque)
+      tela: "produtos",
     },
     {
       id: "vendas",
@@ -115,14 +110,19 @@ export default function Dashboard({ setTela }: DashboardProps) {
         padding: isMobile ? "16px" : "24px",
       }}
     >
-      {/* Cabeçalho */}
+      {/* Cabeçalho com Usuário e Logout */}
       <div
         style={{
           background: "#fff",
           borderRadius: "12px",
-          padding: "24px",
+          padding: "20px 24px",
           marginBottom: "24px",
           border: "1px solid #e5e7eb",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "12px",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -163,6 +163,59 @@ export default function Dashboard({ setTela }: DashboardProps) {
               Visão geral do sistema e acesso rápido aos módulos
             </p>
           </div>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "16px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              color: "#374151",
+            }}
+          >
+            <FontAwesomeIcon
+              icon={faUserCircle}
+              style={{ fontSize: 20, color: "#6b7280" }}
+            />
+            <span style={{ fontSize: "14px", fontWeight: 500 }}>
+              {user?.login || "Usuário"}
+            </span>
+          </div>
+          <button
+            onClick={onLogout}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "8px 16px",
+              borderRadius: "8px",
+              border: "1px solid #e5e7eb",
+              background: "#fff",
+              color: "#dc2626",
+              cursor: "pointer",
+              fontSize: "13px",
+              fontWeight: 500,
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "#fee2e2";
+              e.currentTarget.style.borderColor = "#dc2626";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "#fff";
+              e.currentTarget.style.borderColor = "#e5e7eb";
+            }}
+          >
+            <FontAwesomeIcon icon={faSignOutAlt} />
+            Sair
+          </button>
         </div>
       </div>
 
