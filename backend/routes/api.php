@@ -8,6 +8,8 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\TableController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\ExpenseCategoryController;
+use App\Http\Controllers\PartnerCompanyController;
+use App\Http\Controllers\UserController;
 
 // Rotas para produtos
 // Rotas para produtos
@@ -74,4 +76,21 @@ Route::prefix('expense-categories')->group(function () {
     Route::put('/{id}', [ExpenseCategoryController::class, 'update']);
     Route::delete('/{id}', [ExpenseCategoryController::class, 'destroy']);
     Route::post('/products/bulk-stock', [ProductController::class, 'bulkUpdateStock']);
+});
+
+// ========== EMPRESAS PARCEIRAS ==========
+Route::prefix('partner-companies')->group(function () {
+    Route::get('/', [PartnerCompanyController::class, 'index']);         // Listar
+    Route::post('/', [PartnerCompanyController::class, 'store']);        // Cadastrar
+    Route::get('/{id}', [PartnerCompanyController::class, 'show']);      // Buscar por ID
+    Route::put('/{id}', [PartnerCompanyController::class, 'update']);    // Atualizar
+    Route::delete('/{id}', [PartnerCompanyController::class, 'destroy']); // Excluir
+});
+
+Route::prefix('users')->group(function () {
+    Route::get('/', [UserController::class, 'index']);
+    Route::post('/', [UserController::class, 'store']);
+    Route::get('{id}', [UserController::class, 'show']);
+    Route::put('{id}', [UserController::class, 'update']);
+    Route::delete('{id}', [UserController::class, 'destroy']);
 });
