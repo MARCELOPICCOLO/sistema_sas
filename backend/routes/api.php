@@ -10,6 +10,7 @@ use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\ExpenseCategoryController;
 use App\Http\Controllers\PartnerCompanyController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\PartnerCompanyUserController;
 
 // Rotas para produtos
 // Rotas para produtos
@@ -93,4 +94,13 @@ Route::prefix('users')->group(function () {
     Route::get('{id}', [UserController::class, 'show']);
     Route::put('{id}', [UserController::class, 'update']);
     Route::delete('{id}', [UserController::class, 'destroy']);
+});
+
+
+Route::prefix('partner-company-users')->group(function () {
+    Route::get('/', [PartnerCompanyUserController::class, 'index']);
+    Route::post('/', [PartnerCompanyUserController::class, 'store']);
+    Route::get('{id}', [PartnerCompanyUserController::class, 'show']);
+    Route::put('{id}', [PartnerCompanyUserController::class, 'update']);
+    Route::delete('{id}', [PartnerCompanyUserController::class, 'destroy']);
 });
