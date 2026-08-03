@@ -11,96 +11,121 @@ use App\Http\Controllers\ExpenseCategoryController;
 use App\Http\Controllers\PartnerCompanyController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PartnerCompanyUserController;
+use App\Http\Controllers\AuthController;
 
-// Rotas para produtos
-// Rotas para produtos
-Route::prefix('products')->group(function () {
-    Route::get('/', [ProductController::class, 'index']);           // Listar
-    Route::get('/code/{code}', [ProductController::class, 'findByCode']); // Buscar por código
-    Route::post('/', [ProductController::class, 'store']);          // Criar
-    Route::get('/{id}', [ProductController::class, 'show']);        // Mostrar
-    Route::put('/{id}', [ProductController::class, 'update']);      // Atualizar
-    Route::delete('/{id}', [ProductController::class, 'destroy']);  // Deletar
-    Route::patch('/{id}/stock', [ProductController::class, 'updateStock']); // Atualizar estoque
+/*
+|--------------------------------------------------------------------------
+| Rotas públicas
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('auth')->group(function () {
+    Route::post('/login', [AuthController::class, 'login']);
 });
 
-// ========== CATEGORIAS ==========
-Route::apiResource('categories', CategoryController::class);
+/*
+|--------------------------------------------------------------------------
+| Rotas protegidas por JWT
+|--------------------------------------------------------------------------
+*/
 
-// ========== MESAS ==========
-// API Resource já cria: index, store, show, update, destroy
-Route::apiResource('tables', TableController::class);
-// Rota adicional para listar comandas de uma mesa específica
-Route::get('/tables/{tableId}/orders', [OrderController::class, 'getByTable']);
+Route::middleware('auth:api')->group(function () {
 
-// ========== COMANDAS (ORDERS) ==========
-Route::prefix('orders')->group(function () {
-    // ✅ Adicione explicitamente POST
-    Route::match(['GET', 'POST'], '/summary', [OrderController::class, 'salesSummary']);
+    Route::prefix('auth')->group(function () {
+        Route::post('/logout', [AuthController::class, 'logout']);
+        Route::post('/refresh', [AuthController::class, 'refresh']);
+        Route::get('/me', [AuthController::class, 'me']);
+    });
 
-    // OU apenas POST
-    Route::post('/summary', [OrderController::class, 'salesSummary']);
+    // Rotas para produtos
+    Route::prefix('products')->group(function () {
+        Route::get('/', [ProductController::class, 'index']);           // Listar
+        Route::get('/code/{code}', [ProductController::class, 'findByCode']); // Buscar por código
+        Route::post('/', [ProductController::class, 'store']);          // Criar
+        Route::get('/{id}', [ProductController::class, 'show']);        // Mostrar
+        Route::put('/{id}', [ProductController::class, 'update']);      // Atualizar
+        Route::delete('/{id}', [ProductController::class, 'destroy']);  // Deletar
+        Route::patch('/{id}/stock', [ProductController::class, 'updateStock']); // Atualizar estoque
+    });
 
-    // Depois as outras rotas
-    Route::get('/', [OrderController::class, 'index']);
-    Route::get('/{id}', [OrderController::class, 'show']);
-    Route::post('/', [OrderController::class, 'store']);
-    Route::delete('/{id}', [OrderController::class, 'destroy']);
-    Route::post('/{id}/close', [OrderController::class, 'close']);
-    Route::post('/{id}/items', [OrderController::class, 'addItem']);
-    Route::get('/{id}/items', [OrderController::class, 'getItems']);
-});
+    // ========== CATEGORIAS ==========
+    Route::apiResource('categories', CategoryController::class);
 
-// ========== ORDER ITEMS ==========
-Route::prefix('order-items')->group(function () {
-    Route::put('/{id}', [OrderController::class, 'updateItem']);
-    Route::delete('/{id}', [OrderController::class, 'removeItem']);
-});
+    // ========== MESAS ==========
+    // API Resource já cria: index, store, show, update, destroy
+    Route::apiResource('tables', TableController::class);
+    // Rota adicional para listar comandas de uma mesa específica
+    Route::get('/tables/{tableId}/orders', [OrderController::class, 'getByTable']);
 
-// ========== GASTOS (EXPENSES) ==========
-Route::prefix('expenses')->group(function () {
-    Route::get('/', [ExpenseController::class, 'index']);           // Listar gastos
-    Route::get('/summary', [ExpenseController::class, 'summary']);  // Resumo do dia
-    Route::get('/monthly-summary', [ExpenseController::class, 'monthlySummary']); // Resumo do mês
-    Route::post('/', [ExpenseController::class, 'store']);          // Criar gasto
-    Route::get('/{id}', [ExpenseController::class, 'show']);        // Mostrar gasto
-    Route::put('/{id}', [ExpenseController::class, 'update']);      // Atualizar gasto
-    Route::delete('/{id}', [ExpenseController::class, 'destroy']);  // Deletar gasto
-    Route::post('/import-csv', [ExpenseController::class, 'importCsv']); // Importar gasto
-});
+    // ========== COMANDAS (ORDERS) ==========
+    Route::prefix('orders')->group(function () {
+        // ✅ Adicione explicitamente POST
+        Route::match(['GET', 'POST'], '/summary', [OrderController::class, 'salesSummary']);
 
+        // OU apenas POST
+        Route::post('/summary', [OrderController::class, 'salesSummary']);
 
-Route::prefix('expense-categories')->group(function () {
-    Route::get('/', [ExpenseCategoryController::class, 'index']);
-    Route::post('/', [ExpenseCategoryController::class, 'store']);
-    Route::get('/{id}', [ExpenseCategoryController::class, 'show']);
-    Route::put('/{id}', [ExpenseCategoryController::class, 'update']);
-    Route::delete('/{id}', [ExpenseCategoryController::class, 'destroy']);
-    Route::post('/products/bulk-stock', [ProductController::class, 'bulkUpdateStock']);
-});
+        // Depois as outras rotas
+        Route::get('/', [OrderController::class, 'index']);
+        Route::get('/{id}', [OrderController::class, 'show']);
+        Route::post('/', [OrderController::class, 'store']);
+        Route::delete('/{id}', [OrderController::class, 'destroy']);
+        Route::post('/{id}/close', [OrderController::class, 'close']);
+        Route::post('/{id}/items', [OrderController::class, 'addItem']);
+        Route::get('/{id}/items', [OrderController::class, 'getItems']);
+    });
 
-// ========== EMPRESAS PARCEIRAS ==========
-Route::prefix('partner-companies')->group(function () {
-    Route::get('/', [PartnerCompanyController::class, 'index']);         // Listar
-    Route::post('/', [PartnerCompanyController::class, 'store']);        // Cadastrar
-    Route::get('/{id}', [PartnerCompanyController::class, 'show']);      // Buscar por ID
-    Route::put('/{id}', [PartnerCompanyController::class, 'update']);    // Atualizar
-    Route::delete('/{id}', [PartnerCompanyController::class, 'destroy']); // Excluir
-});
+    // ========== ORDER ITEMS ==========
+    Route::prefix('order-items')->group(function () {
+        Route::put('/{id}', [OrderController::class, 'updateItem']);
+        Route::delete('/{id}', [OrderController::class, 'removeItem']);
+    });
 
-Route::prefix('users')->group(function () {
-    Route::get('/', [UserController::class, 'index']);
-    Route::post('/', [UserController::class, 'store']);
-    Route::get('{id}', [UserController::class, 'show']);
-    Route::put('{id}', [UserController::class, 'update']);
-    Route::delete('{id}', [UserController::class, 'destroy']);
-});
+    // ========== GASTOS (EXPENSES) ==========
+    Route::prefix('expenses')->group(function () {
+        Route::get('/', [ExpenseController::class, 'index']);           // Listar gastos
+        Route::get('/summary', [ExpenseController::class, 'summary']);  // Resumo do dia
+        Route::get('/monthly-summary', [ExpenseController::class, 'monthlySummary']); // Resumo do mês
+        Route::post('/', [ExpenseController::class, 'store']);          // Criar gasto
+        Route::get('/{id}', [ExpenseController::class, 'show']);        // Mostrar gasto
+        Route::put('/{id}', [ExpenseController::class, 'update']);      // Atualizar gasto
+        Route::delete('/{id}', [ExpenseController::class, 'destroy']);  // Deletar gasto
+        Route::post('/import-csv', [ExpenseController::class, 'importCsv']); // Importar gasto
+    });
 
 
-Route::prefix('partner-company-users')->group(function () {
-    Route::get('/', [PartnerCompanyUserController::class, 'index']);
-    Route::post('/', [PartnerCompanyUserController::class, 'store']);
-    Route::get('{id}', [PartnerCompanyUserController::class, 'show']);
-    Route::put('{id}', [PartnerCompanyUserController::class, 'update']);
-    Route::delete('{id}', [PartnerCompanyUserController::class, 'destroy']);
+    Route::prefix('expense-categories')->group(function () {
+        Route::get('/', [ExpenseCategoryController::class, 'index']);
+        Route::post('/', [ExpenseCategoryController::class, 'store']);
+        Route::get('/{id}', [ExpenseCategoryController::class, 'show']);
+        Route::put('/{id}', [ExpenseCategoryController::class, 'update']);
+        Route::delete('/{id}', [ExpenseCategoryController::class, 'destroy']);
+        Route::post('/products/bulk-stock', [ProductController::class, 'bulkUpdateStock']);
+    });
+
+    // ========== EMPRESAS PARCEIRAS ==========
+    Route::prefix('partner-companies')->group(function () {
+        Route::get('/', [PartnerCompanyController::class, 'index']);         // Listar
+        Route::post('/', [PartnerCompanyController::class, 'store']);        // Cadastrar
+        Route::get('/{id}', [PartnerCompanyController::class, 'show']);      // Buscar por ID
+        Route::put('/{id}', [PartnerCompanyController::class, 'update']);    // Atualizar
+        Route::delete('/{id}', [PartnerCompanyController::class, 'destroy']); // Excluir
+    });
+
+    Route::prefix('users')->group(function () {
+        Route::get('/', [UserController::class, 'index']);
+        Route::post('/', [UserController::class, 'store']);
+        Route::get('{id}', [UserController::class, 'show']);
+        Route::put('{id}', [UserController::class, 'update']);
+        Route::delete('{id}', [UserController::class, 'destroy']);
+    });
+
+
+    Route::prefix('partner-company-users')->group(function () {
+        Route::get('/', [PartnerCompanyUserController::class, 'index']);
+        Route::post('/', [PartnerCompanyUserController::class, 'store']);
+        Route::get('{id}', [PartnerCompanyUserController::class, 'show']);
+        Route::put('{id}', [PartnerCompanyUserController::class, 'update']);
+        Route::delete('{id}', [PartnerCompanyUserController::class, 'destroy']);
+    });
 });
