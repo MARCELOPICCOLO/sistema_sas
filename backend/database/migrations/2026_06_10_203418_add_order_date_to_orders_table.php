@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('orders', function (Blueprint $table) {
             // Adicionar coluna order_date para a data da comanda
-            $table->date('order_date')->nullable()->after('order_number');
+            $table->date('order_date')->nullable();
 
             // Manter closed_at apenas para quando a comanda foi finalizada
             // closed_at permanece como está

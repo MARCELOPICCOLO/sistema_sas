@@ -1,5 +1,4 @@
 <?php
-// database/migrations/xxxx_xx_xx_xxxxxx_create_expenses_table.php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -10,27 +9,30 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('expenses', function (Blueprint $table) {
+
             $table->id();
-            $table->foreignId('restaurant_id')->constrained()->cascadeOnDelete();
+
+            // Empresa
+            $table->foreignId('partner_company_id')
+                ->constrained('partner_companies')
+                ->cascadeOnDelete();
+
+            // Categoria da despesa
+            $table->foreignId('expense_category_id')
+                ->constrained('expense_categories')
+                ->cascadeOnDelete();
+
+            // Dados da despesa
             $table->string('description', 255);
             $table->decimal('amount', 10, 2);
             $table->date('expense_date');
-            $table->enum('category', [
-                'carnes',
-                'mercado',
-                'agua',
-                'luz',
-                'gas',
-                'bebidas',
-                'embalagens',
-                'outros'
-            ])->default('outros');
             $table->text('notes')->nullable();
+
             $table->timestamps();
 
-            // Índices para otimizar consultas
-            $table->index(['restaurant_id', 'expense_date']);
-            $table->index(['restaurant_id', 'category']);
+            // Índices
+            $table->index(['partner_company_id', 'expense_date']);
+            $table->index(['partner_company_id', 'expense_category_id']);
         });
     }
 

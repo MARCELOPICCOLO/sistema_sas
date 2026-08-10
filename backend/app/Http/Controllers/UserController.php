@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
@@ -21,6 +22,8 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        $user = Auth::guard('api')->user();
+
         $validated = $request->validate([
             'full_name' => 'required|string|max:255',
             'username'  => 'required|string|max:255|unique:users,username',
@@ -53,7 +56,7 @@ class UserController extends Controller
      */
     public function update(Request $request, int $id)
     {
-        $user = User::findOrFail($id);
+        $user = Auth::guard('api')->user();
 
         $validated = $request->validate([
             'full_name' => 'sometimes|required|string|max:255',

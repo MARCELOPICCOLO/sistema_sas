@@ -1,5 +1,4 @@
 <?php
-// database/migrations/xxxx_xx_xx_xxxxxx_create_expense_categories_table.php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -10,15 +9,22 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('expense_categories', function (Blueprint $table) {
+
             $table->id();
-            $table->foreignId('restaurant_id')->constrained()->cascadeOnDelete();
+
+            $table->foreignId('partner_company_id')
+                ->constrained('partner_companies')
+                ->cascadeOnDelete();
+
             $table->string('name', 100);
             $table->string('icon', 10)->default('📌');
             $table->string('color', 20)->default('#6b7280');
             $table->boolean('is_active')->default(true);
+
             $table->timestamps();
 
-            $table->unique(['restaurant_id', 'name']);
+            // O nome da categoria deve ser único apenas dentro da empresa
+            $table->unique(['partner_company_id', 'name']);
         });
     }
 

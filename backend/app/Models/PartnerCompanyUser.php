@@ -19,4 +19,16 @@ class PartnerCompanyUser extends Model
     protected $casts = [
         'active' => 'boolean',
     ];
+
+    public function users()
+    {
+        return $this->belongsToMany(
+            User::class,
+            'partner_company_users',
+            'partner_company_id',
+            'user_id'
+        )
+            ->withPivot('role', 'active')
+            ->withTimestamps();
+    }
 }

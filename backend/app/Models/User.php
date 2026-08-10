@@ -18,6 +18,7 @@ class User extends Authenticatable implements JWTSubject
         'password',
         'active',
         'is_master',
+        'company_id',
     ];
 
     protected $hidden = [
@@ -43,5 +44,22 @@ class User extends Authenticatable implements JWTSubject
     public function getJWTCustomClaims(): array
     {
         return [];
+    }
+
+    public function restaurante()
+    {
+        return $this->belongsTo(Restaurant::class);
+    }
+
+    public function partnerCompanies()
+    {
+        return $this->belongsToMany(
+            PartnerCompany::class,
+            'partner_company_users',
+            'user_id',
+            'partner_company_id'
+        )
+            ->withPivot('role', 'active')
+            ->withTimestamps();
     }
 }

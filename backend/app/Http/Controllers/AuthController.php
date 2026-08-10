@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class AuthController extends Controller
 {
@@ -28,9 +29,22 @@ class AuthController extends Controller
     /**
      * Retorna o usuário autenticado.
      */
+    /**
+     * Retorna o usuário autenticado.
+     */
     public function me()
     {
-        return response()->json(Auth::guard('api')->user());
+        $user = Auth::guard('api')->user();
+
+        $company = DB::table('partner_company_users')
+            ->where('user_id', $user->id)
+            ->where('active', true)
+            ->first();
+
+        return response()->json([
+            'user' => $user,
+            'company_id' => $company?->partner_company_id
+        ]);
     }
 
     /**

@@ -8,7 +8,6 @@ class Product extends Model
 {
     // ✅ GARANTA QUE TODOS OS CAMPOS ESTEJAM AQUI
     protected $fillable = [
-        'restaurant_id',
         'category_id',
         'name',
         'product_code',
@@ -29,11 +28,6 @@ class Product extends Model
     public function category()
     {
         return $this->belongsTo(Category::class);
-    }
-
-    public function restaurant()
-    {
-        return $this->belongsTo(Restaurant::class);
     }
 
     // ✅ SCOPES ÚTEIS
