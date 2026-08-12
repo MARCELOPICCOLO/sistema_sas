@@ -9,6 +9,8 @@ import {
   faUtensils,
 } from "@fortawesome/free-solid-svg-icons";
 
+import api from "../api/axios";
+
 interface LoginProps {
   onLoginSuccess: (userData: {
     id: number;
@@ -38,6 +40,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     setError("");
 
     if (!login.trim() || !password.trim()) {
@@ -47,31 +50,45 @@ export default function Login({ onLoginSuccess }: LoginProps) {
 
     setLoading(true);
 
-    // Simular delay de rede
-    setTimeout(() => {
-      // Verificar credenciais
-      const user = validCredentials.find(
-        (u) => u.login === login.trim() && u.password === password.trim(),
-      );
+    try {
+      const response = await api.post("/auth/login", {
+        username: login.trim(),
+        password: password.trim(),
+      });
 
-      if (user) {
-        // Login bem-sucedido
-        const userData = {
-          id: user.id,
-          login: user.login,
-          email: user.email,
-        };
+      const token = response.data.access_token;
 
-        localStorage.setItem("auth_token", "fake-token-123");
-        localStorage.setItem("user", JSON.stringify(userData));
+      localStorage.setItem("auth_token", token);
 
-        onLoginSuccess(userData);
-      } else {
-        setError("Login ou senha inválidos");
-      }
+      console.log("Login realizado:", response.data);
 
+      // Buscar usuário autenticado pelo token
+      const userResponse = await api.get("/auth/me", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const user = userResponse.data;
+
+      console.log("Usuário autenticado:", user);
+
+      const userData = {
+        id: user.id,
+        login: user.username,
+        email: user.email,
+      };
+
+      localStorage.setItem("user", JSON.stringify(userData));
+
+      onLoginSuccess(userData);
+    } catch (error: any) {
+      console.error(error);
+
+      setError(error.response?.data?.message ?? "Usuário ou senha inválidos");
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   };
 
   // Preencher credenciais de teste

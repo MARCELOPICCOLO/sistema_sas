@@ -7,7 +7,6 @@ import { DetalhesVenda } from "../../components/DetalheVenda";
 import { TabelaComandas } from "../../components/TabelaComandas";
 import { ModalFinalizarVenda } from "../../components/ModalFinalizarVenda";
 import { ModalAbrirComanda } from "../../components/ModalAbrirComanda";
-
 import {
   faArrowLeft,
   faPlus,
@@ -16,7 +15,10 @@ import {
   faBars,
   faBoxes,
   faClipboardList,
+  faCheck,
 } from "@fortawesome/free-solid-svg-icons";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 interface Product {
   id: number;
@@ -87,6 +89,69 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
   const [showModalNovaVenda, setShowModalNovaVenda] = useState(false);
   const [showModalFecharVenda, setShowModalFecharVenda] = useState(false);
 
+  // 🔥 TOAST
+  const [toast, setToast] = useState<{
+    show: boolean;
+    message: string;
+    type: "success" | "error";
+  }>({
+    show: false,
+    message: "",
+    type: "success",
+  });
+
+  const showToast = (
+    message: string,
+    type: "success" | "error" = "success",
+  ) => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: "", type: "success" });
+    }, 900);
+  };
+
+  const ToastComponent = () => {
+    if (!toast.show) return null;
+    return (
+      <div
+        style={{
+          position: "fixed",
+          top: 20,
+          left: "50%",
+          transform: "translateX(-50%)",
+          zIndex: 10000,
+          background: toast.type === "success" ? "#10b981" : "#ef4444",
+          color: "#fff",
+          padding: "10px 20px",
+          borderRadius: 8,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+          fontSize: 14,
+          fontWeight: 500,
+          animation: "slideDown 0.3s ease-out",
+          minWidth: 200,
+          textAlign: "center",
+        }}
+      >
+        <FontAwesomeIcon icon={faCheck} style={{ marginRight: 8 }} />
+        {toast.message}
+        <style>
+          {`
+            @keyframes slideDown {
+              from {
+                transform: translateX(-50%) translateY(-20px);
+                opacity: 0;
+              }
+              to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+              }
+            }
+          `}
+        </style>
+      </div>
+    );
+  };
+
   // Detectar mobile
   useEffect(() => {
     const handleResize = () => {
@@ -96,32 +161,38 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Buscar pontos de venda
-  const fetchPontosVenda = useCallback(async () => {
-    try {
-      const response = await fetch(
-        "http://localhost:8000/api/tables?restaurant_id=1",
-      );
-      const data = await response.json();
-      setPontosVenda(data);
-    } catch (error) {
-      console.error("Erro ao buscar pontos de venda:", error);
-    }
-  }, []);
-
   // Buscar produtos
   const fetchProdutos = useCallback(async () => {
     try {
-      const response = await fetch(
-        "http://localhost:8000/api/products?restaurant_id=1",
-      );
+      const token = localStorage.getItem("auth_token");
+      console.log(token);
+
+      if (!token) {
+        console.error("JWT não encontrado.");
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/products`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro ao buscar produtos: ${response.status}`);
+      }
+
       const data = await response.json();
+
       const produtosFormatados = data.map((p: any) => ({
         ...p,
         price: typeof p.price === "number" ? p.price : Number(p.price) || 0,
         quantity:
           typeof p.quantity === "number" ? p.quantity : Number(p.quantity) || 0,
       }));
+
       setProdutos(produtosFormatados);
     } catch (error) {
       console.error("Erro ao buscar produtos:", error);
@@ -131,10 +202,27 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
   // Buscar categorias
   const fetchCategorias = async () => {
     try {
-      const response = await fetch(
-        "http://localhost:8000/api/categories?restaurant_id=1",
-      );
+      const token = localStorage.getItem("auth_token");
+
+      if (!token) {
+        console.error("JWT não encontrado.");
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/categories`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro ao buscar categorias: ${response.status}`);
+      }
+
       const data = await response.json();
+
       setCategorias(data);
     } catch (error) {
       console.error("Erro ao buscar categorias:", error);
@@ -144,19 +232,37 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
   // Buscar vendas
   const fetchVendas = useCallback(async () => {
     try {
-      const response = await fetch(
-        "http://localhost:8000/api/orders?restaurant_id=1",
-      );
+      const token = localStorage.getItem("auth_token");
+
+      if (!token) {
+        console.error("JWT não encontrado.");
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/orders`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro ao buscar vendas: ${response.status}`);
+      }
+
       const data = await response.json();
+
       const vendasComTotal = data.map((venda: any) => ({
         ...venda,
         total:
           venda.items?.reduce(
             (sum: number, item: any) =>
-              sum + Number(item.price) * item.quantity,
+              sum + Number(item.price) * Number(item.quantity),
             0,
           ) || 0,
       }));
+
       setVendas(vendasComTotal);
     } catch (error) {
       console.error("Erro ao buscar vendas:", error);
@@ -166,26 +272,33 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
   useEffect(() => {
     fetchProdutos();
     fetchCategorias();
-    fetchPontosVenda();
     fetchVendas();
-  }, [fetchProdutos, fetchVendas, fetchPontosVenda]);
+  }, [fetchProdutos, fetchVendas]);
 
   // Abrir nova venda
   const abrirVenda = async (
-    numeroComanda: number,
+    salesPointId: number,
     nomeCliente: string,
     dataComanda: string,
   ) => {
     try {
-      const response = await fetch("http://localhost:8000/api/orders", {
+      const token = localStorage.getItem("auth_token");
+
+      if (!token) {
+        console.error("JWT não encontrado.");
+        showToast("Sessão expirada. Faça login novamente.", "error");
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/orders`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          restaurant_id: 1,
-          order_number: String(numeroComanda),
+          sales_point_id: salesPointId,
           order_date: dataComanda,
           customer_name: nomeCliente,
           status: "aberto",
@@ -194,23 +307,31 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
 
       if (!response.ok) {
         const error = await response.json();
-        alert(error.message || "Erro ao abrir comanda");
+
+        showToast(error.message || "Erro ao abrir comanda", "error");
+
         return;
       }
+
       const data = await response.json();
+
       const novaVenda = data.order || data;
+
       await fetchVendas();
+
       setVendaSelecionada(novaVenda);
       setShowModalNovaVenda(false);
 
       const mensagem =
         nomeCliente === "Venda Rápida"
-          ? `Comanda #${numeroComanda} aberta com sucesso!`
-          : `Comanda #${numeroComanda} - ${nomeCliente} aberta com sucesso!`;
-      alert(mensagem);
+          ? `Comanda aberta com sucesso!`
+          : `Comanda - ${nomeCliente} aberta com sucesso!`;
+
+      showToast(mensagem, "success");
     } catch (error) {
       console.error("Erro ao abrir comanda:", error);
-      alert("Erro ao conectar com o servidor");
+
+      showToast("Erro ao conectar com o servidor", "error");
     }
   };
 
@@ -222,34 +343,55 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
     precoPersonalizado?: number,
   ) => {
     try {
-      const precoFinal = precoPersonalizado || produto.price;
+      const token = localStorage.getItem("auth_token");
 
-      const response = await fetch(
-        `http://localhost:8000/api/orders/${vendaId}/items`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            product_id: produto.id,
-            quantity: quantidade,
-            price: precoFinal,
-          }),
-        },
-      );
+      if (!token) {
+        console.error("JWT não encontrado.");
+        showToast("Sessão expirada. Faça login novamente.", "error");
+        return;
+      }
+
+      const headers = {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      };
+
+      const precoFinal = precoPersonalizado ?? produto.price;
+
+      // Adicionar item à venda
+      const response = await fetch(`${API_URL}/orders/${vendaId}/items`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          product_id: produto.id,
+          quantity: quantidade,
+          price: precoFinal,
+        }),
+      });
 
       if (!response.ok) {
         const error = await response.json();
-        alert(error.message || "Erro ao adicionar item");
+
+        showToast(error.message || "Erro ao adicionar item", "error");
+
         return;
       }
 
       await fetchVendas();
-      const updatedResponse = await fetch(
-        `http://localhost:8000/api/orders/${vendaId}`,
-      );
+
+      // Buscar a venda atualizada
+      const updatedResponse = await fetch(`${API_URL}/orders/${vendaId}`, {
+        method: "GET",
+        headers,
+      });
+
+      if (!updatedResponse.ok) {
+        throw new Error(
+          `Erro ao buscar venda atualizada: ${updatedResponse.status}`,
+        );
+      }
+
       const updatedVenda = await updatedResponse.json();
 
       if (vendaSelecionada?.id === vendaId) {
@@ -258,18 +400,23 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
           total:
             updatedVenda.items?.reduce(
               (sum: number, item: any) =>
-                sum + Number(item.price) * item.quantity,
+                sum + Number(item.price) * Number(item.quantity),
               0,
             ) || 0,
         });
       }
 
-      alert(
-        `${quantidade}x ${produto.name} adicionado${precoPersonalizado ? ` com preço especial de ${formatCurrency(precoPersonalizado)}` : ""}!`,
-      );
+      const mensagem = `${quantidade}x ${produto.name} adicionado${
+        precoPersonalizado
+          ? ` com preço especial de ${formatCurrency(precoPersonalizado)}`
+          : ""
+      }!`;
+
+      showToast(mensagem, "success");
     } catch (error) {
       console.error("Erro ao adicionar item:", error);
-      alert("Erro ao conectar com o servidor");
+
+      showToast("Erro ao conectar com o servidor", "error");
     }
   };
 
@@ -278,42 +425,67 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
     if (!confirm("Remover este item da venda?")) return;
 
     try {
-      const response = await fetch(
-        `http://localhost:8000/api/order-items/${itemId}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-        },
-      );
+      const token = localStorage.getItem("auth_token");
+
+      if (!token) {
+        console.error("JWT não encontrado.");
+        showToast("Sessão expirada. Faça login novamente.", "error");
+        return;
+      }
+
+      const headers = {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      };
+
+      // Remover item da venda
+      const response = await fetch(`${API_URL}/order-items/${itemId}`, {
+        method: "DELETE",
+        headers,
+      });
 
       if (!response.ok) {
-        alert("Erro ao remover item");
+        const error = await response.json().catch(() => null);
+
+        showToast(error?.message || "Erro ao remover item", "error");
+
         return;
       }
 
       await fetchVendas();
-      const updatedResponse = await fetch(
-        `http://localhost:8000/api/orders/${vendaId}`,
-      );
+
+      // Buscar a venda atualizada
+      const updatedResponse = await fetch(`${API_URL}/orders/${vendaId}`, {
+        method: "GET",
+        headers,
+      });
+
+      if (!updatedResponse.ok) {
+        throw new Error(
+          `Erro ao buscar venda atualizada: ${updatedResponse.status}`,
+        );
+      }
+
       const updatedVenda = await updatedResponse.json();
+
       if (vendaSelecionada?.id === vendaId) {
         setVendaSelecionada({
           ...updatedVenda,
           total:
             updatedVenda.items?.reduce(
               (sum: number, item: any) =>
-                sum + Number(item.price) * item.quantity,
+                sum + Number(item.price) * Number(item.quantity),
               0,
             ) || 0,
         });
       }
-      alert("Item removido!");
+
+      showToast("Item removido!", "success");
     } catch (error) {
       console.error("Erro ao remover item:", error);
-      alert("Erro ao conectar com o servidor");
+
+      showToast("Erro ao conectar com o servidor", "error");
     }
   };
 
@@ -333,20 +505,17 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
   // Cancelar venda
   const cancelarVenda = async (vendaId: number) => {
     try {
-      const response = await fetch(
-        `http://localhost:8000/api/orders/${vendaId}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
+      const response = await fetch(`${API_URL}/orders/${vendaId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
         },
-      );
+      });
 
       if (!response.ok) {
         const error = await response.json();
-        alert(error.message || "Erro ao cancelar venda");
+        showToast(error.message || "Erro ao cancelar venda", "error");
         return;
       }
 
@@ -354,46 +523,73 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
         setVendaSelecionada(null);
       }
       await fetchVendas();
-      alert("Venda cancelada com sucesso!");
+      showToast("Venda cancelada com sucesso!", "success");
     } catch (error) {
       console.error("Erro ao cancelar venda:", error);
-      alert("Erro ao conectar com o servidor");
+      showToast("Erro ao conectar com o servidor", "error");
     }
   };
 
   // Marcar venda como não paga
   const marcarNaoPaga = async (vendaId: number) => {
     try {
-      const response = await fetch(
-        `http://localhost:8000/api/orders/${vendaId}/close`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            payment_method: "pendente",
-          }),
-        },
-      );
+      const token = localStorage.getItem("auth_token");
+
+      if (!token) {
+        console.error("JWT não encontrado.");
+        showToast("Sessão expirada. Faça login novamente.", "error");
+        return;
+      }
+
+      const headers = {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      };
+
+      // Marcar venda como não paga
+      const response = await fetch(`${API_URL}/orders/${vendaId}/close`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          payment_method: "pendente",
+        }),
+      });
 
       if (!response.ok) {
-        const error = await response.json();
-        alert(error.message || "Erro ao marcar venda como não paga");
+        const error = await response.json().catch(() => null);
+
+        showToast(
+          error?.message || "Erro ao marcar venda como não paga",
+          "error",
+        );
+
         return;
       }
 
       await fetchVendas();
-      const updatedResponse = await fetch(
-        `http://localhost:8000/api/orders/${vendaId}`,
-      );
+
+      // Buscar venda atualizada
+      const updatedResponse = await fetch(`${API_URL}/orders/${vendaId}`, {
+        method: "GET",
+        headers,
+      });
+
+      if (!updatedResponse.ok) {
+        throw new Error(
+          `Erro ao buscar venda atualizada: ${updatedResponse.status}`,
+        );
+      }
+
       const updatedVenda = await updatedResponse.json();
+
       setVendaSelecionada(updatedVenda);
-      alert("Venda marcada como não paga!");
+
+      showToast("Venda marcada como não paga!", "success");
     } catch (error) {
       console.error("Erro ao marcar venda:", error);
-      alert("Erro ao conectar com o servidor");
+
+      showToast("Erro ao conectar com o servidor", "error");
     }
   };
 
@@ -404,33 +600,48 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
     valorRecebido?: number,
   ) => {
     try {
-      const response = await fetch(
-        `http://localhost:8000/api/orders/${vendaId}/close`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            payment_method: formaPagamento,
-          }),
+      const token = localStorage.getItem("auth_token");
+
+      if (!token) {
+        console.error("JWT não encontrado.");
+        showToast("Sessão expirada. Faça login novamente.", "error");
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/orders/${vendaId}/close`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({
+          payment_method: formaPagamento,
+          ...(valorRecebido !== undefined && {
+            valor_recebido: valorRecebido,
+          }),
+        }),
+      });
 
       if (!response.ok) {
-        const error = await response.json();
-        alert(error.message || "Erro ao finalizar venda");
+        const error = await response.json().catch(() => null);
+
+        showToast(error?.message || "Erro ao finalizar venda", "error");
+
         return;
       }
 
       setVendaSelecionada(null);
+
       await fetchVendas();
+
       setShowModalFecharVenda(false);
-      alert("Venda finalizada com sucesso!");
+
+      showToast("Venda finalizada com sucesso!", "success");
     } catch (error) {
       console.error("Erro ao finalizar venda:", error);
-      alert("Erro ao conectar com o servidor");
+
+      showToast("Erro ao conectar com o servidor", "error");
     }
   };
 
@@ -440,6 +651,7 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
   if (!isMobile) {
     return (
       <>
+        <ToastComponent />
         <div
           style={{
             display: "grid",
@@ -537,316 +749,333 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
 
   // Versão Mobile
   return (
-    <div
-      style={{
-        background: "#f3f4f6",
-        minHeight: "100vh",
-        paddingBottom:
-          vendaSelecionada && vendaSelecionada.status === "aberto"
-            ? "80px"
-            : "0",
-      }}
-    >
-      {/* Header Mobile */}
+    <>
+      <ToastComponent />
       <div
         style={{
-          padding: "16px",
-          background: "#1f2937",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
+          background: "#f3f4f6",
+          minHeight: "100vh",
+          paddingBottom:
+            vendaSelecionada && vendaSelecionada.status === "aberto"
+              ? "80px"
+              : "0",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div
-            style={{
-              width: 36,
-              height: 36,
-              background: "#374151",
-              borderRadius: 8,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <FontAwesomeIcon
-              icon={faCashRegister}
-              style={{ fontSize: 18, color: "#10b981" }}
-            />
-          </div>
-          <h1
-            style={{ margin: 0, fontSize: 18, fontWeight: 600, color: "#fff" }}
-          >
-            Gestão de Vendas
-          </h1>
-        </div>
-        <button
-          onClick={() => setShowMobileMenu(true)}
+        {/* Header Mobile */}
+        <div
           style={{
-            background: "#374151",
-            border: "none",
-            borderRadius: 8,
-            padding: "8px 12px",
-            cursor: "pointer",
-            color: "#fff",
-          }}
-        >
-          <FontAwesomeIcon icon={faBars} />
-        </button>
-      </div>
-
-      {/* Botão Voltar ao Dashboard */}
-      <div style={{ padding: "12px 16px" }}>
-        <button
-          onClick={() => setTela && setTela("dashboard")}
-          style={{
+            padding: "16px",
+            background: "#1f2937",
             display: "flex",
             alignItems: "center",
-            gap: 8,
-            width: "100%",
-            padding: "10px 16px",
-            background: "#fff",
-            border: "1px solid #e5e7eb",
-            borderRadius: 8,
-            cursor: "pointer",
-            color: "#374151",
-            fontSize: 14,
+            justifyContent: "space-between",
           }}
         >
-          <FontAwesomeIcon icon={faArrowLeft} /> Voltar ao Dashboard
-        </button>
-      </div>
-
-      {/* Abas Mobile */}
-      <div
-        style={{ padding: "0 16px", display: "flex", gap: 8, marginBottom: 16 }}
-      >
-        <button
-          onClick={() => setAbaAtiva("produtos")}
-          style={{
-            flex: 1,
-            padding: "10px",
-            borderRadius: 8,
-            border:
-              abaAtiva === "produtos"
-                ? "1px solid #10b981"
-                : "1px solid #e5e7eb",
-            background: abaAtiva === "produtos" ? "#10b981" : "#fff",
-            color: abaAtiva === "produtos" ? "#fff" : "#374151",
-            cursor: "pointer",
-            fontWeight: 500,
-          }}
-        >
-          <FontAwesomeIcon icon={faBoxes} /> Produtos
-        </button>
-        <button
-          onClick={() => setAbaAtiva("comandas")}
-          style={{
-            flex: 1,
-            padding: "10px",
-            borderRadius: 8,
-            border:
-              abaAtiva === "comandas"
-                ? "1px solid #10b981"
-                : "1px solid #e5e7eb",
-            background: abaAtiva === "comandas" ? "#10b981" : "#fff",
-            color: abaAtiva === "comandas" ? "#fff" : "#374151",
-            cursor: "pointer",
-            fontWeight: 500,
-          }}
-        >
-          <FontAwesomeIcon icon={faClipboardList} /> Comandas
-        </button>
-      </div>
-
-      {/* Menu Mobile */}
-      {showMobileMenu && (
-        <>
-          <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: "rgba(0,0,0,0.5)",
-              zIndex: 1000,
-            }}
-            onClick={() => setShowMobileMenu(false)}
-          />
-          <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              bottom: 0,
-              width: "280px",
-              background: "#1f2937",
-              zIndex: 1001,
-              padding: "20px",
-              overflowY: "auto",
-            }}
-          >
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div
               style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                marginBottom: 20,
-              }}
-            >
-              <button
-                onClick={() => setShowMobileMenu(false)}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  fontSize: 20,
-                  cursor: "pointer",
-                  color: "#fff",
-                }}
-              >
-                <FontAwesomeIcon icon={faTimes} />
-              </button>
-            </div>
-            <button
-              onClick={() => {
-                setShowModalNovaVenda(true);
-                setShowMobileMenu(false);
-              }}
-              style={{
+                width: 36,
+                height: 36,
+                background: "#374151",
+                borderRadius: 8,
                 display: "flex",
                 alignItems: "center",
-                gap: 12,
-                width: "100%",
-                padding: "12px 16px",
-                background: "#10b981",
-                border: "none",
-                borderRadius: 8,
-                cursor: "pointer",
-                color: "#fff",
-                marginBottom: 12,
+                justifyContent: "center",
               }}
             >
-              <FontAwesomeIcon icon={faPlus} /> <span>Nova Venda</span>
-            </button>
+              <FontAwesomeIcon
+                icon={faCashRegister}
+                style={{ fontSize: 18, color: "#10b981" }}
+              />
+            </div>
+            <h1
+              style={{
+                margin: 0,
+                fontSize: 18,
+                fontWeight: 600,
+                color: "#fff",
+              }}
+            >
+              Gestão de Vendas
+            </h1>
           </div>
-        </>
-      )}
+          <button
+            onClick={() => setShowMobileMenu(true)}
+            style={{
+              background: "#374151",
+              border: "none",
+              borderRadius: 8,
+              padding: "8px 12px",
+              cursor: "pointer",
+              color: "#fff",
+            }}
+          >
+            <FontAwesomeIcon icon={faBars} />
+          </button>
+        </div>
 
-      {/* Conteúdo Mobile */}
-      <div style={{ padding: "16px" }}>
-        {abaAtiva === "produtos" ? (
+        {/* Botão Voltar ao Dashboard */}
+        <div style={{ padding: "12px 16px" }}>
+          <button
+            onClick={() => setTela && setTela("dashboard")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              width: "100%",
+              padding: "10px 16px",
+              background: "#fff",
+              border: "1px solid #e5e7eb",
+              borderRadius: 8,
+              cursor: "pointer",
+              color: "#374151",
+              fontSize: 14,
+            }}
+          >
+            <FontAwesomeIcon icon={faArrowLeft} /> Voltar ao Dashboard
+          </button>
+        </div>
+
+        {/* Abas Mobile */}
+        <div
+          style={{
+            padding: "0 16px",
+            display: "flex",
+            gap: 8,
+            marginBottom: 16,
+          }}
+        >
+          <button
+            onClick={() => setAbaAtiva("produtos")}
+            style={{
+              flex: 1,
+              padding: "10px",
+              borderRadius: 8,
+              border:
+                abaAtiva === "produtos"
+                  ? "1px solid #10b981"
+                  : "1px solid #e5e7eb",
+              background: abaAtiva === "produtos" ? "#10b981" : "#fff",
+              color: abaAtiva === "produtos" ? "#fff" : "#374151",
+              cursor: "pointer",
+              fontWeight: 500,
+            }}
+          >
+            <FontAwesomeIcon icon={faBoxes} /> Produtos
+          </button>
+          <button
+            onClick={() => setAbaAtiva("comandas")}
+            style={{
+              flex: 1,
+              padding: "10px",
+              borderRadius: 8,
+              border:
+                abaAtiva === "comandas"
+                  ? "1px solid #10b981"
+                  : "1px solid #e5e7eb",
+              background: abaAtiva === "comandas" ? "#10b981" : "#fff",
+              color: abaAtiva === "comandas" ? "#fff" : "#374151",
+              cursor: "pointer",
+              fontWeight: 500,
+            }}
+          >
+            <FontAwesomeIcon icon={faClipboardList} /> Comandas
+          </button>
+        </div>
+
+        {/* Menu Mobile */}
+        {showMobileMenu && (
           <>
-            <TabelaProdutosPdv
-              produtos={produtos}
-              categorias={categorias}
-              pontosVenda={pontosVenda}
-              onProductSelect={(produto, vendaId, precoPersonalizado) =>
-                addItemToVenda(produto, vendaId, 1, precoPersonalizado)
-              }
-              vendasAbertas={vendasAbertas}
-              disabled={false}
-              isMobile={true}
+            <div
+              style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: "rgba(0,0,0,0.5)",
+                zIndex: 1000,
+              }}
+              onClick={() => setShowMobileMenu(false)}
             />
-            {vendaSelecionada && vendaSelecionada.status === "aberto" && (
+            <div
+              style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                bottom: 0,
+                width: "280px",
+                background: "#1f2937",
+                zIndex: 1001,
+                padding: "20px",
+                overflowY: "auto",
+              }}
+            >
               <div
                 style={{
-                  position: "fixed",
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  background: "#fff",
-                  borderTop: "1px solid #e5e7eb",
-                  padding: "16px",
-                  boxShadow: "0 -2px 10px rgba(0,0,0,0.1)",
-                  zIndex: 100,
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  marginBottom: 20,
                 }}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginBottom: 8,
-                  }}
-                >
-                  <span>{vendaSelecionada.customer_name}</span>
-                  <span
-                    style={{
-                      fontWeight: "bold",
-                      color: "#059669",
-                      fontSize: 18,
-                    }}
-                  >
-                    {formatCurrency(calcularTotal(vendaSelecionada.items))}
-                  </span>
-                </div>
                 <button
-                  onClick={() => setShowModalFecharVenda(true)}
+                  onClick={() => setShowMobileMenu(false)}
                   style={{
-                    width: "100%",
-                    padding: "10px",
-                    background: "#10b981",
-                    color: "#fff",
+                    background: "transparent",
                     border: "none",
-                    borderRadius: 8,
+                    fontSize: 20,
                     cursor: "pointer",
+                    color: "#fff",
                   }}
                 >
-                  Finalizar Venda
+                  <FontAwesomeIcon icon={faTimes} />
                 </button>
               </div>
-            )}
-          </>
-        ) : (
-          <>
-            <TabelaComandas
-              vendas={vendas}
-              pontosVenda={pontosVenda}
-              vendaSelecionada={vendaSelecionada}
-              onVendaClick={setVendaSelecionada}
-              isMobile={true}
-              formatCurrency={formatCurrency}
-            />
-            <DetalhesVenda
-              venda={vendaSelecionada}
-              pontosVenda={pontosVenda}
-              onRemoverItem={removerItem}
-              onFinalizarVenda={() => setShowModalFecharVenda(true)}
-              onCancelarVenda={cancelarVenda}
-              onMarcarNaoPaga={marcarNaoPaga}
-              formatCurrency={formatCurrency}
-              isMobile={true}
-            />
+              <button
+                onClick={() => {
+                  setShowModalNovaVenda(true);
+                  setShowMobileMenu(false);
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  width: "100%",
+                  padding: "12px 16px",
+                  background: "#10b981",
+                  border: "none",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  color: "#fff",
+                  marginBottom: 12,
+                }}
+              >
+                <FontAwesomeIcon icon={faPlus} /> <span>Nova Venda</span>
+              </button>
+            </div>
           </>
         )}
-      </div>
 
-      <ModalAbrirComanda
-        showModal={showModalNovaVenda}
-        onClose={() => setShowModalNovaVenda(false)}
-        onConfirm={abrirVenda}
-      />
+        {/* Conteúdo Mobile */}
+        <div style={{ padding: "16px" }}>
+          {abaAtiva === "produtos" ? (
+            <>
+              <TabelaProdutosPdv
+                produtos={produtos}
+                categorias={categorias}
+                pontosVenda={pontosVenda}
+                onProductSelect={(produto, vendaId, precoPersonalizado) =>
+                  addItemToVenda(produto, vendaId, 1, precoPersonalizado)
+                }
+                vendasAbertas={vendasAbertas}
+                disabled={false}
+                isMobile={true}
+              />
+              {vendaSelecionada && vendaSelecionada.status === "aberto" && (
+                <div
+                  style={{
+                    position: "fixed",
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    background: "#fff",
+                    borderTop: "1px solid #e5e7eb",
+                    padding: "16px",
+                    boxShadow: "0 -2px 10px rgba(0,0,0,0.1)",
+                    zIndex: 100,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginBottom: 8,
+                    }}
+                  >
+                    <span>{vendaSelecionada.customer_name}</span>
+                    <span
+                      style={{
+                        fontWeight: "bold",
+                        color: "#059669",
+                        fontSize: 18,
+                      }}
+                    >
+                      {formatCurrency(calcularTotal(vendaSelecionada.items))}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setShowModalFecharVenda(true)}
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      background: "#10b981",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: 8,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Finalizar Venda
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <TabelaComandas
+                vendas={vendas}
+                pontosVenda={pontosVenda}
+                vendaSelecionada={vendaSelecionada}
+                onVendaClick={setVendaSelecionada}
+                isMobile={true}
+                formatCurrency={formatCurrency}
+              />
+              <DetalhesVenda
+                venda={vendaSelecionada}
+                pontosVenda={pontosVenda}
+                onRemoverItem={removerItem}
+                onFinalizarVenda={() => setShowModalFecharVenda(true)}
+                onCancelarVenda={cancelarVenda}
+                onMarcarNaoPaga={marcarNaoPaga}
+                formatCurrency={formatCurrency}
+                isMobile={true}
+              />
+            </>
+          )}
+        </div>
 
-      {showModalFecharVenda && (
-        <ModalFinalizarVenda
-          isOpen={showModalFecharVenda}
-          venda={vendaSelecionada}
-          onClose={() => setShowModalFecharVenda(false)}
-          onConfirm={async (formaPagamento, valorRecebido, comandaNaoPaga) => {
-            if (!vendaSelecionada) return;
-
-            if (comandaNaoPaga) {
-              await marcarNaoPaga(vendaSelecionada.id);
-            } else {
-              await finalizarVenda(
-                vendaSelecionada.id,
-                formaPagamento,
-                valorRecebido,
-              );
-            }
-          }}
-          formatCurrency={formatCurrency}
+        <ModalAbrirComanda
+          showModal={showModalNovaVenda}
+          onClose={() => setShowModalNovaVenda(false)}
+          onConfirm={abrirVenda}
         />
-      )}
-    </div>
+
+        {showModalFecharVenda && (
+          <ModalFinalizarVenda
+            isOpen={showModalFecharVenda}
+            venda={vendaSelecionada}
+            onClose={() => setShowModalFecharVenda(false)}
+            onConfirm={async (
+              formaPagamento,
+              valorRecebido,
+              comandaNaoPaga,
+            ) => {
+              if (!vendaSelecionada) return;
+
+              if (comandaNaoPaga) {
+                await marcarNaoPaga(vendaSelecionada.id);
+              } else {
+                await finalizarVenda(
+                  vendaSelecionada.id,
+                  formaPagamento,
+                  valorRecebido,
+                );
+              }
+            }}
+            formatCurrency={formatCurrency}
+          />
+        )}
+      </div>
+    </>
   );
 }

@@ -15,6 +15,8 @@ import {
   faBars,
 } from "@fortawesome/free-solid-svg-icons";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 interface Transaction {
   id: number;
   description: string;
@@ -123,12 +125,23 @@ export default function Caixa({ setTela }: CaixaProps) {
   // Buscar categorias
   const fetchCategorias = useCallback(async () => {
     try {
-      const response = await fetch(
-        "http://localhost:8000/api/expense-categories?restaurant_id=1",
-      );
+      const token = localStorage.getItem("auth_token");
+
+      if (!token) {
+        console.error("JWT não encontrado.");
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/expense-categories`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
 
       if (!response.ok) {
-        throw new Error("Erro ao buscar categorias");
+        throw new Error(`Erro ao buscar categorias: ${response.status}`);
       }
 
       const data = await response.json();
@@ -152,29 +165,54 @@ export default function Caixa({ setTela }: CaixaProps) {
   // Buscar entradas (vendas do PDV) - COM FILTRO DE DATA E STATUS
   const fetchEntradas = useCallback(async () => {
     try {
+      const token = localStorage.getItem("auth_token");
+
+      if (!token) {
+        console.error("JWT não encontrado.");
+        return [];
+      }
+
       // Datas do mês selecionado
-      const startDate = `${anoSelecionado}-${String(mesSelecionado).padStart(2, "0")}-01`;
+      const startDate = `${anoSelecionado}-${String(mesSelecionado).padStart(
+        2,
+        "0",
+      )}-01`;
+
       const lastDay = new Date(anoSelecionado, mesSelecionado, 0).getDate();
-      const endDate = `${anoSelecionado}-${String(mesSelecionado).padStart(2, "0")}-${lastDay}`;
+
+      const endDate = `${anoSelecionado}-${String(mesSelecionado).padStart(
+        2,
+        "0",
+      )}-${lastDay}`;
 
       console.log(`=== BUSCANDO VENDAS DE ${startDate} ATÉ ${endDate} ===`);
 
-      const response = await fetch(
-        `http://localhost:8000/api/orders?restaurant_id=1`,
-      );
-      if (!response.ok) throw new Error("Erro ao buscar vendas");
+      const response = await fetch(`${API_URL}/orders`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro ao buscar vendas: ${response.status}`);
+      }
 
       const orders: Order[] = await response.json();
 
-      // 🔥 CORREÇÃO: Incluir "fechado" E "pendente"
+      // Inclui fechados e pendentes
       const ordensFiltradas = orders.filter((order) => {
-        // Inclui fechados e pendentes (não pagas)
-        if (order.status !== "fechado" && order.status !== "pendente")
+        if (order.status !== "fechado" && order.status !== "pendente") {
           return false;
+        }
 
-        if (!order.closed_at) return false;
+        if (!order.closed_at) {
+          return false;
+        }
 
-        const orderDate = order.closed_at.split("T")[0];
+        const orderDate = order.closed_at.split("T")[0].split(" ")[0];
+
         return orderDate >= startDate && orderDate <= endDate;
       });
 
@@ -184,6 +222,7 @@ export default function Caixa({ setTela }: CaixaProps) {
 
       const extrairData = (dataCompleta: string): string => {
         if (!dataCompleta) return "";
+
         return dataCompleta.split("T")[0].split(" ")[0];
       };
 
@@ -192,65 +231,106 @@ export default function Caixa({ setTela }: CaixaProps) {
 
         return {
           id: order.id,
-          description: `Venda - ${order.customer_name || `Mesa ${order.table_id}`}`,
+          description: `Venda - ${order.customer_name || `Venda ${order.id}`}`,
           amount: Number(order.total) || 0,
           date: orderDate || new Date().toISOString().split("T")[0],
           category_id: 0,
           type: "entrada",
           category: undefined,
-          notes: `Status: ${order.status} | Pagamento: ${order.payment_method || "N/A"}`,
+          notes: `Status: ${order.status} | Pagamento: ${
+            order.payment_method || "N/A"
+          }`,
           source: "pdv",
         };
       });
 
       console.log("Entradas geradas:", entradas.length);
+
       return entradas;
     } catch (error) {
       console.error("Erro ao buscar vendas:", error);
+
       return [];
     }
   }, [anoSelecionado, mesSelecionado]);
 
-  // Buscar saídas (gastos)
   const fetchSaidas = useCallback(async () => {
     try {
-      const startDate = `${anoSelecionado}-${String(mesSelecionado).padStart(2, "0")}-01`;
+      const token = localStorage.getItem("auth_token");
+
+      if (!token) {
+        console.error("JWT não encontrado.");
+        return [];
+      }
+
+      const startDate = `${anoSelecionado}-${String(mesSelecionado).padStart(
+        2,
+        "0",
+      )}-01`;
+
       const lastDay = new Date(anoSelecionado, mesSelecionado, 0).getDate();
-      const endDate = `${anoSelecionado}-${String(mesSelecionado).padStart(2, "0")}-${lastDay}`;
+
+      const endDate = `${anoSelecionado}-${String(mesSelecionado).padStart(
+        2,
+        "0",
+      )}-${lastDay}`;
 
       console.log(`=== BUSCANDO GASTOS DE ${startDate} ATÉ ${endDate} ===`);
 
-      const url = `http://localhost:8000/api/expenses?restaurant_id=1&start_date=${startDate}&end_date=${endDate}`;
-      const response = await fetch(url);
+      const url = `${API_URL}/expenses?start_date=${startDate}&end_date=${endDate}`;
 
-      if (!response.ok) throw new Error("Erro ao buscar saídas");
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro ao buscar saídas: ${response.status}`);
+      }
 
       const data = await response.json();
 
+      console.log("Gastos recebidos da API:", data);
+
       const saidas: Transaction[] = data.map((item: any) => {
-        const categoria = categorias.find((c) => c.id === item.category_id);
         return {
           id: item.id,
+
           description: item.description,
+
           amount: Number(item.amount) || 0,
+
           date: item.expense_date
-            ? item.expense_date.split("T")[0]
+            ? item.expense_date.split("T")[0].split(" ")[0]
             : new Date().toISOString().split("T")[0],
-          category_id: item.category_id,
+
+          // ID da categoria conforme o backend atual
+          expense_category_id: item.expense_category_id,
+
           type: "saida",
-          category: categoria,
+
+          // A API já retorna a categoria completa
+          category: item.category,
+
           notes: item.notes,
+
           source: "manual",
         };
       });
 
       console.log(`Gastos no período: ${saidas.length}`);
+      console.table(saidas);
+
       return saidas;
     } catch (error) {
       console.error("Erro ao buscar saídas:", error);
+
       return [];
     }
-  }, [anoSelecionado, mesSelecionado, categorias]);
+  }, [anoSelecionado, mesSelecionado]);
 
   // Buscar todas as transações
   const fetchTransacoes = useCallback(async () => {
@@ -287,9 +367,11 @@ export default function Caixa({ setTela }: CaixaProps) {
       console.log("setTransacoes executado com sucesso");
     } catch (error) {
       console.error("Erro ao buscar transações:", error);
+
       setTransacoes([]);
     } finally {
       setLoading(false);
+
       console.log("========== FIM DA BUSCA ==========");
     }
   }, [fetchEntradas, fetchSaidas]);
@@ -312,32 +394,51 @@ export default function Caixa({ setTela }: CaixaProps) {
     }
 
     try {
-      const response = await fetch(
-        "http://localhost:8000/api/expense-categories",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            restaurant_id: 1,
-            name: novaCategoria.name,
-            icon: novaCategoria.icon,
-            color: novaCategoria.color,
-          }),
-        },
-      );
+      const token = localStorage.getItem("auth_token");
 
-      if (!response.ok) throw new Error("Erro ao criar categoria");
+      if (!token) {
+        console.error("JWT não encontrado.");
+        alert("Sessão expirada. Faça login novamente.");
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/expense-categories`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: novaCategoria.name,
+          icon: novaCategoria.icon,
+          color: novaCategoria.color,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => null);
+
+        throw new Error(error?.message || "Erro ao criar categoria");
+      }
 
       await fetchCategorias();
+
       setShowModalCategoria(false);
-      setNovaCategoria({ name: "", icon: "📌", color: "#6b7280" });
+
+      setNovaCategoria({
+        name: "",
+        icon: "📌",
+        color: "#6b7280",
+      });
+
       alert("Categoria adicionada com sucesso!");
     } catch (error) {
-      console.error(error);
-      alert("Erro ao adicionar categoria");
+      console.error("Erro ao adicionar categoria:", error);
+
+      alert(
+        error instanceof Error ? error.message : "Erro ao adicionar categoria",
+      );
     }
   };
 
@@ -540,7 +641,7 @@ export default function Caixa({ setTela }: CaixaProps) {
         }
 
         try {
-          const response = await fetch("http://localhost:8000/api/expenses", {
+          const response = await fetch(`${API_URL}/expenses`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -672,7 +773,7 @@ export default function Caixa({ setTela }: CaixaProps) {
         }
 
         try {
-          const response = await fetch("http://localhost:8000/api/orders", {
+          const response = await fetch(`${API_URL}/orders`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -799,21 +900,32 @@ export default function Caixa({ setTela }: CaixaProps) {
     reader.readAsText(file, "UTF-8");
   };
 
+  // Editar categoria
   const editarCategoria = async () => {
     if (!editandoCategoria) return;
+
     if (!editandoCategoria.name.trim()) {
       alert("Digite o nome da categoria");
       return;
     }
 
     try {
+      const token = localStorage.getItem("auth_token");
+
+      if (!token) {
+        console.error("JWT não encontrado.");
+        alert("Sessão expirada. Faça login novamente.");
+        return;
+      }
+
       const response = await fetch(
-        `http://localhost:8000/api/expense-categories/${editandoCategoria.id}`,
+        `${API_URL}/expense-categories/${editandoCategoria.id}`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Accept: "application/json",
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             name: editandoCategoria.name,
@@ -823,14 +935,23 @@ export default function Caixa({ setTela }: CaixaProps) {
         },
       );
 
-      if (!response.ok) throw new Error("Erro ao editar categoria");
+      if (!response.ok) {
+        const error = await response.json().catch(() => null);
+
+        throw new Error(error?.message || "Erro ao editar categoria");
+      }
 
       await fetchCategorias();
+
       setEditandoCategoria(null);
+
       alert("Categoria atualizada com sucesso!");
     } catch (error) {
-      console.error(error);
-      alert("Erro ao editar categoria");
+      console.error("Erro ao editar categoria:", error);
+
+      alert(
+        error instanceof Error ? error.message : "Erro ao editar categoria",
+      );
     }
   };
 
@@ -854,16 +975,16 @@ export default function Caixa({ setTela }: CaixaProps) {
     }
 
     try {
-      const response = await fetch(
-        `http://localhost:8000/api/expense-categories/${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
+      const token = localStorage.getItem("auth_token");
+
+      const response = await fetch(`${API_URL}/expense-categories/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+      });
 
       if (!response.ok) {
         const error = await response.json();
@@ -906,18 +1027,20 @@ export default function Caixa({ setTela }: CaixaProps) {
     }
 
     try {
-      const response = await fetch("http://localhost:8000/api/expenses", {
+      const token = localStorage.getItem("auth_token");
+
+      const response = await fetch(`${API_URL}/expenses`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          restaurant_id: 1,
           description: novaSaida.descricao,
           amount: Number(novaSaida.valor),
           expense_date: novaSaida.data,
-          category_id: Number(novaSaida.category_id),
+          expense_category_id: Number(novaSaida.category_id),
           type: "saida",
           notes: null,
         }),
@@ -925,12 +1048,14 @@ export default function Caixa({ setTela }: CaixaProps) {
 
       if (!response.ok) {
         let errorMessage = "Erro ao adicionar saída";
+
         try {
           const errorData = await response.json();
           errorMessage = errorData.message || errorMessage;
         } catch (e) {
           errorMessage = `Erro ${response.status}: ${response.statusText}`;
         }
+
         alert(errorMessage);
         return;
       }
@@ -941,8 +1066,10 @@ export default function Caixa({ setTela }: CaixaProps) {
         category_id: categorias[0]?.id || 0,
         data: hoje,
       });
+
       setShowModalSaida(false);
       fetchTransacoes();
+
       alert("Saída adicionada com sucesso!");
     } catch (error) {
       console.error("Erro ao adicionar saída:", error);
@@ -963,7 +1090,7 @@ export default function Caixa({ setTela }: CaixaProps) {
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/expenses/${id}`, {
+      const response = await fetch(`${API_URL}/expenses/${id}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -1009,12 +1136,15 @@ export default function Caixa({ setTela }: CaixaProps) {
   const saldoGeral = (totalEntradas || 0) - (totalSaidas || 0);
 
   const transacoesFiltradas = transacoes.filter((t) => {
-    const matchCategoria = filtroCategoria
-      ? t.category_id === filtroCategoria
-      : true;
+    const matchCategoria =
+      filtroCategoria !== null
+        ? t.expense_category_id === filtroCategoria
+        : true;
+
     const matchTipo =
       (t.type === "entrada" && showEntradas) ||
       (t.type === "saida" && showSaidas);
+
     return matchCategoria && matchTipo;
   });
 

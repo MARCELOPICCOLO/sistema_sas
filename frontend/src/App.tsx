@@ -6,6 +6,7 @@ import Relatorio from "./pages/Relatorio";
 import Dashboard from "./pages/Dashboard";
 import GestaoPontosVenda from "./pages/GestaoPontosVenda";
 import GestaoVendas from "./pages/GestaoVendas";
+import api from "./api/axios";
 
 interface User {
   id: number;
@@ -21,21 +22,45 @@ export default function App() {
 
   // Verificar se o usuário já está logado
   useEffect(() => {
-    const token = localStorage.getItem("auth_token");
-    const savedUser = localStorage.getItem("user");
+    async function checkAuth() {
+      const token = localStorage.getItem("auth_token");
 
-    if (token && savedUser) {
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        setUser(JSON.parse(savedUser));
+        const response = await api.get("/auth/me");
+
+        const user = response.data;
+
+        const userData = {
+          id: user.id,
+          login: user.username,
+          email: user.email,
+        };
+
+        setUser(userData);
+
+        localStorage.setItem("user", JSON.stringify(userData));
+
         setIsAuthenticated(true);
-      } catch (e) {
+      } catch (error) {
+        console.log("Sessão inválida");
+
         localStorage.removeItem("auth_token");
         localStorage.removeItem("user");
+
+        setUser(null);
+        setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
       }
     }
-    setLoading(false);
-  }, []);
 
+    checkAuth();
+  }, []);
   const handleLoginSuccess = (userData: User) => {
     setUser(userData);
     setIsAuthenticated(true);

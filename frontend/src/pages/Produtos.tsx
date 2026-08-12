@@ -16,6 +16,9 @@ import { TabelaProdutos } from "../../components/TabelaProdutos";
 import { ModalProduto } from "../../components/ModalProduto";
 import { ModalCategorias } from "../../components/ModalCategorias";
 
+import api from "../api/axios";
+const API_URL = import.meta.env.VITE_API_URL;
+
 interface Product {
   id: number;
   name: string;
@@ -85,32 +88,29 @@ export default function Produtos({ setTela }: ProdutosProps) {
 
   const fetchProdutos = useCallback(async () => {
     setLoading(true);
+
     try {
-      let url = "http://localhost:8000/api/products?restaurant_id=1";
-      if (searchTerm) url += `&search=${searchTerm}`;
-      const response = await fetch(url);
-      const data = await response.json();
-      const produtosFormatados = data.map((p: any) => ({
+      const response = await api.get("/products");
+
+      const produtosFormatados = response.data.map((p: any) => ({
         ...p,
-        price: typeof p.price === "number" ? p.price : Number(p.price) || 0,
-        quantity:
-          typeof p.quantity === "number" ? p.quantity : Number(p.quantity) || 0,
+        price: Number(p.price),
+        quantity: Number(p.quantity),
       }));
+
       setProdutos(produtosFormatados);
     } catch (error) {
       console.error("Erro ao buscar produtos:", error);
     } finally {
       setLoading(false);
     }
-  }, [searchTerm]);
+  }, []);
 
   const fetchCategorias = async () => {
     try {
-      const response = await fetch(
-        "http://localhost:8000/api/categories?restaurant_id=1",
-      );
-      const data = await response.json();
-      setCategorias(data);
+      const response = await api.get("/categories");
+
+      setCategorias(response.data);
     } catch (error) {
       console.error("Erro ao buscar categorias:", error);
     }
@@ -139,25 +139,22 @@ export default function Produtos({ setTela }: ProdutosProps) {
         const produto = produtos.find((p) => p.id === alteracao.id);
         if (!produto) continue;
 
-        const response = await fetch(
-          `http://localhost:8000/api/products/${alteracao.id}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
-            body: JSON.stringify({
-              restaurant_id: 1,
-              name: produto.name,
-              product_code: produto.product_code,
-              price: produto.price,
-              quantity: alteracao.quantity,
-              category_id: produto.category_id,
-              active: produto.active,
-            }),
+        const response = await fetch(`${API_URL}/products/${alteracao.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
           },
-        );
+          body: JSON.stringify({
+            restaurant_id: 1,
+            name: produto.name,
+            product_code: produto.product_code,
+            price: produto.price,
+            quantity: alteracao.quantity,
+            category_id: produto.category_id,
+            active: produto.active,
+          }),
+        });
 
         if (response.ok) {
           sucesso++;
@@ -189,36 +186,24 @@ export default function Produtos({ setTela }: ProdutosProps) {
     }
 
     try {
-      const url = editando
-        ? `http://localhost:8000/api/products/${editando.id}`
-        : "http://localhost:8000/api/products";
-      const method = editando ? "PUT" : "POST";
+      const payload = {
+        name: formData.name,
+        product_code: formData.product_code || null,
+        price: Number(formData.price),
+        quantity: Number(formData.quantity),
+        category_id: Number(formData.category_id),
+        active: true,
+      };
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          restaurant_id: 1,
-          name: formData.name,
-          product_code: formData.product_code || null,
-          price: Number(formData.price),
-          quantity: Number(formData.quantity),
-          category_id: Number(formData.category_id),
-          active: true,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        alert(error.message || "Erro ao salvar produto");
-        return;
+      if (editando) {
+        await api.put(`/products/${formData.id}`, payload);
+      } else {
+        await api.post("/products", payload);
       }
 
       setShowModal(false);
       setEditando(null);
+
       setFormData({
         name: "",
         product_code: "",
@@ -226,11 +211,18 @@ export default function Produtos({ setTela }: ProdutosProps) {
         quantity: 0,
         category_id: 0,
       });
+
       fetchProdutos();
+
       alert(editando ? "Produto atualizado!" : "Produto adicionado!");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao salvar produto:", error);
-      alert("Erro ao conectar com o servidor");
+
+      if (error.response) {
+        alert(error.response.data.message || "Erro ao salvar produto");
+      } else {
+        alert("Erro ao conectar com o servidor");
+      }
     }
   };
 
@@ -241,13 +233,18 @@ export default function Produtos({ setTela }: ProdutosProps) {
     }
 
     try {
-      const response = await fetch("http://localhost:8000/api/categories", {
+      const token = localStorage.getItem("auth_token");
+
+      const response = await fetch(`${API_URL}/categories`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ restaurant_id: 1, name: novaCategoria.name }),
+        body: JSON.stringify({
+          name: novaCategoria.name,
+        }),
       });
 
       if (!response.ok) {
@@ -259,6 +256,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
       await fetchCategorias();
       setShowModalCategoria(false);
       setNovaCategoria({ name: "" });
+
       alert("Categoria adicionada com sucesso!");
     } catch (error) {
       console.error("Erro ao adicionar categoria:", error);
@@ -268,31 +266,39 @@ export default function Produtos({ setTela }: ProdutosProps) {
 
   const editarCategoria = async () => {
     if (!editandoCategoria) return;
+
     if (!editandoCategoria.name.trim()) {
       alert("Digite o nome da categoria");
       return;
     }
 
     try {
+      const token = localStorage.getItem("auth_token");
+
       const response = await fetch(
-        `http://localhost:8000/api/categories/${editandoCategoria.id}`,
+        `${API_URL}/categories/${editandoCategoria.id}`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Accept: "application/json",
+            Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ name: editandoCategoria.name }),
+          body: JSON.stringify({
+            name: editandoCategoria.name,
+          }),
         },
       );
 
       if (!response.ok) {
-        alert("Erro ao editar categoria");
+        const error = await response.json();
+        alert(error.message || "Erro ao editar categoria");
         return;
       }
 
       await fetchCategorias();
       setEditandoCategoria(null);
+
       alert("Categoria atualizada com sucesso!");
     } catch (error) {
       console.error("Erro ao editar categoria:", error);
@@ -316,24 +322,29 @@ export default function Produtos({ setTela }: ProdutosProps) {
     }
 
     try {
-      const response = await fetch(
-        `http://localhost:8000/api/categories/${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
+      const token = localStorage.getItem("auth_token");
+
+      const response = await fetch(`${API_URL}/categories/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+      });
 
       if (!response.ok) {
-        alert("Erro ao excluir categoria");
+        const error = await response.json();
+        alert(error.message || "Erro ao excluir categoria");
         return;
       }
 
       await fetchCategorias();
-      if (categoriaFiltro === id) setCategoriaFiltro(null);
+
+      if (categoriaFiltro === id) {
+        setCategoriaFiltro(null);
+      }
+
       alert("Categoria excluída com sucesso!");
     } catch (error) {
       console.error("Erro ao excluir categoria:", error);
@@ -344,21 +355,25 @@ export default function Produtos({ setTela }: ProdutosProps) {
   const removerProduto = async (id: number, name: string) => {
     if (!confirm(`Tem certeza que deseja excluir "${name}"?`)) return;
 
+    const token = localStorage.getItem("auth_token");
+
     try {
-      const response = await fetch(`http://localhost:8000/api/products/${id}`, {
+      const response = await fetch(`${API_URL}/products/${id}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
+          Authorization: `Bearer ${token}`,
         },
       });
 
       if (!response.ok) {
-        alert("Erro ao excluir produto");
+        const error = await response.json();
+        alert(error.message || "Erro ao excluir produto");
         return;
       }
 
-      fetchProdutos();
+      await fetchProdutos();
       alert("Produto excluído com sucesso!");
     } catch (error) {
       console.error("Erro ao excluir produto:", error);
@@ -379,9 +394,12 @@ export default function Produtos({ setTela }: ProdutosProps) {
     setShowModal(true);
   };
 
-  const produtosFiltrados = produtos.filter((p) => {
-    if (categoriaFiltro) return p.category_id === categoriaFiltro;
-    return true;
+  const produtosFiltrados = produtos.filter((produto) => {
+    if (categoriaFiltro === null) {
+      return true;
+    }
+
+    return produto.category?.id === categoriaFiltro;
   });
 
   // Sidebar para Desktop - PADRÃO CORRETO
@@ -662,26 +680,29 @@ export default function Produtos({ setTela }: ProdutosProps) {
                       }}
                     />
                   </div>
+
                   <select
-                    value={categoriaFiltro || ""}
-                    onChange={(e) =>
-                      setCategoriaFiltro(
-                        e.target.value ? Number(e.target.value) : null,
-                      )
-                    }
+                    value={categoriaFiltro ?? ""}
+                    onChange={(e) => {
+                      const valor = e.target.value;
+
+                      setCategoriaFiltro(valor === "" ? null : Number(valor));
+                    }}
                     style={{
-                      padding: "8px 12px",
-                      borderRadius: 6,
+                      width: "100%",
+                      padding: "10px 12px",
+                      borderRadius: 8,
                       border: "1px solid #e5e7eb",
                       background: "#fff",
-                      fontSize: 13,
+                      fontSize: 14,
                       cursor: "pointer",
                     }}
                   >
-                    <option value="">Todas</option>
-                    {categorias.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
+                    <option value="">Todas categorias</option>
+
+                    {categorias.map((categoria) => (
+                      <option key={categoria.id} value={categoria.id}>
+                        {categoria.name}
                       </option>
                     ))}
                   </select>
@@ -987,10 +1008,12 @@ export default function Produtos({ setTela }: ProdutosProps) {
           </div>
 
           <select
-            value={categoriaFiltro || ""}
-            onChange={(e) =>
-              setCategoriaFiltro(e.target.value ? Number(e.target.value) : null)
-            }
+            value={categoriaFiltro ?? ""}
+            onChange={(e) => {
+              const valor = e.target.value;
+
+              setCategoriaFiltro(valor === "" ? null : Number(valor));
+            }}
             style={{
               width: "100%",
               padding: "10px 12px",
@@ -1002,9 +1025,10 @@ export default function Produtos({ setTela }: ProdutosProps) {
             }}
           >
             <option value="">Todas categorias</option>
-            {categorias.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
+
+            {categorias.map((categoria) => (
+              <option key={categoria.id} value={categoria.id}>
+                {categoria.name}
               </option>
             ))}
           </select>

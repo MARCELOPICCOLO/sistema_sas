@@ -1,5 +1,5 @@
 // components/TabelaComandas.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFilter, faClipboardList } from "@fortawesome/free-solid-svg-icons";
 
@@ -22,12 +22,15 @@ interface VendaItem {
 
 interface Venda {
   id: number;
+  order_number?: string;
+  order_date?: string;
   customer_name: string;
   status: string;
   payment_method?: string;
   total?: number;
   items?: VendaItem[];
   created_at?: string;
+  closed_at?: string;
   table_id?: number;
 }
 
@@ -48,104 +51,79 @@ export const TabelaComandas: React.FC<TabelaComandasProps> = ({
   isMobile = false,
   formatCurrency,
 }) => {
-  const hoje = new Date().toISOString().split("T")[0];
+  // Data atual no formato YYYY-MM-DD
+  const hoje = new Date();
+  const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
 
   const [filtroVenda, setFiltroVenda] = useState<
     "todas" | "abertas" | "fechadas" | "pendentes"
-  >("abertas");
-
-  const [dataInicio, setDataInicio] = useState(hoje);
-  const [dataFim, setDataFim] = useState(hoje);
+  >("todas");
+  const [dataInicio, setDataInicio] = useState(hojeStr);
+  const [dataFim, setDataFim] = useState(hojeStr);
   const [showFiltroData, setShowFiltroData] = useState(false);
 
-  // Obter nome do ponto de venda pelo table_id
   const getNomePontoVenda = (tableId?: number) => {
     if (!tableId) return "-";
-
     const ponto = pontosVenda.find((p) => p.id === tableId);
-
     if (!ponto) return "-";
-
     return ponto.number === 0
       ? "Balcão"
       : `Ponto ${ponto.number.toString().padStart(2, "0")}`;
   };
 
-  // Formatar data
-  const formatDate = (dateString?: string): string => {
-    if (!dateString) return "-";
+  const getDataVenda = (venda: Venda): string => {
+    const data = venda.order_date || venda.closed_at || venda.created_at;
 
-    return new Date(dateString).toLocaleDateString("pt-BR");
+    if (!data) return "";
+
+    return data.substring(0, 10);
   };
 
-  // Filtrar vendas - agora por padrão apenas data atual
-  const vendasFiltradas = vendas.filter((venda) => {
-    // Abertas
-    if (filtroVenda === "abertas" && venda.status !== "aberto") {
-      return false;
+  const formatDate = (dateString?: string): string => {
+    if (!dateString) return "-";
+    const parts = dateString.split("-");
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
     }
+    return dateString;
+  };
 
-    // Fechadas pagas
+  // Filtrar vendas
+  const vendasFiltradas = vendas.filter((venda) => {
+    // Filtro por status
+    if (filtroVenda === "abertas" && venda.status !== "aberto") return false;
     if (
       filtroVenda === "fechadas" &&
       (venda.status !== "fechado" || venda.payment_method === "pendente")
-    ) {
+    )
       return false;
-    }
-
-    // Pendentes (não pagas)
-    if (filtroVenda === "pendentes" && venda.payment_method !== "pendente") {
+    if (filtroVenda === "pendentes" && venda.payment_method !== "pendente")
       return false;
-    }
 
-    // Filtro de data - POR PADRÃO APENAS DATA ATUAL
-    if (dataInicio || dataFim) {
-      const dataVenda = venda.created_at
-        ? new Date(venda.created_at).toISOString().split("T")[0]
-        : "";
+    // Filtro por data (usa order_date diretamente)
+    const dataVenda = getDataVenda(venda);
+    if (!dataVenda) return true;
 
-      if (dataInicio && dataVenda < dataInicio) {
-        return false;
-      }
-
-      if (dataFim && dataVenda > dataFim) {
-        return false;
-      }
-    }
+    if (dataInicio && dataVenda < dataInicio) return false;
+    if (dataFim && dataVenda > dataFim) return false;
 
     return true;
   });
 
   const limparFiltroData = () => {
-    // Volta para a data atual quando limpar
-    const hoje = new Date().toISOString().split("T")[0];
-    setDataInicio(hoje);
-    setDataFim(hoje);
+    setDataInicio(hojeStr);
+    setDataFim(hojeStr);
     setShowFiltroData(false);
   };
 
   const getStatusVenda = (venda: Venda) => {
     if (venda.status === "aberto") {
-      return {
-        label: "Em andamento",
-        background: "#d1fae5",
-        color: "#059669",
-      };
+      return { label: "Em andamento", background: "#d1fae5", color: "#059669" };
     }
-
     if (venda.payment_method === "pendente") {
-      return {
-        label: "Pendente",
-        background: "#fef3c7",
-        color: "#d97706",
-      };
+      return { label: "Pendente", background: "#fef3c7", color: "#d97706" };
     }
-
-    return {
-      label: "Finalizada",
-      background: "#fee2e2",
-      color: "#dc2626",
-    };
+    return { label: "Finalizada", background: "#fee2e2", color: "#dc2626" };
   };
 
   // Componente de filtros
@@ -264,7 +242,7 @@ export const TabelaComandas: React.FC<TabelaComandasProps> = ({
           Filtrar por Data
         </button>
 
-        {(dataInicio !== hoje || dataFim !== hoje) && (
+        {(dataInicio !== hojeStr || dataFim !== hojeStr) && (
           <button
             onClick={limparFiltroData}
             style={{
@@ -302,7 +280,6 @@ export const TabelaComandas: React.FC<TabelaComandasProps> = ({
             >
               Data Início
             </label>
-
             <input
               type="date"
               value={dataInicio}
@@ -328,7 +305,6 @@ export const TabelaComandas: React.FC<TabelaComandasProps> = ({
             >
               Data Fim
             </label>
-
             <input
               type="date"
               value={dataFim}
@@ -400,14 +376,14 @@ export const TabelaComandas: React.FC<TabelaComandasProps> = ({
                     icon={faClipboardList}
                     style={{ fontSize: 48, marginBottom: 12 }}
                   />
-
-                  <p>Nenhuma venda para {formatDate(hoje)}</p>
+                  <p>Nenhuma venda encontrada</p>
                 </div>
               </td>
             </tr>
           ) : (
             vendasFiltradas.map((venda, index) => {
               const status = getStatusVenda(venda);
+              const dataVenda = getDataVenda(venda);
 
               return (
                 <tr
@@ -427,24 +403,16 @@ export const TabelaComandas: React.FC<TabelaComandasProps> = ({
                           : "#fafafa",
                   }}
                 >
-                  <td style={tdStyle}>{formatDate(venda.created_at)}</td>
-
+                  <td style={tdStyle}>{formatDate(dataVenda)}</td>
                   <td style={tdStyle}>{getNomePontoVenda(venda.table_id)}</td>
-
                   <td style={tdStyle}>
                     <div style={{ fontWeight: 500 }}>{venda.customer_name}</div>
-
                     <div
-                      style={{
-                        fontSize: 11,
-                        color: "#9ca3af",
-                        marginTop: 2,
-                      }}
+                      style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}
                     >
-                      #{venda.id}
+                      #{venda.order_number || venda.id}
                     </div>
                   </td>
-
                   <td
                     style={{
                       ...tdStyle,
@@ -455,13 +423,7 @@ export const TabelaComandas: React.FC<TabelaComandasProps> = ({
                   >
                     {formatCurrency(venda.total || 0)}
                   </td>
-
-                  <td
-                    style={{
-                      padding: "12px",
-                      textAlign: "center",
-                    }}
-                  >
+                  <td style={{ padding: "12px", textAlign: "center" }}>
                     <span
                       style={{
                         display: "inline-block",
@@ -524,15 +486,14 @@ export const TabelaComandas: React.FC<TabelaComandasProps> = ({
                     color: "#9ca3af",
                   }}
                 >
-                  <p style={{ fontSize: 14 }}>
-                    Nenhuma venda para {formatDate(hoje)}
-                  </p>
+                  <p style={{ fontSize: 14 }}>Nenhuma venda encontrada</p>
                 </div>
               </td>
             </tr>
           ) : (
             vendasFiltradas.map((venda, index) => {
               const status = getStatusVenda(venda);
+              const dataVenda = getDataVenda(venda);
 
               return (
                 <tr
@@ -552,22 +513,18 @@ export const TabelaComandas: React.FC<TabelaComandasProps> = ({
                           : "#fafafa",
                   }}
                 >
-                  <td style={mobileTdStyle}>{formatDate(venda.created_at)}</td>
-
+                  <td style={mobileTdStyle}>{formatDate(dataVenda)}</td>
                   <td style={mobileTdStyle}>
                     {getNomePontoVenda(venda.table_id)}
                   </td>
-
                   <td style={mobileTdStyle}>
                     <div style={{ fontWeight: 500, fontSize: 13 }}>
                       {venda.customer_name}
                     </div>
-
                     <div style={{ fontSize: 10, color: "#9ca3af" }}>
-                      #{venda.id}
+                      #{venda.order_number || venda.id}
                     </div>
                   </td>
-
                   <td
                     style={{
                       ...mobileTdStyle,
@@ -578,13 +535,7 @@ export const TabelaComandas: React.FC<TabelaComandasProps> = ({
                   >
                     {formatCurrency(venda.total || 0)}
                   </td>
-
-                  <td
-                    style={{
-                      ...mobileTdStyle,
-                      textAlign: "center",
-                    }}
-                  >
+                  <td style={{ ...mobileTdStyle, textAlign: "center" }}>
                     <span
                       style={{
                         display: "inline-block",

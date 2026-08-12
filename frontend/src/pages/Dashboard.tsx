@@ -2,17 +2,16 @@
 import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faStore,
   faBoxes,
-  faClipboardList,
   faCashRegister,
   faChartLine,
   faUsers,
-  faConciergeBell,
   faArrowRight,
   faThLarge,
   faSignOutAlt,
   faUserCircle,
+  faShoppingCart,
+  faClipboardList,
 } from "@fortawesome/free-solid-svg-icons";
 
 interface CardProps {
@@ -59,7 +58,7 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
       id: "vendas",
       titulo: "Gestão de Vendas",
       descricao: "Realize vendas, gerencie pedidos e atendimentos",
-      icon: faCashRegister,
+      icon: faShoppingCart,
       cor: "#eab308",
       tela: "vendas",
     },
@@ -105,7 +104,7 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
   return (
     <div
       style={{
-        background: "#f3f4f6",
+        background: "#111827",
         minHeight: "100vh",
         padding: isMobile ? "16px" : "24px",
       }}
@@ -113,11 +112,11 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
       {/* Cabeçalho com Usuário e Logout */}
       <div
         style={{
-          background: "#fff",
+          background: "#1f2937",
           borderRadius: "12px",
           padding: "20px 24px",
           marginBottom: "24px",
-          border: "1px solid #e5e7eb",
+          border: "1px solid #374151",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
@@ -148,7 +147,7 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
                 margin: 0,
                 fontSize: isMobile ? "20px" : "24px",
                 fontWeight: 600,
-                color: "#1f2937",
+                color: "#fff",
               }}
             >
               Dashboard
@@ -157,7 +156,7 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
               style={{
                 margin: "4px 0 0",
                 fontSize: "14px",
-                color: "#6b7280",
+                color: "#9ca3af",
               }}
             >
               Visão geral do sistema e acesso rápido aos módulos
@@ -177,14 +176,14 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
               display: "flex",
               alignItems: "center",
               gap: "8px",
-              color: "#374151",
+              color: "#d1d5db",
             }}
           >
             <FontAwesomeIcon
               icon={faUserCircle}
-              style={{ fontSize: 20, color: "#6b7280" }}
+              style={{ fontSize: 20, color: "#9ca3af" }}
             />
-            <span style={{ fontSize: "14px", fontWeight: 500 }}>
+            <span style={{ fontSize: "14px", fontWeight: 500, color: "#fff" }}>
               {user?.login || "Usuário"}
             </span>
           </div>
@@ -196,21 +195,21 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
               gap: "6px",
               padding: "8px 16px",
               borderRadius: "8px",
-              border: "1px solid #e5e7eb",
-              background: "#fff",
-              color: "#dc2626",
+              border: "1px solid #374151",
+              background: "transparent",
+              color: "#ef4444",
               cursor: "pointer",
               fontSize: "13px",
               fontWeight: 500,
               transition: "all 0.2s",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#fee2e2";
-              e.currentTarget.style.borderColor = "#dc2626";
+              e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)";
+              e.currentTarget.style.borderColor = "#ef4444";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = "#fff";
-              e.currentTarget.style.borderColor = "#e5e7eb";
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.borderColor = "#374151";
             }}
           >
             <FontAwesomeIcon icon={faSignOutAlt} />
@@ -232,31 +231,30 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
             key={card.id}
             onClick={() => handleCardClick(card.tela)}
             style={{
-              background: "#fff",
+              background: "#1f2937",
               borderRadius: "12px",
-              padding: "20px",
+              padding: "24px",
               cursor: "pointer",
               transition: "all 0.2s",
-              border: "1px solid #e5e7eb",
-              boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+              border: "1px solid #374151",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = "translateY(-2px)";
-              e.currentTarget.style.boxShadow = "0 4px 6px rgba(0,0,0,0.1)";
+              e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.3)";
               e.currentTarget.style.borderColor = card.cor;
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.05)";
-              e.currentTarget.style.borderColor = "#e5e7eb";
+              e.currentTarget.style.boxShadow = "none";
+              e.currentTarget.style.borderColor = "#374151";
             }}
           >
-            {/* Ícone */}
+            {/* Ícone com cor de fundo */}
             <div
               style={{
-                width: 48,
-                height: 48,
-                background: `${card.cor}10`,
+                width: 56,
+                height: 56,
+                background: card.cor,
                 borderRadius: 12,
                 display: "flex",
                 alignItems: "center",
@@ -266,7 +264,7 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
             >
               <FontAwesomeIcon
                 icon={card.icon}
-                style={{ fontSize: 24, color: card.cor }}
+                style={{ fontSize: 24, color: "#ffffff" }}
               />
             </div>
 
@@ -276,7 +274,7 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
                 margin: "0 0 8px 0",
                 fontSize: "16px",
                 fontWeight: 600,
-                color: "#1f2937",
+                color: "#fff",
               }}
             >
               {card.titulo}
@@ -285,7 +283,7 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
               style={{
                 margin: "0 0 20px 0",
                 fontSize: "13px",
-                color: "#6b7280",
+                color: "#9ca3af",
                 lineHeight: "1.4",
               }}
             >
@@ -314,10 +312,10 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
       <div
         style={{
           marginTop: "32px",
-          background: "#fff",
+          background: "#1f2937",
           borderRadius: "12px",
           padding: "20px",
-          border: "1px solid #e5e7eb",
+          border: "1px solid #374151",
         }}
       >
         <div
@@ -334,7 +332,7 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
               {cards.length}
             </div>
             <div
-              style={{ fontSize: "13px", color: "#6b7280", marginTop: "4px" }}
+              style={{ fontSize: "13px", color: "#9ca3af", marginTop: "4px" }}
             >
               Módulos Disponíveis
             </div>
@@ -346,7 +344,7 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
               ✓
             </div>
             <div
-              style={{ fontSize: "13px", color: "#6b7280", marginTop: "4px" }}
+              style={{ fontSize: "13px", color: "#9ca3af", marginTop: "4px" }}
             >
               Sistema Integrado
             </div>
@@ -358,7 +356,7 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
               24/7
             </div>
             <div
-              style={{ fontSize: "13px", color: "#6b7280", marginTop: "4px" }}
+              style={{ fontSize: "13px", color: "#9ca3af", marginTop: "4px" }}
             >
               Disponibilidade
             </div>
@@ -370,7 +368,7 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
               🔒
             </div>
             <div
-              style={{ fontSize: "13px", color: "#6b7280", marginTop: "4px" }}
+              style={{ fontSize: "13px", color: "#9ca3af", marginTop: "4px" }}
             >
               Dados Seguros
             </div>

@@ -4,6 +4,8 @@ import SidebarPdv from "../../components/SidebarPdv";
 import PontoAtendimentoMobile from "../../components/PontoAtendimentoMobile";
 import { ModalAbrirComanda } from "../../components/ModalAbrirComanda";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 interface Produto {
   id: number;
   name: string;
@@ -104,12 +106,53 @@ export default function PDV() {
   useEffect(() => {
     async function loadData() {
       try {
-        // Carregar produtos, categorias e pontos de venda
+        const token = localStorage.getItem("auth_token");
+
+        if (!token) {
+          console.error("JWT não encontrado.");
+          return;
+        }
+
+        const headers = {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        };
+
+        // Carregar todos os produtos, categorias e pontos de venda
+        // da empresa vinculada ao usuário autenticado
         const [resProducts, resCategories, resTables] = await Promise.all([
-          fetch("http://localhost:8000/api/products?restaurant_id=1"),
-          fetch("http://localhost:8000/api/categories?restaurant_id=1"),
-          fetch("http://localhost:8000/api/tables?restaurant_id=1"),
+          fetch(`${API_URL}/products`, {
+            method: "GET",
+            headers,
+          }),
+
+          fetch(`${API_URL}/categories`, {
+            method: "GET",
+            headers,
+          }),
+
+          fetch(`${API_URL}/tables`, {
+            method: "GET",
+            headers,
+          }),
         ]);
+
+        // Verificar erros HTTP
+        if (!resProducts.ok) {
+          throw new Error(`Erro ao carregar produtos: ${resProducts.status}`);
+        }
+
+        if (!resCategories.ok) {
+          throw new Error(
+            `Erro ao carregar categorias: ${resCategories.status}`,
+          );
+        }
+
+        if (!resTables.ok) {
+          throw new Error(
+            `Erro ao carregar pontos de venda: ${resTables.status}`,
+          );
+        }
 
         const productsData = await resProducts.json();
         const categoriesData = await resCategories.json();
@@ -120,12 +163,19 @@ export default function PDV() {
         setPontosVenda(tablesData);
 
         // Carregar comandas abertas do backend
-        const resOrders = await fetch(
-          "http://localhost:8000/api/orders?restaurant_id=1",
-        );
+        const resOrders = await fetch(`${API_URL}/orders`, {
+          method: "GET",
+          headers,
+        });
+
+        if (!resOrders.ok) {
+          throw new Error(`Erro ao carregar comandas: ${resOrders.status}`);
+        }
+
         const ordersData = await resOrders.json();
 
         console.log("Comandas carregadas do backend:", ordersData);
+
         setOrders(ordersData);
 
         // Estruturar as comandas por ponto de venda
@@ -136,18 +186,20 @@ export default function PDV() {
           comandasEstruturadas[`ponto-${t.number}`] = [];
         });
 
-        // Para cada comanda aberta, adicionar ao seu ponto correspondente
+        // Para cada comanda aberta
         ordersData.forEach((order: Order) => {
           if (order.status === "aberto") {
             // Encontrar o ponto pelo table_id
             const ponto = tablesData.find(
               (t: PontoVenda) => t.id === order.table_id,
             );
+
             if (ponto) {
               const pontoNome = `ponto-${ponto.number}`;
 
-              // Buscar os itens da comanda com orderItemId
+              // Buscar os itens da comanda
               let items: ComandaItem[] = [];
+
               if (order.items && order.items.length > 0) {
                 items = order.items.map((item: OrderItem) => ({
                   id: item.product_id,
@@ -162,7 +214,7 @@ export default function PDV() {
               comandasEstruturadas[pontoNome].push({
                 orderId: order.id,
                 customerName: order.customer_name || `Comanda ${order.id}`,
-                items: items,
+                items,
               });
             }
           }
@@ -173,9 +225,10 @@ export default function PDV() {
         // Selecionar primeiro ponto se houver
         if (tablesData.length > 0) {
           const pontoInicial = `ponto-${tablesData[0].number}`;
+
           setPontoAtual(pontoInicial);
 
-          // Selecionar primeira comanda do ponto se existir
+          // Selecionar primeira comanda do ponto
           if (comandasEstruturadas[pontoInicial].length > 0) {
             setComandaSelecionada(
               comandasEstruturadas[pontoInicial][0].orderId,
@@ -200,7 +253,7 @@ export default function PDV() {
     }
 
     try {
-      const response = await fetch("http://localhost:8000/api/tables", {
+      const response = await fetch(`${API_URL}/tables`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -249,25 +302,19 @@ export default function PDV() {
         // Primeiro, fechar todas as comandas abertas do ponto
         const comandasDoPonto = comandas[pontoNome] || [];
         for (const comanda of comandasDoPonto) {
-          await fetch(
-            `http://localhost:8000/api/orders/${comanda.orderId}/close`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-            },
-          );
+          await fetch(`${API_URL}/orders/${comanda.orderId}/close`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          });
         }
 
-        const response = await fetch(
-          `http://localhost:8000/api/tables/${ponto.id}`,
-          {
-            method: "DELETE",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
+        const response = await fetch(`${API_URL}/tables/${ponto.id}`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
           },
-        );
+        });
 
         if (!response.ok) {
           alert("Erro ao excluir ponto de venda");
@@ -319,7 +366,7 @@ export default function PDV() {
     }
 
     try {
-      const response = await fetch("http://localhost:8000/api/orders", {
+      const response = await fetch(`${API_URL}/api/orders`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -377,19 +424,16 @@ export default function PDV() {
     }
 
     try {
-      const response = await fetch(
-        `http://localhost:8000/api/orders/${orderId}/items`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            product_id: produto.id,
-          }),
+      const response = await fetch(`${API_URL}/orders/${orderId}/items`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
         },
-      );
+        body: JSON.stringify({
+          product_id: produto.id,
+        }),
+      });
 
       if (!response.ok) {
         const error = await response.json();
@@ -471,35 +515,29 @@ export default function PDV() {
 
     try {
       if (novaQuantidade > 0) {
-        const response = await fetch(
-          `http://localhost:8000/api/order-items/${orderItemId}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
-            body: JSON.stringify({
-              quantity: novaQuantidade,
-            }),
+        const response = await fetch(`${API_URL}/order-items/${orderItemId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
           },
-        );
+          body: JSON.stringify({
+            quantity: novaQuantidade,
+          }),
+        });
 
         if (!response.ok) {
           alert("Erro ao atualizar quantidade");
           return;
         }
       } else {
-        const response = await fetch(
-          `http://localhost:8000/api/order-items/${orderItemId}`,
-          {
-            method: "DELETE",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
+        const response = await fetch(`${API_URL}/order-items/${orderItemId}`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
           },
-        );
+        });
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -553,20 +591,17 @@ export default function PDV() {
     const isBalcao = comandaAtual.customerName === "Balcão";
 
     try {
-      const response = await fetch(
-        `http://localhost:8000/api/orders/${orderId}/close`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            payment_method: formaPagamento || null,
-            total: totalComanda,
-          }),
+      const response = await fetch(`${API_URL}/orders/${orderId}/close`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
         },
-      );
+        body: JSON.stringify({
+          payment_method: formaPagamento || null,
+          total: totalComanda,
+        }),
+      });
 
       if (!response.ok) {
         const error = await response.json();
@@ -680,7 +715,7 @@ export default function PDV() {
     const hoje = new Date().toISOString().split("T")[0];
 
     try {
-      const response = await fetch("http://localhost:8000/api/orders", {
+      const response = await fetch(`${API_URL}/orders`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
