@@ -10,7 +10,7 @@ class ExpenseCategory extends Model
     protected $table = 'expense_categories';
 
     protected $fillable = [
-        'restaurant_id',
+        'partner_company_id',
         'name',
         'icon',
         'color',
@@ -28,6 +28,6 @@ class ExpenseCategory extends Model
 
     public function expenses()
     {
-        return $this->hasMany(Expense::class, 'category_id');
+        return $this->hasMany(Expense::class, 'expense_category_id');
     }
 }

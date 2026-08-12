@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Services\CurrentCompany;
 use Illuminate\Http\Request;
 
 class OrderController extends Controller
@@ -44,70 +45,61 @@ class OrderController extends Controller
         }
     }
 
+
     // ➕ CRIAR COMANDA
     public function store(Request $request)
     {
-        try {
-            $data = $request->validate([
-                'restaurant_id' => 'required|exists:restaurants,id',
-                'order_number'  => 'nullable|string|max:20',
-                'order_date'    => 'nullable|date',
-                'customer_name' => 'nullable|string|max:100',
-                'status'        => 'nullable|string|in:aberto,fechado,pendente,cancelado',
-                'total'         => 'nullable|numeric|min:0',
-                'payment_method' => 'nullable|string|in:dinheiro,pix,credito,debito,pendente',
-                'closed_at'     => 'nullable|date',
-            ]);
+        $partnerCompanyId = CurrentCompany::id();
 
-            // Gerar número da comanda automaticamente se não for informado
-            $orderNumber = $data['order_number'] ?? $this->generateOrderNumber();
+        $data = $request->validate([
+            'sales_point_id'  => 'nullable|integer',
+            'order_date'      => 'nullable|date',
+            'customer_name'   => 'nullable|string|max:100',
+            'status'          => 'nullable|string|in:aberto,fechado,pendente,cancelado',
+            'total'           => 'nullable|numeric|min:0',
+            'payment_method'  => 'nullable|string|in:dinheiro,pix,credito,debito,pendente',
+            'closed_at'       => 'nullable|date',
+        ]);
 
-            // Validar se o número da comanda já existe
-            if (Order::where('order_number', $orderNumber)
-                ->where('restaurant_id', $data['restaurant_id'])
-                ->exists()
-            ) {
-                $orderNumber = $this->generateOrderNumber(true);
-            }
+        /*
+     * Gera automaticamente o próximo número de comanda
+     * dentro da empresa atual.
+     *
+     * Exemplo:
+     * Empresa 1 → 190, 191, 192...
+     * Empresa 2 → 55, 56, 57...
+     */
+        $ultimoNumero = Order::where('partner_company_id', $partnerCompanyId)
+            ->max('command_number');
 
-            // Define valores padrão
-            $status = $data['status'] ?? 'aberto';
-            $total = $data['total'] ?? 0;
-            $customerName = $data['customer_name'] ?? 'Cliente';
-            $paymentMethod = $data['payment_method'] ?? null;
+        $commandNumber = ($ultimoNumero ?? 0) + 1;
 
-            // Usar order_date se informado, senão usar a data atual
-            $orderDate = $data['order_date'] ?? now()->format('Y-m-d');
+        // Define valores padrão
+        $status = $data['status'] ?? 'aberto';
+        $total = $data['total'] ?? 0;
+        $customerName = $data['customer_name'] ?? 'Cliente';
+        $paymentMethod = $data['payment_method'] ?? null;
+        $orderDate = $data['order_date'] ?? now()->format('Y-m-d');
 
-            $order = Order::create([
-                'restaurant_id'   => $data['restaurant_id'],
-                'order_number'    => $orderNumber,
-                'order_date'      => $orderDate,
-                'table_id'        => null,
-                'customer_name'   => $customerName,
-                'status'          => $status,
-                'total'           => $total,
-                'payment_method'  => $paymentMethod,
-                'closed_at'       => null, // Só preenche ao finalizar
-            ]);
+        $order = Order::create([
+            'partner_company_id' => $partnerCompanyId,
+            'sales_point_id'      => $data['sales_point_id'] ?? null,
+            'command_number'      => $commandNumber,
+            'order_date'          => $orderDate,
+            'customer_name'       => $customerName,
+            'status'              => $status,
+            'total'               => $total,
+            'payment_method'      => $paymentMethod,
+            'closed_at'           => null,
+        ]);
 
-            return response()->json([
-                'message' => 'Comanda criada com sucesso',
-                'order' => $order
-            ], 201);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'message' => 'Erro de validação',
-                'errors' => $e->errors()
-            ], 422);
-        } catch (\Exception $e) {
-            \Log::error('Erro ao criar comanda: ' . $e->getMessage());
-            return response()->json([
-                'message' => 'Erro ao criar comanda',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json([
+            'message' => 'Comanda criada com sucesso',
+            'order'   => $order,
+        ], 201);
     }
+
+
 
     // ✏️ ATUALIZAR COMANDA
     public function update(Request $request, $id)

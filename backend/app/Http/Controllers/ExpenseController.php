@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
+use App\Services\CurrentCompany;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -13,61 +14,87 @@ class ExpenseController extends Controller
     public function index(Request $request)
     {
         try {
-            $request->validate([
-                'restaurant_id' => 'required|exists:restaurants,id',
+            $companyId = CurrentCompany::id();
+
+            $data = $request->validate([
                 'start_date' => 'nullable|date',
                 'end_date' => 'nullable|date|after_or_equal:start_date',
-                'category_id' => 'nullable|integer',
+                'expense_category_id' => 'nullable|integer',
             ]);
 
-            $query = Expense::where('restaurant_id', $request->restaurant_id)
-                ->with('category'); // Carregar a categoria relacionada
+            $query = Expense::where('partner_company_id', $companyId)
+                ->with('category');
 
-            if ($request->has('start_date')) {
-                $query->whereDate('expense_date', '>=', $request->start_date);
-            }
-            if ($request->has('end_date')) {
-                $query->whereDate('expense_date', '<=', $request->end_date);
-            }
-            if ($request->has('category_id')) {
-                $query->where('category_id', $request->category_id);
+            if (!empty($data['start_date'])) {
+                $query->whereDate('expense_date', '>=', $data['start_date']);
             }
 
-            $expenses = $query->orderBy('expense_date', 'desc')
+            if (!empty($data['end_date'])) {
+                $query->whereDate('expense_date', '<=', $data['end_date']);
+            }
+
+            if (!empty($data['expense_category_id'])) {
+                $query->where(
+                    'expense_category_id',
+                    $data['expense_category_id']
+                );
+            }
+
+            $expenses = $query
+                ->orderBy('expense_date', 'desc')
                 ->orderBy('created_at', 'desc')
                 ->get();
 
             return response()->json($expenses);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+
+            return response()->json([
+                'message' => 'Erro de validação',
+                'errors' => $e->errors()
+            ], 422);
         } catch (\Exception $e) {
+
             return response()->json([
                 'message' => 'Erro ao buscar gastos',
                 'error' => $e->getMessage()
             ], 500);
         }
     }
-
     public function store(Request $request)
     {
         try {
+            $companyId = CurrentCompany::id();
+
             $data = $request->validate([
-                'restaurant_id' => 'required|exists:restaurants,id',
                 'description' => 'required|string|max:255',
                 'amount' => 'required|numeric|min:0.01',
                 'expense_date' => 'required|date',
-                'category_id' => 'required|exists:expense_categories,id', // Mudado de category para category_id
+                'expense_category_id' => 'required|integer',
                 'notes' => 'nullable|string',
             ]);
 
+            $category = ExpenseCategory::where(
+                'id',
+                $data['expense_category_id']
+            )
+                ->where('partner_company_id', $companyId)
+                ->first();
+
+            if (!$category) {
+                return response()->json([
+                    'message' => 'Categoria não encontrada ou não pertence à empresa atual'
+                ], 404);
+            }
+
             $expense = Expense::create([
-                'restaurant_id' => $data['restaurant_id'],
+                'partner_company_id' => $companyId,
                 'description' => $data['description'],
                 'amount' => $data['amount'],
                 'expense_date' => $data['expense_date'],
-                'category_id' => $data['category_id'], // Usando category_id
-                'notes' => $data['notes'],
+                'expense_category_id' => $data['expense_category_id'],
+                'notes' => $data['notes'] ?? null,
             ]);
 
-            // Carregar a categoria relacionada para retornar
             $expense->load('category');
 
             return response()->json([
@@ -75,11 +102,13 @@ class ExpenseController extends Controller
                 'expense' => $expense
             ], 201);
         } catch (\Illuminate\Validation\ValidationException $e) {
+
             return response()->json([
                 'message' => 'Erro de validação',
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
+
             return response()->json([
                 'message' => 'Erro ao criar gasto',
                 'error' => $e->getMessage()

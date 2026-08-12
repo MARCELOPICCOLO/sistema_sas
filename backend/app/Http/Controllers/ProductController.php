@@ -19,6 +19,7 @@ class ProductController extends Controller
         $products = DB::select("
     SELECT
         prod.id,
+        prod.name,
         prod.product_code,
         prod.description,
         prod.price,
@@ -45,11 +46,14 @@ class ProductController extends Controller
         WHERE prod.id = " . $prod->id
             );
 
-            $prod->category = $cat;
+
+            $prod->category["id"] = $cat[0]->id;
+            $prod->category["name"] = $cat[0]->name;
         }
 
         return response()->json($products);
     }
+
     // 🔍 BUSCAR PRODUTO POR CÓDIGO
     public function findByCode(Request $request, $code)
     {
@@ -312,6 +316,7 @@ class ProductController extends Controller
                 ], 403);
             }
 
+
             $product = Product::where('id', $id)
                 ->whereHas('category', function ($query) use ($partnerCompanyId) {
                     $query->where('partner_company_id', $partnerCompanyId);
@@ -324,12 +329,13 @@ class ProductController extends Controller
                 ], 404);
             }
 
-            // Verificar se o produto está sendo usado em alguma comanda
+            // // Verificar se o produto está sendo usado em alguma comanda
             // if ($product->orderItems()->exists()) {
             //     return response()->json([
             //         'message' => 'Não é possível excluir o produto pois ele está vinculado a comandas'
             //     ], 409);
-            // }
+
+
 
             $product->delete();
 

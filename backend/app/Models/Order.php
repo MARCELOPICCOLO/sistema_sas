@@ -7,17 +7,20 @@ use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
 {
+
     protected $fillable = [
-        'restaurant_id',
-        'table_id',
-        'order_number',
-        'order_date',        // 👈 NOVA COLUNA
+        'partner_company_id',
+        'sales_point_id',
+        'command_number',
+        'order_date',
         'customer_name',
         'status',
         'total',
         'payment_method',
-        'closed_at'
+        'closed_at',
     ];
+
+
 
     protected $casts = [
         'total' => 'decimal:2',

@@ -1,5 +1,4 @@
 <?php
-// app/Models/Expense.php
 
 namespace App\Models;
 
@@ -8,11 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 class Expense extends Model
 {
     protected $fillable = [
-        'restaurant_id',
+        'partner_company_id',
         'description',
         'amount',
         'expense_date',
-        'category_id',
+        'expense_category_id',
         'notes'
     ];
 
@@ -21,13 +20,11 @@ class Expense extends Model
         'expense_date' => 'date'
     ];
 
-    public function restaurant()
-    {
-        return $this->belongsTo(Restaurant::class);
-    }
-
     public function category()
     {
-        return $this->belongsTo(ExpenseCategory::class, 'category_id');
+        return $this->belongsTo(
+            ExpenseCategory::class,
+            'expense_category_id'
+        );
     }
 }
