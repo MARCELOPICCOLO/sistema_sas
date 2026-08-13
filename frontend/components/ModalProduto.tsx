@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTimes } from "@fortawesome/free-solid-svg-icons";
 
 interface Category {
   id: number;
@@ -23,7 +25,10 @@ interface ModalProdutoProps {
   setFormData: React.Dispatch<React.SetStateAction<FormData>>;
   categorias: Category[];
   salvarProduto: () => void;
-  produtosExistentes?: Array<{ id: number; product_code: string }>;
+  produtosExistentes?: Array<{
+    id: number;
+    product_code: string;
+  }>;
 }
 
 export const ModalProduto: React.FC<ModalProdutoProps> = ({
@@ -40,7 +45,6 @@ export const ModalProduto: React.FC<ModalProdutoProps> = ({
   const [quantityInput, setQuantityInput] = useState("");
   const [codigoError, setCodigoError] = useState("");
 
-  // Verificar se o código já existe (ignorando o próprio produto em edição)
   const verificarCodigoDuplicado = (codigo: string) => {
     if (!codigo || codigo.trim() === "") {
       setCodigoError("");
@@ -52,19 +56,22 @@ export const ModalProduto: React.FC<ModalProdutoProps> = ({
     );
 
     if (existe) {
-      setCodigoError(
-        "❌ Este código já está em uso. Por favor, use outro código.",
-      );
+      setCodigoError("Este código já está em uso.");
       return false;
-    } else {
-      setCodigoError("");
-      return true;
     }
+
+    setCodigoError("");
+    return true;
   };
 
   const handleCodigoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.toUpperCase();
-    setFormData({ ...formData, product_code: value });
+
+    setFormData({
+      ...formData,
+      product_code: value,
+    });
+
     verificarCodigoDuplicado(value);
   };
 
@@ -74,62 +81,96 @@ export const ModalProduto: React.FC<ModalProdutoProps> = ({
     } else {
       setPriceInput(formData.price.toString());
     }
+
     setQuantityInput(formData.quantity.toString());
     setCodigoError("");
   }, [formData.price, formData.quantity, showModal, formData.id]);
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value;
+
     value = value.replace(/[^\d,.]/g, "");
     value = value.replace(",", ".");
+
     const parts = value.split(".");
+
     if (parts.length > 2) {
       value = parts[0] + "." + parts.slice(1).join("");
     }
+
     if (parts[1] && parts[1].length > 2) {
       value = parts[0] + "." + parts[1].substring(0, 2);
     }
+
     setPriceInput(value);
+
     const numValue = parseFloat(value);
+
     if (!isNaN(numValue)) {
-      setFormData({ ...formData, price: numValue });
-    } else if (value === "" || value === "-") {
-      setFormData({ ...formData, price: 0 });
+      setFormData({
+        ...formData,
+        price: numValue,
+      });
+    } else if (value === "") {
+      setFormData({
+        ...formData,
+        price: 0,
+      });
     }
   };
 
   const handlePriceBlur = () => {
-    if (priceInput === "" || priceInput === "-") {
+    if (priceInput === "") {
       setPriceInput("");
-      setFormData({ ...formData, price: 0 });
-    } else {
-      const numValue = parseFloat(priceInput);
-      if (!isNaN(numValue)) {
-        const formatted = numValue.toFixed(2);
-        setPriceInput(formatted);
-        setFormData({ ...formData, price: numValue });
-      }
+
+      setFormData({
+        ...formData,
+        price: 0,
+      });
+
+      return;
+    }
+
+    const numValue = parseFloat(priceInput);
+
+    if (!isNaN(numValue)) {
+      const formatted = numValue.toFixed(2);
+
+      setPriceInput(formatted);
+
+      setFormData({
+        ...formData,
+        price: numValue,
+      });
     }
   };
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value;
+
     value = value.replace(/\D/g, "");
+
     if (value.length > 1 && value.startsWith("0")) {
       value = value.replace(/^0+/, "");
     }
+
     if (value === "") {
       value = "0";
     }
+
     setQuantityInput(value);
+
     const numValue = Math.max(0, parseInt(value, 10) || 0);
-    setFormData({ ...formData, quantity: numValue });
+
+    setFormData({
+      ...formData,
+      quantity: numValue,
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validar código duplicado antes de salvar
     if (formData.product_code && formData.product_code.trim() !== "") {
       const existe = produtosExistentes.some(
         (p) =>
@@ -138,9 +179,7 @@ export const ModalProduto: React.FC<ModalProdutoProps> = ({
       );
 
       if (existe) {
-        setCodigoError(
-          "❌ Este código já está em uso. Por favor, use outro código.",
-        );
+        setCodigoError("Este código já está em uso.");
         return;
       }
     }
@@ -150,225 +189,319 @@ export const ModalProduto: React.FC<ModalProdutoProps> = ({
 
   if (!showModal) return null;
 
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    boxSizing: "border-box",
+    height: 42,
+    padding: "0 12px",
+    borderRadius: 8,
+    border: "1px solid #e5e7eb",
+    background: "#fff",
+    color: "#111827",
+    fontSize: 13,
+    outline: "none",
+    transition: "border-color 0.2s, box-shadow 0.2s",
+  };
+
+  const labelStyle: React.CSSProperties = {
+    display: "block",
+    marginBottom: 7,
+    fontSize: 12,
+    fontWeight: 500,
+    color: "#374151",
+  };
+
   return (
     <div
       style={{
         position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: "rgba(0,0,0,0.5)",
+        inset: 0,
+        background: "rgba(15, 23, 42, 0.5)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         zIndex: 1000,
+        padding: 20,
       }}
-      // REMOVIDO o onClick que fechava o modal ao clicar fora
     >
       <form
         onSubmit={handleSubmit}
         style={{
-          background: "#fff",
-          borderRadius: 12,
-          padding: 24,
-          width: "90%",
+          width: "100%",
           maxWidth: 500,
-          maxHeight: "80vh",
-          overflowY: "auto",
+          background: "#fff",
+          borderRadius: 14,
+          overflow: "hidden",
+          boxShadow: "0 20px 50px rgba(0,0,0,0.15)",
         }}
       >
-        <h2 style={{ margin: "0 0 20px 0", fontSize: 20 }}>
-          {editando ? "Editar Produto" : "Novo Produto"}
-        </h2>
+        {/* HEADER */}
+        <div
+          style={{
+            padding: "20px 22px",
+            borderBottom: "1px solid #f1f5f9",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div>
+            <h2
+              style={{
+                margin: 0,
+                fontSize: 17,
+                fontWeight: 600,
+                color: "#111827",
+              }}
+            >
+              {editando ? "Editar produto" : "Novo produto"}
+            </h2>
 
-        <div style={{ marginBottom: 16 }}>
-          <label
-            style={{
-              display: "block",
-              marginBottom: 8,
-              fontSize: 14,
-              fontWeight: 500,
-            }}
-          >
-            Nome: <span style={{ color: "#dc2626" }}>*</span>
-          </label>
-          <input
-            type="text"
-            placeholder="Ex: X-Burguer"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            style={{
-              width: "100%",
-              padding: "10px",
-              borderRadius: 6,
-              border: "1px solid #e5e7eb",
-              fontSize: 14,
-              outline: "none",
-            }}
-            autoFocus
-            required
-          />
-        </div>
-
-        <div style={{ marginBottom: 16 }}>
-          <label
-            style={{
-              display: "block",
-              marginBottom: 8,
-              fontSize: 14,
-              fontWeight: 500,
-            }}
-          >
-            Código:
-          </label>
-          <input
-            type="text"
-            placeholder="Ex: BURG001 (deixe em branco para gerar automático)"
-            value={formData.product_code}
-            onChange={handleCodigoChange}
-            style={{
-              width: "100%",
-              padding: "10px",
-              borderRadius: 6,
-              border: codigoError ? "1px solid #dc2626" : "1px solid #e5e7eb",
-              fontSize: 14,
-              outline: "none",
-            }}
-          />
-          {codigoError && (
-            <div style={{ fontSize: 12, color: "#dc2626", marginTop: 4 }}>
-              {codigoError}
-            </div>
-          )}
-          <div style={{ fontSize: 11, color: "#6b7280", marginTop: 4 }}>
-            💡 Dica: Deixe em branco para o sistema gerar automaticamente
+            <p
+              style={{
+                margin: "4px 0 0",
+                fontSize: 12,
+                color: "#9ca3af",
+              }}
+            >
+              {editando
+                ? "Atualize as informações do produto."
+                : "Cadastre um novo produto no estoque."}
+            </p>
           </div>
-        </div>
 
-        <div style={{ marginBottom: 16 }}>
-          <label
-            style={{
-              display: "block",
-              marginBottom: 8,
-              fontSize: 14,
-              fontWeight: 500,
-            }}
-          >
-            Categoria: <span style={{ color: "#dc2626" }}>*</span>
-          </label>
-          <select
-            value={formData.category_id}
-            onChange={(e) =>
-              setFormData({ ...formData, category_id: Number(e.target.value) })
-            }
-            style={{
-              width: "100%",
-              padding: "10px",
-              borderRadius: 6,
-              border: "1px solid #e5e7eb",
-              fontSize: 14,
-              outline: "none",
-              cursor: "pointer",
-            }}
-            required
-          >
-            <option value={0}>Selecione uma categoria</option>
-            {categorias.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div style={{ marginBottom: 16 }}>
-          <label
-            style={{
-              display: "block",
-              marginBottom: 8,
-              fontSize: 14,
-              fontWeight: 500,
-            }}
-          >
-            Preço (R$): <span style={{ color: "#dc2626" }}>*</span>
-          </label>
-          <input
-            type="text"
-            placeholder="0,00"
-            value={priceInput}
-            onChange={handlePriceChange}
-            onBlur={handlePriceBlur}
-            style={{
-              width: "100%",
-              padding: "10px",
-              borderRadius: 6,
-              border: "1px solid #e5e7eb",
-              fontSize: 14,
-              outline: "none",
-            }}
-            required
-          />
-        </div>
-
-        <div style={{ marginBottom: 20 }}>
-          <label
-            style={{
-              display: "block",
-              marginBottom: 8,
-              fontSize: 14,
-              fontWeight: 500,
-            }}
-          >
-            Estoque:
-          </label>
-          <input
-            type="text"
-            placeholder="0"
-            value={quantityInput}
-            onChange={handleQuantityChange}
-            style={{
-              width: "100%",
-              padding: "10px",
-              borderRadius: 6,
-              border: "1px solid #e5e7eb",
-              fontSize: 14,
-              outline: "none",
-            }}
-          />
-        </div>
-
-        <div style={{ display: "flex", gap: 12 }}>
           <button
             type="button"
             onClick={() => setShowModal(false)}
             style={{
-              flex: 1,
-              padding: "10px",
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              border: "none",
+              background: "#f8fafc",
+              color: "#6b7280",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <FontAwesomeIcon icon={faTimes} style={{ fontSize: 14 }} />
+          </button>
+        </div>
+
+        {/* CONTEÚDO */}
+        <div
+          style={{
+            padding: "22px",
+          }}
+        >
+          {/* NOME */}
+          <div style={{ marginBottom: 16 }}>
+            <label style={labelStyle}>
+              Nome <span style={{ color: "#dc2626" }}>*</span>
+            </label>
+
+            <input
+              type="text"
+              placeholder="Ex.: X-Burguer"
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  name: e.target.value,
+                })
+              }
+              style={inputStyle}
+              autoFocus
+              required
+            />
+          </div>
+
+          {/* CÓDIGO + CATEGORIA */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 14,
+              marginBottom: 16,
+            }}
+          >
+            {/* CÓDIGO */}
+            <div>
+              <label style={labelStyle}>Código</label>
+
+              <input
+                type="text"
+                placeholder="Ex.: BURG001"
+                value={formData.product_code}
+                onChange={handleCodigoChange}
+                style={{
+                  ...inputStyle,
+                  border: codigoError
+                    ? "1px solid #dc2626"
+                    : "1px solid #e5e7eb",
+                }}
+              />
+
+              {codigoError ? (
+                <div
+                  style={{
+                    marginTop: 5,
+                    fontSize: 11,
+                    color: "#dc2626",
+                  }}
+                >
+                  {codigoError}
+                </div>
+              ) : (
+                <div
+                  style={{
+                    marginTop: 5,
+                    fontSize: 10,
+                    color: "#9ca3af",
+                  }}
+                >
+                  Opcional
+                </div>
+              )}
+            </div>
+
+            {/* CATEGORIA */}
+            <div>
+              <label style={labelStyle}>
+                Categoria <span style={{ color: "#dc2626" }}>*</span>
+              </label>
+
+              <select
+                value={formData.category_id}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    category_id: Number(e.target.value),
+                  })
+                }
+                style={{
+                  ...inputStyle,
+                  cursor: "pointer",
+                }}
+                required
+              >
+                <option value={0}>Selecione</option>
+
+                {categorias.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* PREÇO + ESTOQUE */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 14,
+            }}
+          >
+            {/* PREÇO */}
+            <div>
+              <label style={labelStyle}>
+                Preço <span style={{ color: "#dc2626" }}>*</span>
+              </label>
+
+              <div
+                style={{
+                  position: "relative",
+                }}
+              >
+                <span
+                  style={{
+                    position: "absolute",
+                    left: 12,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    fontSize: 12,
+                    color: "#9ca3af",
+                    pointerEvents: "none",
+                  }}
+                >
+                  R$
+                </span>
+
+                <input
+                  type="text"
+                  placeholder="0,00"
+                  value={priceInput}
+                  onChange={handlePriceChange}
+                  onBlur={handlePriceBlur}
+                  style={{
+                    ...inputStyle,
+                    paddingLeft: 34,
+                  }}
+                  required
+                />
+              </div>
+            </div>
+
+            {/* ESTOQUE */}
+            <div>
+              <label style={labelStyle}>Estoque</label>
+
+              <input
+                type="text"
+                placeholder="0"
+                value={quantityInput}
+                onChange={handleQuantityChange}
+                style={inputStyle}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* FOOTER */}
+        <div
+          style={{
+            padding: "14px 22px",
+            borderTop: "1px solid #f1f5f9",
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 10,
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setShowModal(false)}
+            style={{
+              padding: "10px 16px",
               borderRadius: 8,
               border: "1px solid #e5e7eb",
               background: "#fff",
               color: "#374151",
-              fontWeight: "bold",
               cursor: "pointer",
+              fontSize: 13,
+              fontWeight: 500,
             }}
           >
             Cancelar
           </button>
+
           <button
             type="submit"
             style={{
-              flex: 1,
-              padding: "10px",
+              padding: "10px 18px",
               borderRadius: 8,
               border: "none",
-              background: "#10b981",
+              background: "#059669",
               color: "#fff",
-              fontWeight: "bold",
               cursor: "pointer",
+              fontSize: 13,
+              fontWeight: 600,
             }}
           >
-            {editando ? "Atualizar" : "Criar"}
+            {editando ? "Salvar alterações" : "Criar produto"}
           </button>
         </div>
       </form>

@@ -64,34 +64,77 @@ export const DetalhesVenda: React.FC<DetalhesVendaProps> = ({
   const [loading, setLoading] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [confirmText, setConfirmText] = useState("");
+
   const [toast, setToast] = useState<{
     show: boolean;
     message: string;
     type: "success" | "error";
-  }>({ show: false, message: "", type: "success" });
+  }>({
+    show: false,
+    message: "",
+    type: "success",
+  });
 
   const showToast = (
     message: string,
     type: "success" | "error" = "success",
   ) => {
-    setToast({ show: true, message, type });
+    setToast({
+      show: true,
+      message,
+      type,
+    });
+
     setTimeout(() => {
-      setToast({ show: false, message: "", type: "success" });
+      setToast({
+        show: false,
+        message: "",
+        type: "success",
+      });
     }, 1000);
   };
 
   const calcularTotal = (items?: VendaItem[]) => {
     if (!items) return 0;
+
     return items.reduce(
-      (sum, item) => sum + Number(item.price) * item.quantity,
+      (sum, item) => sum + Number(item.price) * Number(item.quantity),
       0,
     );
   };
 
+  const agruparItens = (items?: VendaItem[]) => {
+    if (!items) return [];
+
+    const agrupados: VendaItem[] = [];
+
+    items.forEach((item) => {
+      const existente = agrupados.find(
+        (i) =>
+          i.product_id === item.product_id &&
+          Number(i.price) === Number(item.price),
+      );
+
+      if (existente) {
+        existente.quantity += Number(item.quantity);
+      } else {
+        agrupados.push({
+          ...item,
+          quantity: Number(item.quantity),
+        });
+      }
+    });
+
+    return agrupados;
+  };
+
   const getNomePontoVenda = (tableId?: number) => {
     if (!tableId) return "-";
+
     const ponto = pontosVenda.find((p) => p.id === tableId);
+
     if (!ponto) return "-";
+
     return ponto.number === 0
       ? "Balcão"
       : `Ponto ${ponto.number.toString().padStart(2, "0")}`;
@@ -100,20 +143,45 @@ export const DetalhesVenda: React.FC<DetalhesVendaProps> = ({
   const getStatusText = (status: string) => {
     switch (status) {
       case "aberto":
-        return { text: "Em andamento", color: "#f59e0b", bg: "#fef3c7" };
+        return {
+          text: "Em andamento",
+          color: "#b45309",
+          bg: "#fffbeb",
+        };
+
       case "fechado":
-        return { text: "Finalizada", color: "#10b981", bg: "#d1fae5" };
+        return {
+          text: "Finalizada",
+          color: "#047857",
+          bg: "#ecfdf5",
+        };
+
       case "pendente":
-        return { text: "Não Paga", color: "#dc2626", bg: "#fee2e2" };
+        return {
+          text: "Não paga",
+          color: "#b91c1c",
+          bg: "#fef2f2",
+        };
+
       case "cancelado":
-        return { text: "Cancelada", color: "#6b7280", bg: "#f3f4f6" };
+        return {
+          text: "Cancelada",
+          color: "#6b7280",
+          bg: "#f3f4f6",
+        };
+
       default:
-        return { text: status, color: "#6b7280", bg: "#f3f4f6" };
+        return {
+          text: status,
+          color: "#6b7280",
+          bg: "#f3f4f6",
+        };
     }
   };
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return "-";
+
     return new Date(dateString).toLocaleDateString("pt-BR");
   };
 
@@ -126,12 +194,15 @@ export const DetalhesVenda: React.FC<DetalhesVendaProps> = ({
     }
 
     setLoading(true);
+
     try {
       await onCancelarVenda(venda.id);
+
       showToast(
         `Venda #${venda.order_number || venda.id} cancelada com sucesso!`,
         "success",
       );
+
       setShowCancelModal(false);
       setConfirmText("");
     } catch (error) {
@@ -143,12 +214,15 @@ export const DetalhesVenda: React.FC<DetalhesVendaProps> = ({
 
   const handleMarcarNaoPaga = async () => {
     if (!venda) return;
+
     if (
       confirm(`Marcar venda #${venda.order_number || venda.id} como não paga?`)
     ) {
       setLoading(true);
+
       try {
         await onMarcarNaoPaga(venda.id);
+
         showToast(
           `Venda #${venda.order_number || venda.id} marcada como não paga!`,
           "success",
@@ -167,28 +241,85 @@ export const DetalhesVenda: React.FC<DetalhesVendaProps> = ({
 
   if (!venda) {
     return (
-      <div style={{ textAlign: "center", color: "#9ca3af", padding: "40px" }}>
-        <FontAwesomeIcon
-          icon={faShoppingCart}
-          style={{ fontSize: 48, marginBottom: 12 }}
-        />
-        <p>Selecione uma venda na lista de comandas</p>
+      <div
+        style={{
+          height: "100%",
+          minHeight: 300,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#9ca3af",
+          padding: 40,
+          textAlign: "center",
+        }}
+      >
+        <div
+          style={{
+            width: 64,
+            height: 64,
+            borderRadius: "50%",
+            background: "#f3f4f6",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: 16,
+          }}
+        >
+          <FontAwesomeIcon
+            icon={faShoppingCart}
+            style={{
+              fontSize: 26,
+              color: "#9ca3af",
+            }}
+          />
+        </div>
+
+        <p
+          style={{
+            margin: 0,
+            fontSize: 14,
+            fontWeight: 500,
+            color: "#6b7280",
+          }}
+        >
+          Selecione uma venda
+        </p>
+
+        <p
+          style={{
+            margin: "6px 0 0",
+            fontSize: 12,
+            color: "#9ca3af",
+          }}
+        >
+          Escolha uma comanda na lista para visualizar os detalhes.
+        </p>
       </div>
     );
   }
 
   const statusInfo = getStatusText(venda.status);
   const totalVenda = calcularTotal(venda.items);
+  const itensAgrupados = agruparItens(venda.items);
   const temItens = venda.items && venda.items.length > 0;
 
-  // 🔥 NOVA REGRA: Comanda pendente pode ser finalizada
   const podeFinalizar =
     (venda.status === "aberto" || venda.status === "pendente") && temItens;
+
   const podeCancelar = venda.status === "aberto" || venda.status === "pendente";
+
   const podeMarcarNaoPaga = venda.status === "fechado";
+
+  /*
+   * ============================================================
+   * TOAST
+   * ============================================================
+   */
 
   const ToastComponent = () => {
     if (!toast.show) return null;
+
     return (
       <div
         style={{
@@ -196,46 +327,390 @@ export const DetalhesVenda: React.FC<DetalhesVendaProps> = ({
           top: 20,
           right: 20,
           zIndex: 10000,
-          animation: "slideIn 0.3s ease-out",
+          animation: "slideIn 0.25s ease-out",
         }}
       >
         <div
           style={{
-            background: toast.type === "success" ? "#10b981" : "#ef4444",
-            color: "#fff",
-            padding: "12px 20px",
-            borderRadius: 8,
+            background: "#fff",
+            color: "#374151",
+            padding: "12px 16px",
+            borderRadius: 10,
             display: "flex",
             alignItems: "center",
             gap: 10,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-            fontSize: 14,
+            boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
+            border: "1px solid #e5e7eb",
+            fontSize: 13,
             fontWeight: 500,
           }}
         >
-          {toast.type === "success" ? (
-            <FontAwesomeIcon icon={faCheck} style={{ fontSize: 16 }} />
-          ) : (
-            <FontAwesomeIcon icon={faBan} style={{ fontSize: 16 }} />
-          )}
+          <div
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: "50%",
+              background: toast.type === "success" ? "#ecfdf5" : "#fef2f2",
+              color: toast.type === "success" ? "#059669" : "#dc2626",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <FontAwesomeIcon
+              icon={toast.type === "success" ? faCheck : faBan}
+              style={{ fontSize: 13 }}
+            />
+          </div>
+
           {toast.message}
         </div>
       </div>
     );
   };
 
-  // Versão Desktop
+  /*
+   * ============================================================
+   * MODAL CANCELAR
+   * ============================================================
+   */
+
+  const CancelModal = () => {
+    if (!showCancelModal) return null;
+
+    return (
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(15, 23, 42, 0.55)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 2000,
+          padding: 20,
+        }}
+        onClick={() => {
+          setShowCancelModal(false);
+          setConfirmText("");
+        }}
+      >
+        <div
+          style={{
+            background: "#fff",
+            borderRadius: 14,
+            width: "100%",
+            maxWidth: 420,
+            overflow: "hidden",
+            boxShadow: "0 20px 50px rgba(0,0,0,0.18)",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div
+            style={{
+              padding: "22px 24px",
+              borderBottom: "1px solid #f1f5f9",
+            }}
+          >
+            <div
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 10,
+                background: "#fef2f2",
+                color: "#dc2626",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 14,
+              }}
+            >
+              <FontAwesomeIcon icon={faBan} style={{ fontSize: 18 }} />
+            </div>
+
+            <h3
+              style={{
+                margin: 0,
+                fontSize: 18,
+                fontWeight: 600,
+                color: "#111827",
+              }}
+            >
+              Cancelar venda
+            </h3>
+
+            <p
+              style={{
+                margin: "6px 0 0",
+                fontSize: 13,
+                color: "#6b7280",
+                lineHeight: 1.5,
+              }}
+            >
+              Você está prestes a cancelar a venda{" "}
+              <strong style={{ color: "#374151" }}>
+                #{venda.order_number || venda.id}
+              </strong>
+              .
+            </p>
+          </div>
+
+          <div style={{ padding: "20px 24px" }}>
+            <div
+              style={{
+                padding: 12,
+                borderRadius: 8,
+                background: "#fef2f2",
+                color: "#b91c1c",
+                fontSize: 12,
+                lineHeight: 1.5,
+                marginBottom: 18,
+              }}
+            >
+              Esta ação não poderá ser desfeita.
+            </div>
+
+            <label
+              style={{
+                display: "block",
+                marginBottom: 7,
+                fontSize: 12,
+                fontWeight: 500,
+                color: "#374151",
+              }}
+            >
+              Digite <strong style={{ color: "#dc2626" }}>CANCELAR</strong> para
+              confirmar
+            </label>
+
+            <input
+              type="text"
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value.toUpperCase())}
+              placeholder="CANCELAR"
+              autoFocus
+              style={{
+                width: "100%",
+                boxSizing: "border-box",
+                padding: "11px 12px",
+                borderRadius: 8,
+                border: "1px solid #d1d5db",
+                fontSize: 13,
+                outline: "none",
+                color: "#111827",
+                background: "#fff",
+              }}
+            />
+          </div>
+
+          <div
+            style={{
+              padding: "14px 24px",
+              borderTop: "1px solid #f1f5f9",
+              display: "flex",
+              gap: 10,
+              justifyContent: "flex-end",
+            }}
+          >
+            <button
+              onClick={() => {
+                setShowCancelModal(false);
+                setConfirmText("");
+              }}
+              style={{
+                padding: "10px 16px",
+                borderRadius: 8,
+                border: "1px solid #e5e7eb",
+                background: "#fff",
+                color: "#374151",
+                cursor: "pointer",
+                fontSize: 13,
+                fontWeight: 500,
+              }}
+            >
+              Voltar
+            </button>
+
+            <button
+              onClick={handleCancelarVenda}
+              disabled={confirmText !== "CANCELAR" || loading}
+              style={{
+                padding: "10px 16px",
+                borderRadius: 8,
+                border: "none",
+                background: confirmText === "CANCELAR" ? "#dc2626" : "#e5e7eb",
+                color: confirmText === "CANCELAR" ? "#fff" : "#9ca3af",
+                cursor: confirmText === "CANCELAR" ? "pointer" : "not-allowed",
+                fontSize: 13,
+                fontWeight: 500,
+              }}
+            >
+              {loading ? "Cancelando..." : "Confirmar"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  /*
+   * ============================================================
+   * AÇÕES
+   * ============================================================
+   */
+
+  const AcoesVenda = ({ mobile = false }: { mobile?: boolean }) => {
+    return (
+      <div
+        style={{
+          marginTop: mobile ? 14 : 20,
+          paddingTop: mobile ? 12 : 14,
+          borderTop: "1px solid #f1f5f9",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: mobile ? "stretch" : "flex-end",
+          gap: 8,
+          flexWrap: "wrap",
+        }}
+      >
+        {podeCancelar && (
+          <button
+            onClick={() => setShowCancelModal(true)}
+            disabled={loading}
+            title="Cancelar venda"
+            style={{
+              padding: mobile ? "9px 11px" : "9px 12px",
+              background: "#fff",
+              color: "#6b7280",
+              border: "1px solid #e5e7eb",
+              borderRadius: 7,
+              cursor: loading ? "not-allowed" : "pointer",
+              fontSize: 11,
+              fontWeight: 500,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              transition: "all 0.15s",
+              flex: mobile ? 1 : "initial",
+            }}
+            onMouseEnter={(e) => {
+              if (!loading) {
+                e.currentTarget.style.background = "#f9fafb";
+                e.currentTarget.style.borderColor = "#d1d5db";
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "#fff";
+              e.currentTarget.style.borderColor = "#e5e7eb";
+            }}
+          >
+            <FontAwesomeIcon icon={faBan} style={{ fontSize: 10 }} />
+            Cancelar
+          </button>
+        )}
+
+        {podeMarcarNaoPaga && (
+          <button
+            onClick={handleMarcarNaoPaga}
+            disabled={loading}
+            title="Marcar como não paga"
+            style={{
+              padding: mobile ? "9px 11px" : "9px 12px",
+              background: "#fff",
+              color: "#b45309",
+              border: "1px solid #fde68a",
+              borderRadius: 7,
+              cursor: loading ? "not-allowed" : "pointer",
+              fontSize: 11,
+              fontWeight: 500,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              transition: "all 0.15s",
+              flex: mobile ? 1 : "initial",
+            }}
+            onMouseEnter={(e) => {
+              if (!loading) {
+                e.currentTarget.style.background = "#fffbeb";
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "#fff";
+            }}
+          >
+            <FontAwesomeIcon icon={faClock} style={{ fontSize: 10 }} />
+            Não paga
+          </button>
+        )}
+
+        {podeFinalizar && (
+          <button
+            onClick={handleFinalizarVenda}
+            disabled={loading}
+            style={{
+              padding: mobile ? "9px 14px" : "9px 16px",
+              background: "#059669",
+              color: "#fff",
+              border: "none",
+              borderRadius: 7,
+              cursor: loading ? "not-allowed" : "pointer",
+              fontSize: 11,
+              fontWeight: 600,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              transition: "background 0.15s",
+              flex: mobile ? 1.3 : "initial",
+            }}
+            onMouseEnter={(e) => {
+              if (!loading) {
+                e.currentTarget.style.background = "#047857";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!loading) {
+                e.currentTarget.style.background = "#059669";
+              }
+            }}
+          >
+            <FontAwesomeIcon icon={faCheck} style={{ fontSize: 10 }} />
+
+            {mobile
+              ? venda.status === "pendente"
+                ? "Finalizar e receber"
+                : "Finalizar venda"
+              : venda.status === "pendente"
+                ? "Finalizar e receber"
+                : "Finalizar venda"}
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  /*
+   * ============================================================
+   * DESKTOP
+   * ============================================================
+   */
+
   if (!isMobile) {
     return (
       <>
         <ToastComponent />
+        <CancelModal />
+
         <style>
           {`
             @keyframes slideIn {
               from {
-                transform: translateX(100%);
+                transform: translateX(20px);
                 opacity: 0;
               }
+
               to {
                 transform: translateX(0);
                 opacity: 1;
@@ -243,509 +718,369 @@ export const DetalhesVenda: React.FC<DetalhesVendaProps> = ({
             }
           `}
         </style>
+
         <div
           style={{
+            height: "100vh",
             background: "#fff",
             display: "flex",
             flexDirection: "column",
-            height: "100vh",
+            color: "#111827",
           }}
         >
-          <div style={{ padding: "20px", borderBottom: "1px solid #e5e7eb" }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 8,
-              }}
-            >
-              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>
-                Venda #{venda.order_number || venda.id}
-              </h2>
-              <span
-                style={{
-                  padding: "4px 12px",
-                  borderRadius: 20,
-                  fontSize: 12,
-                  fontWeight: 500,
-                  background: statusInfo.bg,
-                  color: statusInfo.color,
-                }}
-              >
-                {statusInfo.text}
-              </span>
-            </div>
-            <p style={{ margin: "4px 0 0", fontSize: 13, color: "#6b7280" }}>
-              Cliente: {venda.customer_name}
-            </p>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginTop: 4,
-              }}
-            >
-              <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>
-                Ponto: {getNomePontoVenda(venda.table_id)}
-              </p>
-              <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>
-                <FontAwesomeIcon icon={faCalendar} style={{ marginRight: 4 }} />
-                Data: {formatDate(venda.order_date)}
-              </p>
-            </div>
-          </div>
-
-          <div style={{ flex: 1, overflowY: "auto", padding: "20px" }}>
-            {!temItens ? (
-              <div
-                style={{
-                  textAlign: "center",
-                  color: "#9ca3af",
-                  padding: "40px",
-                }}
-              >
-                <FontAwesomeIcon
-                  icon={faShoppingCart}
-                  style={{ fontSize: 48, marginBottom: 12 }}
-                />
-                <p>Nenhum item adicionado</p>
-                <p style={{ fontSize: 12 }}>
-                  Clique nos produtos ao lado para adicionar
-                </p>
-              </div>
-            ) : (
-              <div style={{ overflowX: "auto" }}>
-                <table
-                  style={{
-                    width: "100%",
-                    borderCollapse: "collapse",
-                    fontSize: 13,
-                  }}
-                >
-                  <thead
-                    style={{
-                      position: "sticky",
-                      top: 0,
-                      backgroundColor: "#f9fafb",
-                      borderBottom: "1px solid #e5e7eb",
-                    }}
-                  >
-                    <tr>
-                      <th
-                        style={{
-                          padding: "10px 8px",
-                          textAlign: "left",
-                          fontWeight: 600,
-                        }}
-                      >
-                        Produto
-                      </th>
-                      <th
-                        style={{
-                          padding: "10px 8px",
-                          textAlign: "center",
-                          fontWeight: 600,
-                        }}
-                      >
-                        Qtd
-                      </th>
-                      <th
-                        style={{
-                          padding: "10px 8px",
-                          textAlign: "right",
-                          fontWeight: 600,
-                        }}
-                      >
-                        Preço Unit.
-                      </th>
-                      <th
-                        style={{
-                          padding: "10px 8px",
-                          textAlign: "right",
-                          fontWeight: 600,
-                        }}
-                      >
-                        Subtotal
-                      </th>
-                      <th
-                        style={{
-                          padding: "10px 8px",
-                          textAlign: "center",
-                          fontWeight: 600,
-                        }}
-                      >
-                        Ações
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {venda.items!.map((item, index) => (
-                      <tr
-                        key={item.id}
-                        style={{
-                          borderBottom:
-                            index < venda.items!.length - 1
-                              ? "1px solid #e5e7eb"
-                              : "none",
-                          backgroundColor: index % 2 === 0 ? "#fff" : "#fafafa",
-                        }}
-                      >
-                        <td style={{ padding: "10px 8px" }}>
-                          <div style={{ fontWeight: 500 }}>
-                            {item.product?.name || `Produto ${item.product_id}`}
-                          </div>
-                          {item.product?.product_code && (
-                            <div
-                              style={{
-                                fontSize: 10,
-                                color: "#9ca3af",
-                                marginTop: 2,
-                              }}
-                            >
-                              Cód: {item.product.product_code}
-                            </div>
-                          )}
-                        </td>
-                        <td
-                          style={{
-                            padding: "10px 8px",
-                            textAlign: "center",
-                            fontWeight: 500,
-                          }}
-                        >
-                          {item.quantity}
-                        </td>
-                        <td
-                          style={{
-                            padding: "10px 8px",
-                            textAlign: "right",
-                            color: "#6b7280",
-                          }}
-                        >
-                          {formatCurrency(item.price)}
-                        </td>
-                        <td
-                          style={{
-                            padding: "10px 8px",
-                            textAlign: "right",
-                            fontWeight: 600,
-                            color: "#059669",
-                          }}
-                        >
-                          {formatCurrency(item.price * item.quantity)}
-                        </td>
-                        <td
-                          style={{ padding: "10px 8px", textAlign: "center" }}
-                        >
-                          {(venda.status === "aberto" ||
-                            venda.status === "pendente") && (
-                            <button
-                              onClick={() => onRemoverItem(venda.id, item.id)}
-                              style={{
-                                background: "none",
-                                border: "none",
-                                cursor: "pointer",
-                                color: "#dc2626",
-                                fontSize: 14,
-                              }}
-                              title="Remover item"
-                            >
-                              <FontAwesomeIcon icon={faTrash} />
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr
-                      style={{
-                        borderTop: "2px solid #e5e7eb",
-                        background: "#f9fafb",
-                      }}
-                    >
-                      <td
-                        colSpan={3}
-                        style={{
-                          padding: "12px 8px",
-                          textAlign: "right",
-                          fontWeight: 600,
-                        }}
-                      >
-                        Total:
-                      </td>
-                      <td
-                        style={{
-                          padding: "12px 8px",
-                          textAlign: "right",
-                          fontWeight: "bold",
-                          fontSize: 16,
-                          color: "#059669",
-                        }}
-                      >
-                        {formatCurrency(totalVenda)}
-                      </td>
-                      <td style={{ padding: "12px 8px" }} />
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            )}
-
-            <div
-              style={{
-                marginTop: 20,
-                display: "flex",
-                gap: 12,
-                flexDirection: "column",
-              }}
-            >
-              {/* 🔥 Botão Finalizar Venda - Agora aparece para comandas pendentes também */}
-              {podeFinalizar && (
-                <button
-                  onClick={handleFinalizarVenda}
-                  disabled={loading}
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    background: "#10b981",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: 8,
-                    fontWeight: 600,
-                    cursor: loading ? "not-allowed" : "pointer",
-                    fontSize: 14,
-                  }}
-                >
-                  <FontAwesomeIcon icon={faCheck} style={{ marginRight: 8 }} />
-                  {venda.status === "pendente"
-                    ? "Finalizar Venda (Pagar Agora)"
-                    : "Finalizar Venda"}
-                </button>
-              )}
-
-              {podeMarcarNaoPaga && (
-                <button
-                  onClick={handleMarcarNaoPaga}
-                  disabled={loading}
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    background: "#dc2626",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: 8,
-                    fontWeight: 600,
-                    cursor: loading ? "not-allowed" : "pointer",
-                    fontSize: 14,
-                  }}
-                >
-                  <FontAwesomeIcon icon={faClock} style={{ marginRight: 8 }} />
-                  Marcar como Não Paga
-                </button>
-              )}
-
-              {podeCancelar && (
-                <button
-                  onClick={() => setShowCancelModal(true)}
-                  disabled={loading}
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    background: "#6b7280",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: 8,
-                    fontWeight: 600,
-                    cursor: loading ? "not-allowed" : "pointer",
-                    fontSize: 14,
-                  }}
-                >
-                  <FontAwesomeIcon icon={faBan} style={{ marginRight: 8 }} />
-                  Cancelar Venda
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Modal de Confirmação de Cancelamento */}
-        {showCancelModal && (
+          {/* HEADER */}
           <div
             style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: "rgba(0,0,0,0.7)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 2000,
-            }}
-            onClick={() => {
-              setShowCancelModal(false);
-              setConfirmText("");
+              padding: "22px 24px",
+              borderBottom: "1px solid #f1f5f9",
             }}
           >
             <div
               style={{
-                background: "#fff",
-                borderRadius: 12,
-                width: "90%",
-                maxWidth: 450,
-                overflow: "hidden",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                gap: 20,
               }}
-              onClick={(e) => e.stopPropagation()}
             >
-              <div
-                style={{
-                  padding: "20px",
-                  background: "#dc2626",
-                  color: "#fff",
-                  textAlign: "center",
-                }}
-              >
-                <FontAwesomeIcon
-                  icon={faBan}
-                  style={{ fontSize: 32, marginBottom: 12 }}
-                />
-                <h3 style={{ margin: 0, fontSize: 20 }}>Cancelar Venda</h3>
-              </div>
-
-              <div style={{ padding: "24px" }}>
-                <p
+              <div>
+                <div
                   style={{
-                    margin: "0 0 8px 0",
-                    fontSize: 14,
-                    color: "#374151",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
                   }}
                 >
-                  Tem certeza que deseja cancelar a venda{" "}
-                  <strong>#{venda.order_number || venda.id}</strong>?
-                </p>
+                  <h2
+                    style={{
+                      margin: 0,
+                      fontSize: 20,
+                      fontWeight: 600,
+                      letterSpacing: "-0.3px",
+                    }}
+                  >
+                    Ordem nº : {venda.order_number || venda.id}
+                  </h2>
+
+                  <span
+                    style={{
+                      padding: "4px 9px",
+                      borderRadius: 20,
+                      fontSize: 14,
+                      fontWeight: 600,
+                      background: statusInfo.bg,
+                      color: statusInfo.color,
+                    }}
+                  >
+                    {statusInfo.text}
+                  </span>
+                </div>
+
                 <p
                   style={{
-                    margin: "0 0 16px 0",
-                    fontSize: 12,
+                    margin: "7px 0 0",
+                    fontSize: 14,
                     color: "#6b7280",
                   }}
                 >
-                  Cliente: {venda.customer_name}
+                  {venda.customer_name}
                 </p>
-                <p
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 22,
+                marginTop: 18,
+                paddingTop: 14,
+                borderTop: "1px solid #f8fafc",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 12,
+                  color: "#6b7280",
+                }}
+              >
+                Ponto da venda :{" "}
+                <strong
                   style={{
-                    margin: "0 0 16px 0",
-                    fontSize: 12,
-                    color: "#dc2626",
-                    background: "#fee2e2",
-                    padding: "8px",
-                    borderRadius: 6,
+                    color: "#374151",
+                    fontWeight: 500,
                   }}
                 >
-                  ⚠️ Esta ação não poderá ser desfeita!
-                </p>
+                  {getNomePontoVenda(venda.table_id)}
+                </strong>
+              </span>
 
-                <div style={{ marginBottom: 16 }}>
-                  <label
+              <span
+                style={{
+                  fontSize: 12,
+                  color: "#6b7280",
+                }}
+              >
+                Data:{" "}
+                <strong
+                  style={{
+                    color: "#374151",
+                    fontWeight: 500,
+                  }}
+                >
+                  {formatDate(venda.order_date)}
+                </strong>
+              </span>
+            </div>
+          </div>
+
+          {/* CONTEÚDO */}
+          <div
+            style={{
+              flex: 1,
+              overflowY: "auto",
+              padding: "22px 24px",
+            }}
+          >
+            {!temItens ? (
+              <div
+                style={{
+                  minHeight: 260,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#9ca3af",
+                  textAlign: "center",
+                }}
+              >
+                <div
+                  style={{
+                    width: 58,
+                    height: 58,
+                    borderRadius: "50%",
+                    background: "#f8fafc",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: 12,
+                  }}
+                >
+                  <FontAwesomeIcon
+                    icon={faShoppingCart}
                     style={{
-                      display: "block",
-                      marginBottom: 8,
-                      fontSize: 13,
-                      fontWeight: 500,
-                      color: "#374151",
-                    }}
-                  >
-                    Digite{" "}
-                    <strong style={{ color: "#dc2626" }}>CANCELAR</strong> para
-                    confirmar:
-                  </label>
-                  <input
-                    type="text"
-                    value={confirmText}
-                    onChange={(e) =>
-                      setConfirmText(e.target.value.toUpperCase())
-                    }
-                    placeholder="Digite CANCELAR aqui"
-                    autoFocus
-                    style={{
-                      width: "100%",
-                      padding: "10px",
-                      borderRadius: 8,
-                      border: "1px solid #e5e7eb",
-                      fontSize: 14,
-                      outline: "none",
-                      textTransform: "uppercase",
+                      fontSize: 22,
                     }}
                   />
                 </div>
-              </div>
 
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 13,
+                    fontWeight: 500,
+                    color: "#6b7280",
+                  }}
+                >
+                  Nenhum item adicionado
+                </p>
+
+                <p
+                  style={{
+                    margin: "5px 0 0",
+                    fontSize: 11,
+                  }}
+                >
+                  Clique nos produtos ao lado para adicionar.
+                </p>
+              </div>
+            ) : (
               <div
                 style={{
-                  padding: "16px 24px",
-                  borderTop: "1px solid #e5e7eb",
-                  display: "flex",
-                  gap: 12,
-                  justifyContent: "flex-end",
+                  border: "1px solid #eef2f7",
+                  borderRadius: 10,
+                  overflow: "hidden",
                 }}
               >
-                <button
-                  onClick={() => {
-                    setShowCancelModal(false);
-                    setConfirmText("");
-                  }}
+                {/* CABEÇALHO DA TABELA */}
+                <div
                   style={{
-                    padding: "10px 20px",
-                    borderRadius: 8,
-                    border: "1px solid #e5e7eb",
-                    background: "#fff",
-                    color: "#374151",
-                    cursor: "pointer",
-                    fontSize: 13,
+                    display: "grid",
+                    gridTemplateColumns:
+                      "minmax(180px, 1fr) 70px 110px 120px 50px",
+                    padding: "10px 14px",
+                    background: "#f8fafc",
+                    borderBottom: "1px solid #eef2f7",
+                    fontSize: 10,
+                    fontWeight: 600,
+                    color: "#6b7280",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.3px",
                   }}
                 >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleCancelarVenda}
-                  disabled={confirmText !== "CANCELAR" || loading}
+                  <div>Produto</div>
+                  <div style={{ textAlign: "center" }}>Qtd</div>
+                  <div style={{ textAlign: "right" }}>Unitário</div>
+                  <div style={{ textAlign: "right" }}>Subtotal</div>
+                  <div />
+                </div>
+
+                {itensAgrupados.map((item) => (
+                  <div
+                    key={item.id}
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "minmax(180px, 1fr) 70px 110px 120px 50px",
+                      alignItems: "center",
+                      padding: "13px 14px",
+                      borderBottom: "1px solid #f1f5f9",
+                      fontSize: 12,
+                    }}
+                  >
+                    <div>
+                      <div
+                        style={{
+                          fontWeight: 500,
+                          color: "#1f2937",
+                        }}
+                      >
+                        {item.product?.name || `Produto ${item.product_id}`}
+                      </div>
+
+                      {item.product?.product_code && (
+                        <div
+                          style={{
+                            marginTop: 3,
+                            fontSize: 10,
+                            color: "#9ca3af",
+                          }}
+                        >
+                          Cód. {item.product.product_code}
+                        </div>
+                      )}
+                    </div>
+
+                    <div
+                      style={{
+                        textAlign: "center",
+                        color: "#374151",
+                        fontWeight: 500,
+                      }}
+                    >
+                      {item.quantity}
+                    </div>
+
+                    <div
+                      style={{
+                        textAlign: "right",
+                        color: "#6b7280",
+                      }}
+                    >
+                      {formatCurrency(item.price)}
+                    </div>
+
+                    <div
+                      style={{
+                        textAlign: "right",
+                        fontWeight: 600,
+                        color: "#059669",
+                      }}
+                    >
+                      {formatCurrency(item.price * item.quantity)}
+                    </div>
+
+                    <div
+                      style={{
+                        textAlign: "center",
+                      }}
+                    >
+                      {(venda.status === "aberto" ||
+                        venda.status === "pendente") && (
+                        <button
+                          onClick={() => onRemoverItem(venda.id, item.id)}
+                          title="Remover item"
+                          style={{
+                            width: 30,
+                            height: 30,
+                            borderRadius: 7,
+                            border: "none",
+                            background: "#fef2f2",
+                            color: "#dc2626",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <FontAwesomeIcon
+                            icon={faTrash}
+                            style={{ fontSize: 12 }}
+                          />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {/* TOTAL */}
+                <div
                   style={{
-                    padding: "10px 20px",
-                    borderRadius: 8,
-                    border: "none",
-                    background:
-                      confirmText === "CANCELAR" ? "#dc2626" : "#9ca3af",
-                    color: "#fff",
-                    cursor:
-                      confirmText === "CANCELAR" ? "pointer" : "not-allowed",
-                    fontSize: 13,
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    alignItems: "center",
+                    gap: 20,
+                    padding: "16px 14px",
+                    background: "#fafafa",
                   }}
                 >
-                  {loading ? "Cancelando..." : "Confirmar Cancelamento"}
-                </button>
+                  <span
+                    style={{
+                      fontSize: 12,
+                      color: "#6b7280",
+                      fontWeight: 500,
+                    }}
+                  >
+                    Total da venda
+                  </span>
+
+                  <strong
+                    style={{
+                      fontSize: 20,
+                      color: "#059669",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {formatCurrency(totalVenda)}
+                  </strong>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* AÇÕES DESKTOP */}
+            <AcoesVenda />
           </div>
-        )}
+        </div>
       </>
     );
   }
 
-  // Versão Mobile
+  /*
+   * ============================================================
+   * MOBILE
+   * ============================================================
+   */
+
   return (
     <>
       <ToastComponent />
+      <CancelModal />
+
       <style>
         {`
           @keyframes slideIn {
             from {
-              transform: translateX(100%);
+              transform: translateX(20px);
               opacity: 0;
             }
+
             to {
               transform: translateX(0);
               opacity: 1;
@@ -753,20 +1088,21 @@ export const DetalhesVenda: React.FC<DetalhesVendaProps> = ({
           }
         `}
       </style>
+
       <div
         style={{
           background: "#fff",
           borderRadius: 12,
-          marginTop: 16,
-          border: "1px solid #e5e7eb",
+          marginTop: 14,
+          border: "1px solid #eef2f7",
           overflow: "hidden",
         }}
       >
+        {/* HEADER MOBILE */}
         <div
           style={{
-            padding: "12px",
-            borderBottom: "1px solid #e5e7eb",
-            background: "#f9fafb",
+            padding: "16px",
+            borderBottom: "1px solid #f1f5f9",
           }}
         >
           <div
@@ -774,17 +1110,26 @@ export const DetalhesVenda: React.FC<DetalhesVendaProps> = ({
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
+              gap: 10,
             }}
           >
-            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>
+            <h3
+              style={{
+                margin: 0,
+                fontSize: 15,
+                fontWeight: 600,
+                color: "#111827",
+              }}
+            >
               Venda #{venda.order_number || venda.id}
             </h3>
+
             <span
               style={{
-                padding: "2px 8px",
-                borderRadius: 16,
-                fontSize: 10,
-                fontWeight: 500,
+                padding: "4px 8px",
+                borderRadius: 20,
+                fontSize: 9,
+                fontWeight: 600,
                 background: statusInfo.bg,
                 color: statusInfo.color,
               }}
@@ -792,358 +1137,215 @@ export const DetalhesVenda: React.FC<DetalhesVendaProps> = ({
               {statusInfo.text}
             </span>
           </div>
-          <p style={{ margin: "2px 0 0", fontSize: 11, color: "#6b7280" }}>
+
+          <p
+            style={{
+              margin: "6px 0 0",
+              fontSize: 12,
+              color: "#6b7280",
+            }}
+          >
             {venda.customer_name}
           </p>
+
           <div
             style={{
               display: "flex",
-              justifyContent: "space-between",
-              marginTop: 2,
-            }}
-          >
-            <p style={{ margin: 0, fontSize: 10, color: "#9ca3af" }}>
-              Ponto: {getNomePontoVenda(venda.table_id)}
-            </p>
-            <p style={{ margin: 0, fontSize: 10, color: "#9ca3af" }}>
-              <FontAwesomeIcon icon={faCalendar} style={{ marginRight: 4 }} />
-              {formatDate(venda.order_date)}
-            </p>
-          </div>
-        </div>
-
-        <div style={{ padding: "12px" }}>
-          {!temItens ? (
-            <div
-              style={{ textAlign: "center", color: "#9ca3af", padding: "20px" }}
-            >
-              <FontAwesomeIcon
-                icon={faShoppingCart}
-                style={{ fontSize: 32, marginBottom: 8 }}
-              />
-              <p style={{ fontSize: 12 }}>Nenhum item</p>
-            </div>
-          ) : (
-            <>
-              <div style={{ overflowX: "auto" }}>
-                <table
-                  style={{
-                    width: "100%",
-                    borderCollapse: "collapse",
-                    fontSize: 12,
-                  }}
-                >
-                  <thead>
-                    <tr style={{ borderBottom: "1px solid #e5e7eb" }}>
-                      <th style={{ padding: "8px 6px", textAlign: "left" }}>
-                        Produto
-                      </th>
-                      <th style={{ padding: "8px 6px", textAlign: "center" }}>
-                        Qtd
-                      </th>
-                      <th style={{ padding: "8px 6px", textAlign: "right" }}>
-                        Subtotal
-                      </th>
-                      <th style={{ padding: "8px 6px", textAlign: "center" }}>
-                        Ação
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {venda.items!.map((item) => (
-                      <tr
-                        key={item.id}
-                        style={{ borderBottom: "1px solid #e5e7eb" }}
-                      >
-                        <td style={{ padding: "8px 6px" }}>
-                          <div style={{ fontWeight: 500 }}>
-                            {item.product?.name || `Produto ${item.product_id}`}
-                          </div>
-                          <div style={{ fontSize: 9, color: "#9ca3af" }}>
-                            {formatCurrency(item.price)}
-                          </div>
-                        </td>
-                        <td style={{ padding: "8px 6px", textAlign: "center" }}>
-                          {item.quantity}
-                        </td>
-                        <td
-                          style={{
-                            padding: "8px 6px",
-                            textAlign: "right",
-                            fontWeight: 600,
-                            color: "#059669",
-                          }}
-                        >
-                          {formatCurrency(item.price * item.quantity)}
-                        </td>
-                        <td style={{ padding: "8px 6px", textAlign: "center" }}>
-                          {(venda.status === "aberto" ||
-                            venda.status === "pendente") && (
-                            <button
-                              onClick={() => onRemoverItem(venda.id, item.id)}
-                              style={{
-                                background: "none",
-                                border: "none",
-                                cursor: "pointer",
-                                color: "#dc2626",
-                                fontSize: 12,
-                              }}
-                            >
-                              <FontAwesomeIcon icon={faTrash} />
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr
-                      style={{
-                        borderTop: "2px solid #e5e7eb",
-                        background: "#f9fafb",
-                      }}
-                    >
-                      <td
-                        colSpan={2}
-                        style={{
-                          padding: "8px 6px",
-                          textAlign: "right",
-                          fontWeight: 600,
-                        }}
-                      >
-                        Total:
-                      </td>
-                      <td
-                        style={{
-                          padding: "8px 6px",
-                          textAlign: "right",
-                          fontWeight: "bold",
-                          color: "#059669",
-                        }}
-                      >
-                        {formatCurrency(totalVenda)}
-                      </td>
-                      <td style={{ padding: "8px 6px" }} />
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            </>
-          )}
-
-          <div
-            style={{
+              gap: 18,
               marginTop: 12,
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
             }}
           >
-            {podeFinalizar && (
-              <button
-                onClick={handleFinalizarVenda}
-                disabled={loading}
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  background: "#10b981",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 8,
-                  cursor: loading ? "not-allowed" : "pointer",
-                  fontSize: 12,
-                }}
-              >
-                <FontAwesomeIcon icon={faCheck} style={{ marginRight: 6 }} />
-                {venda.status === "pendente"
-                  ? "Finalizar Venda (Pagar Agora)"
-                  : "Finalizar Venda"}
-              </button>
-            )}
-
-            {podeMarcarNaoPaga && (
-              <button
-                onClick={handleMarcarNaoPaga}
-                disabled={loading}
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  background: "#dc2626",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 8,
-                  cursor: loading ? "not-allowed" : "pointer",
-                  fontSize: 12,
-                }}
-              >
-                <FontAwesomeIcon icon={faClock} style={{ marginRight: 6 }} />
-                Marcar como Não Paga
-              </button>
-            )}
-
-            {podeCancelar && (
-              <button
-                onClick={() => setShowCancelModal(true)}
-                disabled={loading}
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  background: "#6b7280",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 8,
-                  cursor: loading ? "not-allowed" : "pointer",
-                  fontSize: 12,
-                }}
-              >
-                <FontAwesomeIcon icon={faBan} style={{ marginRight: 6 }} />
-                Cancelar Venda
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Modal de Confirmação de Cancelamento - Mobile */}
-      {showCancelModal && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0,0,0,0.7)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 2000,
-          }}
-          onClick={() => {
-            setShowCancelModal(false);
-            setConfirmText("");
-          }}
-        >
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: 12,
-              width: "90%",
-              maxWidth: 400,
-              overflow: "hidden",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div
+            <span
               style={{
-                padding: "16px",
-                background: "#dc2626",
-                color: "#fff",
-                textAlign: "center",
+                fontSize: 10,
+                color: "#9ca3af",
               }}
             >
-              <FontAwesomeIcon
-                icon={faBan}
-                style={{ fontSize: 24, marginBottom: 8 }}
-              />
-              <h3 style={{ margin: 0, fontSize: 18 }}>Cancelar Venda</h3>
-            </div>
-
-            <div style={{ padding: "16px" }}>
-              <p
-                style={{ margin: "0 0 8px 0", fontSize: 13, color: "#374151" }}
-              >
-                Cancelar venda{" "}
-                <strong>#{venda.order_number || venda.id}</strong>?
-              </p>
-              <p
-                style={{ margin: "0 0 12px 0", fontSize: 11, color: "#6b7280" }}
-              >
-                Cliente: {venda.customer_name}
-              </p>
-              <p
+              Ponto:{" "}
+              <strong
                 style={{
-                  margin: "0 0 12px 0",
-                  fontSize: 11,
-                  color: "#dc2626",
-                  background: "#fee2e2",
-                  padding: "8px",
-                  borderRadius: 6,
+                  color: "#6b7280",
+                  fontWeight: 500,
                 }}
               >
-                ⚠️ Ação irreversível!
-              </p>
+                {getNomePontoVenda(venda.table_id)}
+              </strong>
+            </span>
 
-              <div style={{ marginBottom: 12 }}>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: 6,
-                    fontSize: 12,
-                    fontWeight: 500,
-                  }}
-                >
-                  Digite <strong style={{ color: "#dc2626" }}>CANCELAR</strong>:
-                </label>
-                <input
-                  type="text"
-                  value={confirmText}
-                  onChange={(e) => setConfirmText(e.target.value.toUpperCase())}
-                  placeholder="CANCELAR"
-                  autoFocus
-                  style={{
-                    width: "100%",
-                    padding: "8px",
-                    borderRadius: 6,
-                    border: "1px solid #e5e7eb",
-                    fontSize: 13,
-                    textTransform: "uppercase",
-                  }}
+            <span
+              style={{
+                fontSize: 10,
+                color: "#9ca3af",
+              }}
+            >
+              <FontAwesomeIcon icon={faCalendar} style={{ marginRight: 4 }} />
+
+              {formatDate(venda.order_date)}
+            </span>
+          </div>
+        </div>
+
+        <div style={{ padding: 14 }}>
+          {!temItens ? (
+            <div
+              style={{
+                textAlign: "center",
+                color: "#9ca3af",
+                padding: "30px 10px",
+              }}
+            >
+              <div
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: "50%",
+                  background: "#f8fafc",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  margin: "0 auto 10px",
+                }}
+              >
+                <FontAwesomeIcon
+                  icon={faShoppingCart}
+                  style={{ fontSize: 18 }}
                 />
               </div>
 
-              <div style={{ display: "flex", gap: 8 }}>
-                <button
-                  onClick={() => {
-                    setShowCancelModal(false);
-                    setConfirmText("");
-                  }}
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 12,
+                  color: "#6b7280",
+                }}
+              >
+                Nenhum item adicionado
+              </p>
+            </div>
+          ) : (
+            <div
+              style={{
+                border: "1px solid #eef2f7",
+                borderRadius: 9,
+                overflow: "hidden",
+              }}
+            >
+              {itensAgrupados.map((item) => (
+                <div
+                  key={item.id}
                   style={{
-                    flex: 1,
-                    padding: "8px",
-                    borderRadius: 6,
-                    border: "1px solid #e5e7eb",
-                    background: "#fff",
-                    color: "#374151",
-                    cursor: "pointer",
-                    fontSize: 12,
+                    padding: "11px 10px",
+                    borderBottom: "1px solid #f1f5f9",
                   }}
                 >
-                  Voltar
-                </button>
-                <button
-                  onClick={handleCancelarVenda}
-                  disabled={confirmText !== "CANCELAR" || loading}
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      gap: 10,
+                    }}
+                  >
+                    <div style={{ flex: 1 }}>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 500,
+                          color: "#1f2937",
+                        }}
+                      >
+                        {item.product?.name || `Produto ${item.product_id}`}
+                      </div>
+
+                      <div
+                        style={{
+                          marginTop: 4,
+                          fontSize: 10,
+                          color: "#9ca3af",
+                        }}
+                      >
+                        {item.quantity} × {formatCurrency(item.price)}
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                      }}
+                    >
+                      <strong
+                        style={{
+                          fontSize: 12,
+                          color: "#059669",
+                        }}
+                      >
+                        {formatCurrency(item.price * item.quantity)}
+                      </strong>
+
+                      {(venda.status === "aberto" ||
+                        venda.status === "pendente") && (
+                        <button
+                          onClick={() => onRemoverItem(venda.id, item.id)}
+                          title="Remover item"
+                          style={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: 6,
+                            border: "none",
+                            background: "#fef2f2",
+                            color: "#dc2626",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <FontAwesomeIcon
+                            icon={faTrash}
+                            style={{ fontSize: 11 }}
+                          />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* TOTAL MOBILE */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "13px 10px",
+                  background: "#fafafa",
+                }}
+              >
+                <span
                   style={{
-                    flex: 1,
-                    padding: "8px",
-                    borderRadius: 6,
-                    border: "none",
-                    background:
-                      confirmText === "CANCELAR" ? "#dc2626" : "#9ca3af",
-                    color: "#fff",
-                    cursor:
-                      confirmText === "CANCELAR" ? "pointer" : "not-allowed",
-                    fontSize: 12,
+                    fontSize: 11,
+                    fontWeight: 500,
+                    color: "#6b7280",
                   }}
                 >
-                  {loading ? "..." : "Confirmar"}
-                </button>
+                  Total
+                </span>
+
+                <strong
+                  style={{
+                    fontSize: 17,
+                    color: "#059669",
+                  }}
+                >
+                  {formatCurrency(totalVenda)}
+                </strong>
               </div>
             </div>
-          </div>
+          )}
+
+          {/* AÇÕES MOBILE */}
+          <AcoesVenda mobile />
         </div>
-      )}
+      </div>
     </>
   );
 };

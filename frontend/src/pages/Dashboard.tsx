@@ -11,7 +11,6 @@ import {
   faSignOutAlt,
   faUserCircle,
   faShoppingCart,
-  faClipboardList,
 } from "@fortawesome/free-solid-svg-icons";
 
 interface CardProps {
@@ -40,7 +39,9 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
       setIsMobile(window.innerWidth < 768);
       setIsTablet(window.innerWidth >= 768 && window.innerWidth < 1024);
     };
+
     window.addEventListener("resize", handleResize);
+
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
@@ -51,7 +52,7 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
       descricao:
         "Controle de entradas, saídas, níveis de estoque e movimentações",
       icon: faBoxes,
-      cor: "#3b82f6",
+      cor: "#059669",
       tela: "produtos",
     },
     {
@@ -59,7 +60,7 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
       titulo: "Gestão de Vendas",
       descricao: "Realize vendas, gerencie pedidos e atendimentos",
       icon: faShoppingCart,
-      cor: "#eab308",
+      cor: "#059669",
       tela: "vendas",
     },
     {
@@ -68,7 +69,7 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
       descricao:
         "Controle financeiro, abertura/fechamento e movimentações diárias",
       icon: faCashRegister,
-      cor: "#ef4444",
+      cor: "#059669",
       tela: "caixa",
     },
     {
@@ -77,7 +78,7 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
       descricao:
         "Análises de vendas, produtos, performance e métricas do negócio",
       icon: faChartLine,
-      cor: "#f59e0b",
+      cor: "#059669",
       tela: "relatorio",
     },
     {
@@ -86,7 +87,7 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
       descricao:
         "Gerencie colaboradores, permissões e controle de acesso ao sistema",
       icon: faUsers,
-      cor: "#ec4899",
+      cor: "#059669",
       tela: "equipe",
     },
   ];
@@ -104,33 +105,42 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
   return (
     <div
       style={{
-        background: "#111827",
         minHeight: "100vh",
+        background: "#f8fafc",
         padding: isMobile ? "16px" : "24px",
+        fontFamily:
+          "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
       }}
     >
       {/* Cabeçalho com Usuário e Logout */}
       <div
         style={{
-          background: "#1f2937",
+          background: "#ffffff",
           borderRadius: "12px",
-          padding: "20px 24px",
+          padding: isMobile ? "18px" : "20px 24px",
           marginBottom: "24px",
-          border: "1px solid #374151",
+          border: "1px solid #e5e7eb",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           flexWrap: "wrap",
-          gap: "12px",
+          gap: "16px",
+          boxShadow: "0 2px 10px rgba(15, 23, 42, 0.03)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
           <div
             style={{
-              width: 48,
-              height: 48,
-              background: "#10b981",
-              borderRadius: 12,
+              width: 44,
+              height: 44,
+              background: "#ecfdf5",
+              borderRadius: 10,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -138,25 +148,31 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
           >
             <FontAwesomeIcon
               icon={faThLarge}
-              style={{ fontSize: 24, color: "#fff" }}
+              style={{
+                fontSize: 20,
+                color: "#059669",
+              }}
             />
           </div>
+
           <div>
             <h1
               style={{
                 margin: 0,
-                fontSize: isMobile ? "20px" : "24px",
+                fontSize: isMobile ? "20px" : "22px",
                 fontWeight: 600,
-                color: "#fff",
+                color: "#111827",
+                letterSpacing: "-0.3px",
               }}
             >
               Dashboard
             </h1>
+
             <p
               style={{
                 margin: "4px 0 0",
-                fontSize: "14px",
-                color: "#9ca3af",
+                fontSize: "13px",
+                color: "#6b7280",
               }}
             >
               Visão geral do sistema e acesso rápido aos módulos
@@ -176,40 +192,53 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
               display: "flex",
               alignItems: "center",
               gap: "8px",
-              color: "#d1d5db",
+              color: "#374151",
             }}
           >
             <FontAwesomeIcon
               icon={faUserCircle}
-              style={{ fontSize: 20, color: "#9ca3af" }}
+              style={{
+                fontSize: 20,
+                color: "#9ca3af",
+              }}
             />
-            <span style={{ fontSize: "14px", fontWeight: 500, color: "#fff" }}>
+
+            <span
+              style={{
+                fontSize: "14px",
+                fontWeight: 500,
+                color: "#374151",
+              }}
+            >
               {user?.login || "Usuário"}
             </span>
           </div>
+
           <button
             onClick={onLogout}
             style={{
               display: "flex",
               alignItems: "center",
               gap: "6px",
-              padding: "8px 16px",
-              borderRadius: "8px",
-              border: "1px solid #374151",
-              background: "transparent",
-              color: "#ef4444",
+              padding: "8px 14px",
+              borderRadius: "7px",
+              border: "1px solid #e5e7eb",
+              background: "#ffffff",
+              color: "#6b7280",
               cursor: "pointer",
               fontSize: "13px",
               fontWeight: 500,
               transition: "all 0.2s",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)";
-              e.currentTarget.style.borderColor = "#ef4444";
+              e.currentTarget.style.background = "#fef2f2";
+              e.currentTarget.style.borderColor = "#fecaca";
+              e.currentTarget.style.color = "#dc2626";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.borderColor = "#374151";
+              e.currentTarget.style.background = "#ffffff";
+              e.currentTarget.style.borderColor = "#e5e7eb";
+              e.currentTarget.style.color = "#6b7280";
             }}
           >
             <FontAwesomeIcon icon={faSignOutAlt} />
@@ -218,12 +247,40 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
         </div>
       </div>
 
+      {/* Título da seção */}
+      <div
+        style={{
+          marginBottom: "16px",
+        }}
+      >
+        <h2
+          style={{
+            margin: 0,
+            fontSize: "16px",
+            fontWeight: 600,
+            color: "#111827",
+          }}
+        >
+          Módulos do sistema
+        </h2>
+
+        <p
+          style={{
+            margin: "4px 0 0",
+            fontSize: "13px",
+            color: "#6b7280",
+          }}
+        >
+          Acesse rapidamente as principais funcionalidades.
+        </p>
+      </div>
+
       {/* Grid de Cards */}
       <div
         style={{
           display: "grid",
           gridTemplateColumns: getCardsPerRow(),
-          gap: "20px",
+          gap: "16px",
         }}
       >
         {cards.map((card) => (
@@ -231,60 +288,69 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
             key={card.id}
             onClick={() => handleCardClick(card.tela)}
             style={{
-              background: "#1f2937",
-              borderRadius: "12px",
-              padding: "24px",
+              background: "#ffffff",
+              borderRadius: "10px",
+              padding: "22px",
               cursor: "pointer",
               transition: "all 0.2s",
-              border: "1px solid #374151",
+              border: "1px solid #e5e7eb",
+              boxShadow: "0 2px 8px rgba(15, 23, 42, 0.025)",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = "translateY(-2px)";
-              e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.3)";
-              e.currentTarget.style.borderColor = card.cor;
+              e.currentTarget.style.boxShadow =
+                "0 6px 18px rgba(15, 23, 42, 0.07)";
+              e.currentTarget.style.borderColor = "#a7f3d0";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = "none";
-              e.currentTarget.style.borderColor = "#374151";
+              e.currentTarget.style.boxShadow =
+                "0 2px 8px rgba(15, 23, 42, 0.025)";
+              e.currentTarget.style.borderColor = "#e5e7eb";
             }}
           >
-            {/* Ícone com cor de fundo */}
+            {/* Ícone */}
             <div
               style={{
-                width: 56,
-                height: 56,
-                background: card.cor,
-                borderRadius: 12,
+                width: 46,
+                height: 46,
+                background: "#ecfdf5",
+                borderRadius: 10,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                marginBottom: "16px",
+                marginBottom: "18px",
               }}
             >
               <FontAwesomeIcon
                 icon={card.icon}
-                style={{ fontSize: 24, color: "#ffffff" }}
+                style={{
+                  fontSize: 19,
+                  color: "#059669",
+                }}
               />
             </div>
 
-            {/* Título e Descrição */}
+            {/* Título */}
             <h3
               style={{
                 margin: "0 0 8px 0",
-                fontSize: "16px",
+                fontSize: "15px",
                 fontWeight: 600,
-                color: "#fff",
+                color: "#111827",
               }}
             >
               {card.titulo}
             </h3>
+
+            {/* Descrição */}
             <p
               style={{
                 margin: "0 0 20px 0",
                 fontSize: "13px",
-                color: "#9ca3af",
-                lineHeight: "1.4",
+                color: "#6b7280",
+                lineHeight: "1.5",
+                minHeight: "39px",
               }}
             >
               {card.descricao}
@@ -295,14 +361,20 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "8px",
-                color: card.cor,
+                gap: "7px",
+                color: "#059669",
                 fontSize: "13px",
                 fontWeight: 500,
               }}
             >
               <span>Acessar módulo</span>
-              <FontAwesomeIcon icon={faArrowRight} style={{ fontSize: 12 }} />
+
+              <FontAwesomeIcon
+                icon={faArrowRight}
+                style={{
+                  fontSize: 11,
+                }}
+              />
             </div>
           </div>
         ))}
@@ -311,64 +383,124 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
       {/* Rodapé com estatísticas */}
       <div
         style={{
-          marginTop: "32px",
-          background: "#1f2937",
-          borderRadius: "12px",
-          padding: "20px",
-          border: "1px solid #374151",
+          marginTop: "24px",
+          background: "#ffffff",
+          borderRadius: "10px",
+          padding: isMobile ? "18px" : "20px",
+          border: "1px solid #e5e7eb",
+          boxShadow: "0 2px 8px rgba(15, 23, 42, 0.025)",
         }}
       >
         <div
           style={{
             display: "grid",
             gridTemplateColumns: isMobile ? "1fr" : "repeat(4, 1fr)",
-            gap: "20px",
+            gap: isMobile ? "20px" : "12px",
           }}
         >
-          <div style={{ textAlign: "center" }}>
+          <div
+            style={{
+              textAlign: "center",
+              padding: "4px",
+            }}
+          >
             <div
-              style={{ fontSize: "28px", fontWeight: "bold", color: "#10b981" }}
+              style={{
+                fontSize: "24px",
+                fontWeight: 600,
+                color: "#111827",
+              }}
             >
               {cards.length}
             </div>
+
             <div
-              style={{ fontSize: "13px", color: "#9ca3af", marginTop: "4px" }}
+              style={{
+                fontSize: "12px",
+                color: "#6b7280",
+                marginTop: "4px",
+              }}
             >
               Módulos Disponíveis
             </div>
           </div>
-          <div style={{ textAlign: "center" }}>
+
+          <div
+            style={{
+              textAlign: "center",
+              padding: "4px",
+            }}
+          >
             <div
-              style={{ fontSize: "28px", fontWeight: "bold", color: "#3b82f6" }}
+              style={{
+                fontSize: "24px",
+                fontWeight: 600,
+                color: "#059669",
+              }}
             >
               ✓
             </div>
+
             <div
-              style={{ fontSize: "13px", color: "#9ca3af", marginTop: "4px" }}
+              style={{
+                fontSize: "12px",
+                color: "#6b7280",
+                marginTop: "4px",
+              }}
             >
               Sistema Integrado
             </div>
           </div>
-          <div style={{ textAlign: "center" }}>
+
+          <div
+            style={{
+              textAlign: "center",
+              padding: "4px",
+            }}
+          >
             <div
-              style={{ fontSize: "28px", fontWeight: "bold", color: "#8b5cf6" }}
+              style={{
+                fontSize: "24px",
+                fontWeight: 600,
+                color: "#111827",
+              }}
             >
               24/7
             </div>
+
             <div
-              style={{ fontSize: "13px", color: "#9ca3af", marginTop: "4px" }}
+              style={{
+                fontSize: "12px",
+                color: "#6b7280",
+                marginTop: "4px",
+              }}
             >
               Disponibilidade
             </div>
           </div>
-          <div style={{ textAlign: "center" }}>
+
+          <div
+            style={{
+              textAlign: "center",
+              padding: "4px",
+            }}
+          >
             <div
-              style={{ fontSize: "28px", fontWeight: "bold", color: "#ef4444" }}
+              style={{
+                fontSize: "24px",
+                fontWeight: 600,
+                color: "#059669",
+              }}
             >
               🔒
             </div>
+
             <div
-              style={{ fontSize: "13px", color: "#9ca3af", marginTop: "4px" }}
+              style={{
+                fontSize: "12px",
+                color: "#6b7280",
+                marginTop: "4px",
+              }}
             >
               Dados Seguros
             </div>

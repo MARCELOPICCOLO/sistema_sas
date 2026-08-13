@@ -1,6 +1,11 @@
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrash, faEdit } from "@fortawesome/free-solid-svg-icons";
+import {
+  faTrash,
+  faEdit,
+  faChevronDown,
+  faChevronRight,
+} from "@fortawesome/free-solid-svg-icons";
 
 interface Transaction {
   id: number;
@@ -50,7 +55,19 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
 }) => {
   if (loading) {
     return (
-      <div style={{ textAlign: "center", padding: "40px" }}>Carregando...</div>
+      <div
+        style={{
+          background: "#ffffff",
+          border: "1px solid #e5e7eb",
+          borderRadius: 10,
+          padding: "40px",
+          textAlign: "center",
+          color: "#6b7280",
+          fontSize: 13,
+        }}
+      >
+        Carregando...
+      </div>
     );
   }
 
@@ -59,13 +76,28 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
       <div
         style={{
           textAlign: "center",
-          padding: "40px",
-          background: "#fff",
-          borderRadius: 8,
+          padding: "48px 20px",
+          background: "#ffffff",
+          borderRadius: 10,
           border: "1px solid #e5e7eb",
         }}
       >
-        <div style={{ fontSize: 48, marginBottom: 12 }}>📊</div>
+        <div
+          style={{
+            width: 48,
+            height: 48,
+            margin: "0 auto 14px",
+            borderRadius: 10,
+            background: "#f3f4f6",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#9ca3af",
+            fontSize: 20,
+          }}
+        >
+          —
+        </div>
 
         <p
           style={{
@@ -95,28 +127,25 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
           const transacoesDoDia = transacoesPorData[data];
 
           const totalEntradasDia = totalEntradasPorData[data] || 0;
-
           const totalSaidasDia = totalSaidasPorData[data] || 0;
-
           const saldoDia = saldoPorData[data] || 0;
 
           return (
             <div
               key={data}
               style={{
-                background: "#fff",
-                borderRadius: 12,
+                background: "#ffffff",
+                borderRadius: 10,
                 border: "1px solid #e5e7eb",
                 overflow: "hidden",
-                boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
               }}
             >
               {/* CABEÇALHO DO DIA */}
               <div
                 onClick={() => toggleDia(data)}
                 style={{
-                  background: estaExpandido ? "#f9fafb" : "#fff",
-                  padding: "14px 20px",
+                  background: estaExpandido ? "#f9fafb" : "#ffffff",
+                  padding: "14px 18px",
                   cursor: "pointer",
                   display: "flex",
                   justifyContent: "space-between",
@@ -124,42 +153,51 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                   flexWrap: "wrap",
                   gap: 12,
                   borderBottom: estaExpandido ? "1px solid #e5e7eb" : "none",
+                  transition: "background 0.15s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#f9fafb";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = estaExpandido
+                    ? "#f9fafb"
+                    : "#ffffff";
                 }}
               >
+                {/* DATA */}
                 <div
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 12,
+                    gap: 10,
                   }}
                 >
+                  <FontAwesomeIcon
+                    icon={estaExpandido ? faChevronDown : faChevronRight}
+                    style={{
+                      fontSize: 11,
+                      color: "#9ca3af",
+                      width: 12,
+                    }}
+                  />
+
                   <span
                     style={{
                       fontSize: 14,
-                      color: "#6b7280",
-                    }}
-                  >
-                    {estaExpandido ? "▼" : "▶"}
-                  </span>
-
-                  <h3
-                    style={{
-                      margin: 0,
-                      fontSize: 15,
                       fontWeight: 600,
                       color: "#1f2937",
                     }}
                   >
-                    📅 {formatDate(data)}
-                  </h3>
+                    {formatDate(data)}
+                  </span>
 
                   <span
                     style={{
-                      fontSize: 12,
+                      fontSize: 11,
                       color: "#6b7280",
                       background: "#f3f4f6",
-                      padding: "2px 8px",
-                      borderRadius: 12,
+                      padding: "3px 8px",
+                      borderRadius: 6,
                     }}
                   >
                     {transacoesDoDia.length}{" "}
@@ -167,46 +205,65 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                   </span>
                 </div>
 
+                {/* RESUMO DO DIA */}
                 <div
                   style={{
                     display: "flex",
-                    gap: 16,
                     alignItems: "center",
+                    gap: 18,
                     flexWrap: "wrap",
                   }}
                 >
-                  <span
+                  <div
                     style={{
                       fontSize: 12,
-                      fontWeight: 500,
-                      color: "#10b981",
+                      color: "#6b7280",
                     }}
                   >
-                    Entradas: {formatCurrency(totalEntradasDia)}
-                  </span>
+                    Entradas{" "}
+                    <span
+                      style={{
+                        fontWeight: 600,
+                        color: "#059669",
+                      }}
+                    >
+                      {formatCurrency(totalEntradasDia)}
+                    </span>
+                  </div>
 
-                  <span
+                  <div
                     style={{
                       fontSize: 12,
-                      fontWeight: 500,
-                      color: "#dc2626",
+                      color: "#6b7280",
                     }}
                   >
-                    Saídas: {formatCurrency(totalSaidasDia)}
-                  </span>
+                    Saídas{" "}
+                    <span
+                      style={{
+                        fontWeight: 600,
+                        color: "#374151",
+                      }}
+                    >
+                      {formatCurrency(totalSaidasDia)}
+                    </span>
+                  </div>
 
-                  <span
+                  <div
                     style={{
-                      fontSize: 13,
-                      fontWeight: 600,
-                      padding: "4px 8px",
-                      borderRadius: 6,
-                      background: saldoDia >= 0 ? "#f0fdf4" : "#fee2e2",
-                      color: saldoDia >= 0 ? "#059669" : "#dc2626",
+                      fontSize: 12,
+                      color: "#6b7280",
                     }}
                   >
-                    Saldo: {formatCurrency(saldoDia)}
-                  </span>
+                    Saldo{" "}
+                    <span
+                      style={{
+                        fontWeight: 600,
+                        color: saldoDia >= 0 ? "#059669" : "#374151",
+                      }}
+                    >
+                      {formatCurrency(saldoDia)}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -224,16 +281,18 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                       <tr
                         style={{
                           background: "#f9fafb",
-                          borderBottom: "2px solid #e5e7eb",
+                          borderBottom: "1px solid #e5e7eb",
                         }}
                       >
                         <th
                           style={{
-                            padding: "12px 16px",
+                            padding: "11px 16px",
                             textAlign: "left",
-                            fontSize: 12,
+                            fontSize: 11,
                             fontWeight: 600,
-                            color: "#374151",
+                            color: "#6b7280",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.02em",
                           }}
                         >
                           Descrição
@@ -241,11 +300,13 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
 
                         <th
                           style={{
-                            padding: "12px 16px",
+                            padding: "11px 16px",
                             textAlign: "left",
-                            fontSize: 12,
+                            fontSize: 11,
                             fontWeight: 600,
-                            color: "#374151",
+                            color: "#6b7280",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.02em",
                           }}
                         >
                           Categoria
@@ -253,11 +314,13 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
 
                         <th
                           style={{
-                            padding: "12px 16px",
+                            padding: "11px 16px",
                             textAlign: "left",
-                            fontSize: 12,
+                            fontSize: 11,
                             fontWeight: 600,
-                            color: "#374151",
+                            color: "#6b7280",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.02em",
                           }}
                         >
                           Tipo
@@ -265,11 +328,13 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
 
                         <th
                           style={{
-                            padding: "12px 16px",
+                            padding: "11px 16px",
                             textAlign: "right",
-                            fontSize: 12,
+                            fontSize: 11,
                             fontWeight: 600,
-                            color: "#374151",
+                            color: "#6b7280",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.02em",
                           }}
                         >
                           Valor
@@ -277,11 +342,13 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
 
                         <th
                           style={{
-                            padding: "12px 16px",
+                            padding: "11px 16px",
                             textAlign: "center",
-                            fontSize: 12,
+                            fontSize: 11,
                             fontWeight: 600,
-                            color: "#374151",
+                            color: "#6b7280",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.02em",
                           }}
                         >
                           Ações
@@ -296,18 +363,24 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                           style={{
                             borderBottom:
                               index < transacoesDoDia.length - 1
-                                ? "1px solid #e5e7eb"
+                                ? "1px solid #f0f1f3"
                                 : "none",
-                            backgroundColor:
-                              index % 2 === 0 ? "#fff" : "#fafafa",
+                            background: "#ffffff",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = "#fafafa";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = "#ffffff";
                           }}
                         >
                           {/* DESCRIÇÃO */}
                           <td
                             style={{
-                              padding: "12px 16px",
+                              padding: "13px 16px",
                               fontSize: 13,
                               color: "#1f2937",
+                              fontWeight: 400,
                             }}
                             title={t.description}
                           >
@@ -319,21 +392,14 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                           {/* CATEGORIA */}
                           <td
                             style={{
-                              padding: "12px 16px",
+                              padding: "13px 16px",
                             }}
                           >
                             {t.type === "entrada" ? (
                               <span
                                 style={{
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: 6,
-                                  padding: "4px 12px",
-                                  borderRadius: 20,
-                                  fontSize: 11,
-                                  fontWeight: 500,
-                                  background: "#d1fae5",
-                                  color: "#059669",
+                                  fontSize: 12,
+                                  color: "#6b7280",
                                 }}
                               >
                                 PDV
@@ -341,18 +407,11 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                             ) : t.category ? (
                               <span
                                 style={{
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: 6,
-                                  padding: "4px 12px",
-                                  borderRadius: 20,
-                                  fontSize: 11,
-                                  fontWeight: 500,
-                                  background: `${t.category.color}15`,
-                                  color: t.category.color,
+                                  fontSize: 12,
+                                  color: "#4b5563",
                                 }}
                               >
-                                <span>{t.category.name}</span>
+                                {t.category.name}
                               </span>
                             ) : (
                               <span
@@ -369,23 +428,30 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                           {/* TIPO */}
                           <td
                             style={{
-                              padding: "12px 16px",
-                              fontSize: 13,
-                              color: "#6b7280",
+                              padding: "13px 16px",
                             }}
                           >
-                            {t.type === "entrada" ? "Entrada" : "Saída"}
+                            <span
+                              style={{
+                                fontSize: 12,
+                                color:
+                                  t.type === "entrada" ? "#059669" : "#6b7280",
+                                fontWeight: 500,
+                              }}
+                            >
+                              {t.type === "entrada" ? "Entrada" : "Saída"}
+                            </span>
                           </td>
 
                           {/* VALOR */}
                           <td
                             style={{
-                              padding: "12px 16px",
+                              padding: "13px 16px",
                               textAlign: "right",
-                              fontSize: 14,
+                              fontSize: 13,
                               fontWeight: 600,
                               color:
-                                t.type === "entrada" ? "#10b981" : "#dc2626",
+                                t.type === "entrada" ? "#059669" : "#374151",
                             }}
                           >
                             {formatCurrency(t.amount)}
@@ -394,14 +460,14 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                           {/* AÇÕES */}
                           <td
                             style={{
-                              padding: "12px 16px",
+                              padding: "13px 16px",
                               textAlign: "center",
                             }}
                           >
                             <div
                               style={{
                                 display: "flex",
-                                gap: 8,
+                                gap: 10,
                                 justifyContent: "center",
                                 alignItems: "center",
                               }}
@@ -410,22 +476,34 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                                 <button
                                   onClick={() => editarTransacao(t)}
                                   style={{
-                                    background: "none",
-                                    border: "none",
+                                    width: 30,
+                                    height: 30,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    background: "transparent",
+                                    border: "1px solid transparent",
+                                    borderRadius: 6,
                                     cursor: "pointer",
                                     color: "#9ca3af",
-                                    fontSize: 16,
-                                    transition: "all 0.2s",
+                                    transition: "all 0.15s ease",
                                   }}
                                   onMouseEnter={(e) => {
-                                    e.currentTarget.style.color = "#10b981";
+                                    e.currentTarget.style.background =
+                                      "#f3f4f6";
+                                    e.currentTarget.style.color = "#374151";
                                   }}
                                   onMouseLeave={(e) => {
+                                    e.currentTarget.style.background =
+                                      "transparent";
                                     e.currentTarget.style.color = "#9ca3af";
                                   }}
                                   title="Editar"
                                 >
-                                  <FontAwesomeIcon icon={faEdit} />
+                                  <FontAwesomeIcon
+                                    icon={faEdit}
+                                    style={{ fontSize: 13 }}
+                                  />
                                 </button>
                               )}
 
@@ -435,22 +513,34 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                                     removerTransacao(t.id, t.type, t.source)
                                   }
                                   style={{
-                                    background: "none",
-                                    border: "none",
+                                    width: 30,
+                                    height: 30,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    background: "transparent",
+                                    border: "1px solid transparent",
+                                    borderRadius: 6,
                                     cursor: "pointer",
                                     color: "#9ca3af",
-                                    fontSize: 16,
-                                    transition: "all 0.2s",
+                                    transition: "all 0.15s ease",
                                   }}
                                   onMouseEnter={(e) => {
+                                    e.currentTarget.style.background =
+                                      "#fef2f2";
                                     e.currentTarget.style.color = "#dc2626";
                                   }}
                                   onMouseLeave={(e) => {
+                                    e.currentTarget.style.background =
+                                      "transparent";
                                     e.currentTarget.style.color = "#9ca3af";
                                   }}
                                   title="Remover"
                                 >
-                                  <FontAwesomeIcon icon={faTrash} />
+                                  <FontAwesomeIcon
+                                    icon={faTrash}
+                                    style={{ fontSize: 13 }}
+                                  />
                                 </button>
                               )}
 
@@ -459,9 +549,6 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                                   style={{
                                     fontSize: 11,
                                     color: "#9ca3af",
-                                    background: "#f3f4f6",
-                                    padding: "4px 8px",
-                                    borderRadius: 12,
                                   }}
                                 >
                                   PDV

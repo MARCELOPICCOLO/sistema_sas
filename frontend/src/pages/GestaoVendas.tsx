@@ -657,7 +657,7 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
             display: "grid",
             gridTemplateColumns: "280px 1fr 380px",
             height: "100%",
-            background: "#FAFAFA",
+            background: "#f8fafc",
           }}
         >
           <SidebarVendas
@@ -753,7 +753,7 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
       <ToastComponent />
       <div
         style={{
-          background: "#f3f4f6",
+          background: "#f8fafc",
           minHeight: "100vh",
           paddingBottom:
             vendaSelecionada && vendaSelecionada.status === "aberto"
@@ -765,10 +765,11 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
         <div
           style={{
             padding: "16px",
-            background: "#1f2937",
+            background: "#ffffff",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
+            borderBottom: "1px solid #e5e7eb",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -776,7 +777,7 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
               style={{
                 width: 36,
                 height: 36,
-                background: "#374151",
+                background: "#ecfdf5",
                 borderRadius: 8,
                 display: "flex",
                 alignItems: "center",
@@ -793,7 +794,7 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
                 margin: 0,
                 fontSize: 18,
                 fontWeight: 600,
-                color: "#fff",
+                color: "#111827",
               }}
             >
               Gestão de Vendas
@@ -802,12 +803,12 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
           <button
             onClick={() => setShowMobileMenu(true)}
             style={{
-              background: "#374151",
+              background: "#f3f4f6",
               border: "none",
               borderRadius: 8,
               padding: "8px 12px",
               cursor: "pointer",
-              color: "#fff",
+              color: "#374151",
             }}
           >
             <FontAwesomeIcon icon={faBars} />
@@ -905,10 +906,11 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
                 left: 0,
                 bottom: 0,
                 width: "280px",
-                background: "#1f2937",
+                background: "#ffffff",
                 zIndex: 1001,
                 padding: "20px",
                 overflowY: "auto",
+                borderRight: "1px solid #e5e7eb",
               }}
             >
               <div
@@ -925,7 +927,7 @@ export default function GestaoVendas({ setTela }: GestaoVendasProps) {
                     border: "none",
                     fontSize: 20,
                     cursor: "pointer",
-                    color: "#fff",
+                    color: "#374151",
                   }}
                 >
                   <FontAwesomeIcon icon={faTimes} />

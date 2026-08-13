@@ -104,18 +104,21 @@ export default function Login({ onLoginSuccess }: LoginProps) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "linear-gradient(135deg, #1f2937 0%, #111827 100%)",
-        padding: "20px",
+        background: "#f8fafc",
+        padding: "24px",
+        fontFamily:
+          "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
       }}
     >
       <div
         style={{
-          background: "#fff",
-          borderRadius: 16,
-          padding: "40px 32px",
+          background: "#ffffff",
+          border: "1px solid #e5e7eb",
+          borderRadius: 12,
+          padding: "40px",
           width: "100%",
-          maxWidth: 420,
-          boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+          maxWidth: 400,
+          boxShadow: "0 4px 20px rgba(15, 23, 42, 0.05)",
         }}
       >
         {/* Logo */}
@@ -125,36 +128,42 @@ export default function Login({ onLoginSuccess }: LoginProps) {
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              width: 72,
-              height: 72,
-              borderRadius: "50%",
-              background: "linear-gradient(135deg, #10b981, #059669)",
-              marginBottom: 16,
+              width: 52,
+              height: 52,
+              borderRadius: 12,
+              background: "#ecfdf5",
+              marginBottom: 18,
             }}
           >
             <FontAwesomeIcon
               icon={faUtensils}
-              style={{ fontSize: 32, color: "#fff" }}
+              style={{
+                fontSize: 22,
+                color: "#059669",
+              }}
             />
           </div>
+
           <h1
             style={{
               margin: 0,
-              fontSize: 24,
-              fontWeight: 700,
-              color: "#1f2937",
+              fontSize: 22,
+              fontWeight: 600,
+              color: "#111827",
+              letterSpacing: "-0.3px",
             }}
           >
             Sistema de Gestão
           </h1>
+
           <p
             style={{
-              margin: "4px 0 0",
+              margin: "8px 0 0",
               fontSize: 14,
               color: "#6b7280",
             }}
           >
-            Faça login para acessar o sistema
+            Entre na sua conta para continuar
           </p>
         </div>
 
@@ -164,7 +173,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
             <label
               style={{
                 display: "block",
-                marginBottom: 6,
+                marginBottom: 7,
                 fontSize: 13,
                 fontWeight: 500,
                 color: "#374151",
@@ -172,21 +181,26 @@ export default function Login({ onLoginSuccess }: LoginProps) {
             >
               Usuário
             </label>
+
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                border: "1px solid #e5e7eb",
+                border: "1px solid #d1d5db",
                 borderRadius: 8,
                 padding: "0 12px",
-                transition: "all 0.2s",
-                background: "#f9fafb",
+                background: "#ffffff",
+                transition: "border-color 0.2s, box-shadow 0.2s",
               }}
             >
               <FontAwesomeIcon
                 icon={faUser}
-                style={{ fontSize: 16, color: "#9ca3af" }}
+                style={{
+                  fontSize: 14,
+                  color: "#9ca3af",
+                }}
               />
+
               <input
                 type="text"
                 value={login}
@@ -194,12 +208,12 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                 placeholder="Digite seu usuário"
                 style={{
                   width: "100%",
-                  padding: "12px 12px",
+                  padding: "12px",
                   border: "none",
                   background: "transparent",
                   fontSize: 14,
                   outline: "none",
-                  color: "#1f2937",
+                  color: "#111827",
                 }}
                 disabled={loading}
                 autoFocus
@@ -211,7 +225,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
             <label
               style={{
                 display: "block",
-                marginBottom: 6,
+                marginBottom: 7,
                 fontSize: 13,
                 fontWeight: 500,
                 color: "#374151",
@@ -219,21 +233,26 @@ export default function Login({ onLoginSuccess }: LoginProps) {
             >
               Senha
             </label>
+
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                border: "1px solid #e5e7eb",
+                border: "1px solid #d1d5db",
                 borderRadius: 8,
                 padding: "0 12px",
-                transition: "all 0.2s",
-                background: "#f9fafb",
+                background: "#ffffff",
+                transition: "border-color 0.2s, box-shadow 0.2s",
               }}
             >
               <FontAwesomeIcon
                 icon={faLock}
-                style={{ fontSize: 16, color: "#9ca3af" }}
+                style={{
+                  fontSize: 14,
+                  color: "#9ca3af",
+                }}
               />
+
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
@@ -241,15 +260,16 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                 placeholder="Digite sua senha"
                 style={{
                   width: "100%",
-                  padding: "12px 12px",
+                  padding: "12px",
                   border: "none",
                   background: "transparent",
                   fontSize: 14,
                   outline: "none",
-                  color: "#1f2937",
+                  color: "#111827",
                 }}
                 disabled={loading}
               />
+
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
@@ -258,11 +278,13 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                   border: "none",
                   cursor: "pointer",
                   color: "#9ca3af",
-                  fontSize: 14,
+                  fontSize: 13,
                   padding: "4px",
                 }}
+                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
               >
-                {showPassword ? "🙈" : "👁️"}
+                <FontAwesomeIcon icon={faUser} style={{ opacity: 0 }} />
+                {showPassword ? "Ocultar" : "Mostrar"}
               </button>
             </div>
           </div>
@@ -270,10 +292,11 @@ export default function Login({ onLoginSuccess }: LoginProps) {
           {error && (
             <div
               style={{
-                padding: "10px 14px",
+                padding: "11px 13px",
                 borderRadius: 8,
-                background: "#fee2e2",
-                color: "#dc2626",
+                background: "#fef2f2",
+                border: "1px solid #fecaca",
+                color: "#b91c1c",
                 fontSize: 13,
                 marginBottom: 20,
                 display: "flex",
@@ -281,7 +304,16 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                 gap: 8,
               }}
             >
-              <span>❌</span>
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: "#dc2626",
+                  flexShrink: 0,
+                }}
+              />
+
               {error}
             </div>
           )}
@@ -291,15 +323,15 @@ export default function Login({ onLoginSuccess }: LoginProps) {
             disabled={loading}
             style={{
               width: "100%",
-              padding: "14px",
+              padding: "13px 14px",
               borderRadius: 8,
               border: "none",
-              background: loading ? "#9ca3af" : "#10b981",
-              color: "#fff",
-              fontSize: 16,
+              background: loading ? "#9ca3af" : "#059669",
+              color: "#ffffff",
+              fontSize: 14,
               fontWeight: 600,
               cursor: loading ? "not-allowed" : "pointer",
-              transition: "all 0.2s",
+              transition: "background 0.2s, transform 0.1s",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -307,12 +339,12 @@ export default function Login({ onLoginSuccess }: LoginProps) {
             }}
             onMouseEnter={(e) => {
               if (!loading) {
-                e.currentTarget.style.background = "#059669";
+                e.currentTarget.style.background = "#047857";
               }
             }}
             onMouseLeave={(e) => {
               if (!loading) {
-                e.currentTarget.style.background = "#10b981";
+                e.currentTarget.style.background = "#059669";
               }
             }}
           >
@@ -332,7 +364,9 @@ export default function Login({ onLoginSuccess }: LoginProps) {
           {/* Botões de credenciais rápidas */}
           <div
             style={{
-              marginTop: 16,
+              marginTop: 20,
+              paddingTop: 20,
+              borderTop: "1px solid #f1f5f9",
               display: "flex",
               gap: 8,
               flexWrap: "wrap",
@@ -343,42 +377,47 @@ export default function Login({ onLoginSuccess }: LoginProps) {
               type="button"
               onClick={() => fillCredentials("admin", "admin")}
               style={{
-                padding: "6px 12px",
+                padding: "6px 11px",
                 borderRadius: 6,
                 border: "1px solid #e5e7eb",
-                background: "#f3f4f6",
-                color: "#374151",
+                background: "#ffffff",
+                color: "#4b5563",
                 cursor: "pointer",
-                fontSize: 12,
-                transition: "all 0.2s",
+                fontSize: 11,
+                transition: "background 0.2s, border-color 0.2s",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#e5e7eb";
+                e.currentTarget.style.background = "#f9fafb";
+                e.currentTarget.style.borderColor = "#d1d5db";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = "#f3f4f6";
+                e.currentTarget.style.background = "#ffffff";
+                e.currentTarget.style.borderColor = "#e5e7eb";
               }}
             >
               admin / admin
             </button>
+
             <button
               type="button"
               onClick={() => fillCredentials("operador", "123456")}
               style={{
-                padding: "6px 12px",
+                padding: "6px 11px",
                 borderRadius: 6,
                 border: "1px solid #e5e7eb",
-                background: "#f3f4f6",
-                color: "#374151",
+                background: "#ffffff",
+                color: "#4b5563",
                 cursor: "pointer",
-                fontSize: 12,
-                transition: "all 0.2s",
+                fontSize: 11,
+                transition: "background 0.2s, border-color 0.2s",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#e5e7eb";
+                e.currentTarget.style.background = "#f9fafb";
+                e.currentTarget.style.borderColor = "#d1d5db";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = "#f3f4f6";
+                e.currentTarget.style.background = "#ffffff";
+                e.currentTarget.style.borderColor = "#e5e7eb";
               }}
             >
               operador / 123456
@@ -387,13 +426,13 @@ export default function Login({ onLoginSuccess }: LoginProps) {
 
           <div
             style={{
-              marginTop: 12,
+              marginTop: 10,
               textAlign: "center",
               fontSize: 11,
               color: "#9ca3af",
             }}
           >
-            Clique nos botões para preencher automaticamente
+            Clique para preencher automaticamente
           </div>
         </form>
       </div>

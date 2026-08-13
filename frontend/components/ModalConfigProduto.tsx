@@ -23,6 +23,10 @@ interface Props {
 
   setVendaSelecionadaId: (value: number | null) => void;
 
+  quantidade: number;
+
+  setQuantidade: (value: number) => void;
+
   precoPersonalizado: string;
 
   setPrecoPersonalizado: (value: string) => void;
@@ -45,6 +49,8 @@ const ModalConfigProduto: React.FC<Props> = ({
   vendasAbertas,
   vendaSelecionadaId,
   setVendaSelecionadaId,
+  quantidade,
+  setQuantidade,
   precoPersonalizado,
   setPrecoPersonalizado,
   usarPrecoPersonalizado,
@@ -81,6 +87,7 @@ const ModalConfigProduto: React.FC<Props> = ({
         }}
       >
         {/* HEADER */}
+
         <div
           style={{
             display: "flex",
@@ -112,6 +119,7 @@ const ModalConfigProduto: React.FC<Props> = ({
         </div>
 
         {/* VENDA */}
+
         <div style={{ marginBottom: 20 }}>
           <label
             style={{
@@ -135,7 +143,11 @@ const ModalConfigProduto: React.FC<Props> = ({
           ) : (
             <select
               value={vendaSelecionadaId || ""}
-              onChange={(e) => setVendaSelecionadaId(Number(e.target.value))}
+              onChange={(e) =>
+                setVendaSelecionadaId(
+                  e.target.value ? Number(e.target.value) : null,
+                )
+              }
               style={{
                 width: "100%",
                 padding: "10px",
@@ -154,36 +166,99 @@ const ModalConfigProduto: React.FC<Props> = ({
           )}
         </div>
 
-        {/* PREÇO */}
-        <div style={{ marginBottom: 20 }}>
-          <label
-            style={{
-              display: "block",
-              marginBottom: 8,
-            }}
-          >
-            Preço do Produto
-          </label>
+        {/* PREÇO + QUANTIDADE */}
 
+        <div style={{ marginBottom: 20 }}>
           <div
             style={{
-              padding: "10px",
-              borderRadius: 6,
-              background: "#f9fafb",
-              border: "1px solid #e5e7eb",
-              marginBottom: 12,
-              fontWeight: 600,
-              color: "#059669",
+              display: "flex",
+              gap: 12,
+              alignItems: "flex-end",
             }}
           >
-            {formatCurrency(produtoSelecionado.price)}
+            {/* PREÇO */}
+
+            <div style={{ flex: 1 }}>
+              <label
+                style={{
+                  display: "block",
+                  marginBottom: 8,
+                }}
+              >
+                Preço do Produto
+              </label>
+
+              <div
+                style={{
+                  padding: "10px",
+                  borderRadius: 6,
+                  background: "#f9fafb",
+                  border: "1px solid #e5e7eb",
+                  fontWeight: 600,
+                  color: "#059669",
+                }}
+              >
+                {formatCurrency(produtoSelecionado.price)}
+              </div>
+            </div>
+
+            {/* QUANTIDADE */}
+
+            <div style={{ width: 100 }}>
+              <label
+                style={{
+                  display: "block",
+                  marginBottom: 8,
+                }}
+              >
+                Quantidade
+              </label>
+
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={quantidade === 0 ? "" : quantidade}
+                onChange={(e) => {
+                  const value = e.target.value;
+
+                  // Permite apagar o campo temporariamente
+                  if (value === "") {
+                    setQuantidade(0);
+                    return;
+                  }
+
+                  const numero = Number(value);
+
+                  if (Number.isInteger(numero) && numero >= 1) {
+                    setQuantidade(numero);
+                  }
+                }}
+                onBlur={() => {
+                  // Se deixar vazio, volta para 1
+                  if (quantidade < 1) {
+                    setQuantidade(1);
+                  }
+                }}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: 6,
+                  border: "1px solid #ccc",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
           </div>
+
+          {/* PREÇO PERSONALIZADO */}
 
           <label
             style={{
               display: "flex",
               alignItems: "center",
               gap: 8,
+              marginTop: 12,
               marginBottom: 12,
               cursor: "pointer",
             }}
@@ -219,6 +294,7 @@ const ModalConfigProduto: React.FC<Props> = ({
         </div>
 
         {/* BOTÕES */}
+
         <div
           style={{
             display: "flex",

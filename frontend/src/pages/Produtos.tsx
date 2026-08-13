@@ -402,19 +402,25 @@ export default function Produtos({ setTela }: ProdutosProps) {
     return produto.category?.id === categoriaFiltro;
   });
 
-  // Sidebar para Desktop - PADRÃO CORRETO
+  // Sidebar para Desktop - NOVO VISUAL CLEAN
   const SidebarProdutos = () => (
     <div
       style={{
-        background: "#1f2937",
+        background: "#ffffff",
         display: "flex",
         flexDirection: "column",
         height: "100%",
         overflowY: "auto",
+        borderRight: "1px solid #e5e7eb",
       }}
     >
-      {/* Botão Voltar ao Dashboard */}
-      <div style={{ padding: "16px 20px", borderBottom: "1px solid #374151" }}>
+      {/* Botão Voltar */}
+      <div
+        style={{
+          padding: "16px 20px",
+          borderBottom: "1px solid #f1f5f9",
+        }}
+      >
         <button
           onClick={() => setTela && setTela("dashboard")}
           style={{
@@ -422,22 +428,24 @@ export default function Produtos({ setTela }: ProdutosProps) {
             alignItems: "center",
             gap: 8,
             width: "100%",
-            padding: "10px 16px",
-            background: "transparent",
-            border: "1px solid #374151",
+            padding: "9px 12px",
+            background: "#f8fafc",
+            border: "1px solid #e5e7eb",
             borderRadius: 8,
             cursor: "pointer",
-            transition: "all 0.2s",
-            color: "#9ca3af",
+            color: "#6b7280",
             fontSize: 13,
+            transition: "all 0.2s",
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = "#374151";
-            e.currentTarget.style.color = "#fff";
+            e.currentTarget.style.background = "#ecfdf5";
+            e.currentTarget.style.borderColor = "#a7f3d0";
+            e.currentTarget.style.color = "#059669";
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = "transparent";
-            e.currentTarget.style.color = "#9ca3af";
+            e.currentTarget.style.background = "#f8fafc";
+            e.currentTarget.style.borderColor = "#e5e7eb";
+            e.currentTarget.style.color = "#6b7280";
           }}
         >
           <FontAwesomeIcon icon={faArrowLeft} />
@@ -446,13 +454,18 @@ export default function Produtos({ setTela }: ProdutosProps) {
       </div>
 
       {/* Cabeçalho */}
-      <div style={{ padding: "24px 20px", borderBottom: "1px solid #374151" }}>
+      <div
+        style={{
+          padding: "24px 20px",
+          borderBottom: "1px solid #f1f5f9",
+        }}
+      >
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div
             style={{
-              width: 40,
-              height: 40,
-              background: "#374151",
+              width: 42,
+              height: 42,
+              background: "#ecfdf5",
               borderRadius: 10,
               display: "flex",
               alignItems: "center",
@@ -461,31 +474,38 @@ export default function Produtos({ setTela }: ProdutosProps) {
           >
             <FontAwesomeIcon
               icon={faBoxes}
-              style={{ fontSize: 20, color: "#10b981" }}
+              style={{ fontSize: 19, color: "#059669" }}
             />
           </div>
+
           <div>
             <h2
               style={{
                 margin: 0,
-                fontSize: 18,
+                fontSize: 17,
                 fontWeight: 600,
-                color: "#fff",
+                color: "#111827",
               }}
             >
               Produtos
             </h2>
-            <p style={{ margin: "2px 0 0", fontSize: 12, color: "#9ca3af" }}>
+
+            <p
+              style={{
+                margin: "3px 0 0",
+                fontSize: 12,
+                color: "#6b7280",
+              }}
+            >
               Gerenciamento de estoque
             </p>
           </div>
         </div>
       </div>
 
-      {/* MENU - PADRÃO COM ÍCONE FA_CHART_LINE NO FINAL */}
+      {/* Menu */}
       <div style={{ padding: "20px", flex: 1 }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {/* Botão Novo Produto */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <button
             onClick={() => {
               setEditando(null);
@@ -501,18 +521,19 @@ export default function Produtos({ setTela }: ProdutosProps) {
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 14,
+              gap: 12,
               width: "100%",
-              padding: "12px 16px",
+              padding: "11px 12px",
               background: "transparent",
               border: "none",
               borderRadius: 8,
               cursor: "pointer",
+              color: "#374151",
               transition: "all 0.2s",
-              color: "#fff",
+              textAlign: "left",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#374151";
+              e.currentTarget.style.background = "#f8fafc";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = "transparent";
@@ -522,7 +543,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
               style={{
                 width: 32,
                 height: 32,
-                background: "#374151",
+                background: "#f3f4f6",
                 borderRadius: 8,
                 display: "flex",
                 alignItems: "center",
@@ -531,39 +552,51 @@ export default function Produtos({ setTela }: ProdutosProps) {
             >
               <FontAwesomeIcon
                 icon={faPlus}
-                style={{ fontSize: 14, color: "#9ca3af" }}
+                style={{ fontSize: 13, color: "#6b7280" }}
               />
             </div>
-            <div style={{ flex: 1, textAlign: "left" }}>
-              <div style={{ fontSize: 14, fontWeight: 500 }}>Novo Produto</div>
-              <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>
+
+            <div style={{ flex: 1 }}>
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "#374151",
+                }}
+              >
+                Novo Produto
+              </div>
+
+              <div
+                style={{
+                  fontSize: 11,
+                  color: "#9ca3af",
+                  marginTop: 2,
+                }}
+              >
                 Adicionar ao catálogo
               </div>
             </div>
-            <FontAwesomeIcon
-              icon={faChartLine}
-              style={{ fontSize: 12, color: "#4b5563" }}
-            />
           </button>
 
-          {/* Botão Categorias */}
           <button
             onClick={() => setShowModalCategoria(true)}
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 14,
+              gap: 12,
               width: "100%",
-              padding: "12px 16px",
+              padding: "11px 12px",
               background: "transparent",
               border: "none",
               borderRadius: 8,
               cursor: "pointer",
+              color: "#374151",
               transition: "all 0.2s",
-              color: "#fff",
+              textAlign: "left",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#374151";
+              e.currentTarget.style.background = "#f8fafc";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = "transparent";
@@ -573,7 +606,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
               style={{
                 width: 32,
                 height: 32,
-                background: "#374151",
+                background: "#f3f4f6",
                 borderRadius: 8,
                 display: "flex",
                 alignItems: "center",
@@ -582,60 +615,82 @@ export default function Produtos({ setTela }: ProdutosProps) {
             >
               <FontAwesomeIcon
                 icon={faTag}
-                style={{ fontSize: 14, color: "#9ca3af" }}
+                style={{ fontSize: 13, color: "#6b7280" }}
               />
             </div>
-            <div style={{ flex: 1, textAlign: "left" }}>
-              <div style={{ fontSize: 14, fontWeight: 500 }}>Categorias</div>
-              <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>
+
+            <div style={{ flex: 1 }}>
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "#374151",
+                }}
+              >
+                Categorias
+              </div>
+
+              <div
+                style={{
+                  fontSize: 11,
+                  color: "#9ca3af",
+                  marginTop: 2,
+                }}
+              >
                 Gerenciar categorias
               </div>
             </div>
-            <FontAwesomeIcon
-              icon={faChartLine}
-              style={{ fontSize: 12, color: "#4b5563" }}
-            />
           </button>
         </div>
       </div>
-
-      <div style={{ flex: 1 }} />
 
       {/* Rodapé */}
       <div
         style={{
           padding: "16px 20px",
-          borderTop: "1px solid #374151",
-          background: "#111827",
+          borderTop: "1px solid #f1f5f9",
+          background: "#fafafa",
         }}
       >
-        <div style={{ fontSize: 12, color: "#9ca3af", textAlign: "center" }}>
+        <div
+          style={{
+            fontSize: 12,
+            color: "#9ca3af",
+            textAlign: "center",
+          }}
+        >
           Total: {produtos.length} produtos
         </div>
       </div>
     </div>
   );
 
-  // Versão Desktop
+  // Desktop
   if (!isMobile) {
     return (
       <>
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "280px 1fr",
+            gridTemplateColumns: "260px 1fr",
             height: "100%",
-            background: "#FAFAFA",
+            background: "#f8fafc",
           }}
         >
           <SidebarProdutos />
 
-          <div style={{ padding: "20px", overflowY: "auto", height: "100vh" }}>
+          <div
+            style={{
+              padding: "24px",
+              overflowY: "auto",
+              height: "100vh",
+            }}
+          >
             <div
               style={{
-                background: "#fff",
-                padding: "16px 20px",
-                borderRadius: 8,
+                background: "#ffffff",
+                padding: "18px 20px",
+                borderRadius: 10,
                 marginBottom: 20,
                 border: "1px solid #e5e7eb",
               }}
@@ -646,37 +701,60 @@ export default function Produtos({ setTela }: ProdutosProps) {
                   justifyContent: "space-between",
                   alignItems: "center",
                   flexWrap: "wrap",
-                  gap: 12,
+                  gap: 16,
                 }}
               >
-                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>
-                  Lista de Produtos
-                </h2>
+                <div>
+                  <h2
+                    style={{
+                      margin: 0,
+                      fontSize: 18,
+                      fontWeight: 600,
+                      color: "#111827",
+                    }}
+                  >
+                    Lista de Produtos
+                  </h2>
+
+                  <p
+                    style={{
+                      margin: "4px 0 0",
+                      fontSize: 13,
+                      color: "#6b7280",
+                    }}
+                  >
+                    Gerencie seus produtos e níveis de estoque
+                  </p>
+                </div>
+
                 <div style={{ display: "flex", gap: 10 }}>
                   <div style={{ position: "relative" }}>
                     <FontAwesomeIcon
                       icon={faSearch}
                       style={{
                         position: "absolute",
-                        left: 10,
+                        left: 11,
                         top: "50%",
                         transform: "translateY(-50%)",
                         fontSize: 12,
                         color: "#9ca3af",
                       }}
                     />
+
                     <input
                       type="text"
                       placeholder="Buscar..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       style={{
-                        padding: "8px 12px 8px 32px",
-                        borderRadius: 6,
+                        padding: "9px 12px 9px 32px",
+                        borderRadius: 8,
                         border: "1px solid #e5e7eb",
                         fontSize: 13,
                         width: 220,
                         outline: "none",
+                        background: "#ffffff",
+                        color: "#111827",
                       }}
                     />
                   </div>
@@ -685,17 +763,18 @@ export default function Produtos({ setTela }: ProdutosProps) {
                     value={categoriaFiltro ?? ""}
                     onChange={(e) => {
                       const valor = e.target.value;
-
                       setCategoriaFiltro(valor === "" ? null : Number(valor));
                     }}
                     style={{
-                      width: "100%",
-                      padding: "10px 12px",
+                      width: 190,
+                      padding: "9px 12px",
                       borderRadius: 8,
                       border: "1px solid #e5e7eb",
                       background: "#fff",
-                      fontSize: 14,
+                      color: "#374151",
+                      fontSize: 13,
                       cursor: "pointer",
+                      outline: "none",
                     }}
                   >
                     <option value="">Todas categorias</option>
@@ -721,7 +800,6 @@ export default function Produtos({ setTela }: ProdutosProps) {
           </div>
         </div>
 
-        {/* Modais */}
         <ModalProduto
           showModal={showModal}
           setShowModal={setShowModal}
@@ -752,46 +830,80 @@ export default function Produtos({ setTela }: ProdutosProps) {
     );
   }
 
-  // Versão Mobile (mantém a mesma)
+  // Mobile
   return (
-    <div style={{ background: "#f3f4f6", minHeight: "100vh" }}>
+    <div
+      style={{
+        background: "#f8fafc",
+        minHeight: "100vh",
+      }}
+    >
       {/* Header Mobile */}
       <div
         style={{
           padding: "16px",
-          background: "#1f2937",
+          background: "#ffffff",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
+          borderBottom: "1px solid #e5e7eb",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <FontAwesomeIcon
-            icon={faBoxes}
-            style={{ fontSize: 24, color: "#10b981" }}
-          />
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 9,
+              background: "#ecfdf5",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <FontAwesomeIcon
+              icon={faBoxes}
+              style={{
+                fontSize: 17,
+                color: "#059669",
+              }}
+            />
+          </div>
+
           <h1
-            style={{ margin: 0, fontSize: 18, fontWeight: 600, color: "#fff" }}
+            style={{
+              margin: 0,
+              fontSize: 18,
+              fontWeight: 600,
+              color: "#111827",
+            }}
           >
             Produtos
           </h1>
         </div>
+
         <button
           onClick={() => setShowMobileMenu(true)}
           style={{
-            background: "#374151",
-            border: "none",
+            background: "#f8fafc",
+            border: "1px solid #e5e7eb",
             borderRadius: 8,
-            padding: "8px 12px",
+            padding: "8px 11px",
             cursor: "pointer",
-            color: "#fff",
+            color: "#374151",
           }}
         >
           <span style={{ fontSize: 16 }}>☰</span>
         </button>
       </div>
 
-      {/* Botão Voltar ao Dashboard - Mobile */}
+      {/* Voltar */}
       <div style={{ padding: "12px 16px" }}>
         <button
           onClick={() => setTela && setTela("dashboard")}
@@ -800,13 +912,13 @@ export default function Produtos({ setTela }: ProdutosProps) {
             alignItems: "center",
             gap: 8,
             width: "100%",
-            padding: "10px 16px",
-            background: "#fff",
+            padding: "10px 14px",
+            background: "#ffffff",
             border: "1px solid #e5e7eb",
             borderRadius: 8,
             cursor: "pointer",
             color: "#374151",
-            fontSize: 14,
+            fontSize: 13,
           }}
         >
           <FontAwesomeIcon icon={faArrowLeft} />
@@ -824,11 +936,12 @@ export default function Produtos({ setTela }: ProdutosProps) {
               left: 0,
               right: 0,
               bottom: 0,
-              background: "rgba(0,0,0,0.5)",
+              background: "rgba(15, 23, 42, 0.25)",
               zIndex: 1000,
             }}
             onClick={() => setShowMobileMenu(false)}
           />
+
           <div
             style={{
               position: "fixed",
@@ -836,10 +949,11 @@ export default function Produtos({ setTela }: ProdutosProps) {
               left: 0,
               bottom: 0,
               width: "280px",
-              background: "#1f2937",
+              background: "#ffffff",
               zIndex: 1001,
               padding: "20px",
               overflowY: "auto",
+              boxShadow: "4px 0 20px rgba(15, 23, 42, 0.08)",
             }}
           >
             <div
@@ -852,11 +966,13 @@ export default function Produtos({ setTela }: ProdutosProps) {
               <button
                 onClick={() => setShowMobileMenu(false)}
                 style={{
-                  background: "transparent",
-                  border: "none",
-                  fontSize: 20,
+                  background: "#f8fafc",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: 8,
+                  width: 34,
+                  height: 34,
                   cursor: "pointer",
-                  color: "#fff",
+                  color: "#6b7280",
                 }}
               >
                 <FontAwesomeIcon icon={faTimes} />
@@ -881,16 +997,17 @@ export default function Produtos({ setTela }: ProdutosProps) {
                 alignItems: "center",
                 gap: 12,
                 width: "100%",
-                padding: "12px 16px",
+                padding: "12px",
                 background: "transparent",
                 border: "none",
                 borderRadius: 8,
                 cursor: "pointer",
-                color: "#fff",
-                marginBottom: 12,
+                color: "#374151",
+                marginBottom: 6,
+                textAlign: "left",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#374151";
+                e.currentTarget.style.background = "#f8fafc";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "transparent";
@@ -900,7 +1017,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                 style={{
                   width: 32,
                   height: 32,
-                  background: "#374151",
+                  background: "#ecfdf5",
                   borderRadius: 8,
                   display: "flex",
                   alignItems: "center",
@@ -909,14 +1026,21 @@ export default function Produtos({ setTela }: ProdutosProps) {
               >
                 <FontAwesomeIcon
                   icon={faPlus}
-                  style={{ fontSize: 14, color: "#9ca3af" }}
+                  style={{
+                    fontSize: 13,
+                    color: "#059669",
+                  }}
                 />
               </div>
-              <span>Novo Produto</span>
-              <FontAwesomeIcon
-                icon={faChartLine}
-                style={{ fontSize: 12, color: "#4b5563", marginLeft: "auto" }}
-              />
+
+              <span
+                style={{
+                  fontSize: 13,
+                  fontWeight: 500,
+                }}
+              >
+                Novo Produto
+              </span>
             </button>
 
             <button
@@ -929,15 +1053,16 @@ export default function Produtos({ setTela }: ProdutosProps) {
                 alignItems: "center",
                 gap: 12,
                 width: "100%",
-                padding: "12px 16px",
+                padding: "12px",
                 background: "transparent",
                 border: "none",
                 borderRadius: 8,
                 cursor: "pointer",
-                color: "#fff",
+                color: "#374151",
+                textAlign: "left",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#374151";
+                e.currentTarget.style.background = "#f8fafc";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "transparent";
@@ -947,7 +1072,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                 style={{
                   width: 32,
                   height: 32,
-                  background: "#374151",
+                  background: "#f3f4f6",
                   borderRadius: 8,
                   display: "flex",
                   alignItems: "center",
@@ -956,14 +1081,21 @@ export default function Produtos({ setTela }: ProdutosProps) {
               >
                 <FontAwesomeIcon
                   icon={faTag}
-                  style={{ fontSize: 14, color: "#9ca3af" }}
+                  style={{
+                    fontSize: 13,
+                    color: "#6b7280",
+                  }}
                 />
               </div>
-              <span>Categorias</span>
-              <FontAwesomeIcon
-                icon={faChartLine}
-                style={{ fontSize: 12, color: "#4b5563", marginLeft: "auto" }}
-              />
+
+              <span
+                style={{
+                  fontSize: 13,
+                  fontWeight: 500,
+                }}
+              >
+                Categorias
+              </span>
             </button>
           </div>
         </>
@@ -973,13 +1105,19 @@ export default function Produtos({ setTela }: ProdutosProps) {
       <div style={{ padding: "16px" }}>
         <div
           style={{
-            background: "#fff",
-            borderRadius: 12,
+            background: "#ffffff",
+            borderRadius: 10,
             padding: "12px",
             marginBottom: 16,
+            border: "1px solid #e5e7eb",
           }}
         >
-          <div style={{ position: "relative", marginBottom: 12 }}>
+          <div
+            style={{
+              position: "relative",
+              marginBottom: 10,
+            }}
+          >
             <FontAwesomeIcon
               icon={faSearch}
               style={{
@@ -987,10 +1125,11 @@ export default function Produtos({ setTela }: ProdutosProps) {
                 left: 12,
                 top: "50%",
                 transform: "translateY(-50%)",
-                fontSize: 14,
+                fontSize: 13,
                 color: "#9ca3af",
               }}
             />
+
             <input
               type="text"
               placeholder="Buscar produtos..."
@@ -1003,6 +1142,8 @@ export default function Produtos({ setTela }: ProdutosProps) {
                 border: "1px solid #e5e7eb",
                 fontSize: 14,
                 outline: "none",
+                color: "#111827",
+                background: "#ffffff",
               }}
             />
           </div>
@@ -1020,8 +1161,10 @@ export default function Produtos({ setTela }: ProdutosProps) {
               borderRadius: 8,
               border: "1px solid #e5e7eb",
               background: "#fff",
+              color: "#374151",
               fontSize: 14,
               cursor: "pointer",
+              outline: "none",
             }}
           >
             <option value="">Todas categorias</option>
@@ -1036,7 +1179,14 @@ export default function Produtos({ setTela }: ProdutosProps) {
 
         <div>
           {loading ? (
-            <div style={{ textAlign: "center", padding: "40px" }}>
+            <div
+              style={{
+                textAlign: "center",
+                padding: "40px",
+                color: "#6b7280",
+                fontSize: 13,
+              }}
+            >
               Carregando...
             </div>
           ) : (
@@ -1044,9 +1194,9 @@ export default function Produtos({ setTela }: ProdutosProps) {
               <div
                 key={produto.id}
                 style={{
-                  background: "#fff",
-                  borderRadius: 12,
-                  padding: "12px",
+                  background: "#ffffff",
+                  borderRadius: 10,
+                  padding: "14px",
                   marginBottom: 8,
                   border: "1px solid #e5e7eb",
                 }}
@@ -1059,20 +1209,37 @@ export default function Produtos({ setTela }: ProdutosProps) {
                   }}
                 >
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: 14 }}>
+                    <div
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 14,
+                        color: "#111827",
+                      }}
+                    >
                       {produto.name}
                     </div>
+
                     <div
-                      style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}
+                      style={{
+                        fontSize: 11,
+                        color: "#6b7280",
+                        marginTop: 3,
+                      }}
                     >
                       Cód: {produto.product_code || "-"}
                     </div>
+
                     <div
-                      style={{ fontSize: 12, color: "#9ca3af", marginTop: 2 }}
+                      style={{
+                        fontSize: 12,
+                        color: "#9ca3af",
+                        marginTop: 2,
+                      }}
                     >
                       {produto.category?.name || "Sem categoria"}
                     </div>
                   </div>
+
                   <div style={{ textAlign: "right" }}>
                     <div
                       style={{
@@ -1083,31 +1250,37 @@ export default function Produtos({ setTela }: ProdutosProps) {
                     >
                       {formatCurrency(produto.price)}
                     </div>
+
                     <div
-                      style={{ fontSize: 12, color: "#374151", marginTop: 2 }}
+                      style={{
+                        fontSize: 12,
+                        color: "#374151",
+                        marginTop: 2,
+                      }}
                     >
                       Estoque: {produto.quantity}
                     </div>
                   </div>
                 </div>
+
                 <div
                   style={{
                     display: "flex",
                     gap: 8,
                     marginTop: 8,
                     paddingTop: 8,
-                    borderTop: "1px solid #e5e7eb",
+                    borderTop: "1px solid #f1f5f9",
                   }}
                 >
                   <button
                     onClick={() => abrirModalEditar(produto)}
                     style={{
                       flex: 1,
-                      padding: "6px",
-                      borderRadius: 6,
-                      border: "none",
-                      background: "#10b981",
-                      color: "#fff",
+                      padding: "7px",
+                      borderRadius: 7,
+                      border: "1px solid #a7f3d0",
+                      background: "#ecfdf5",
+                      color: "#047857",
                       fontSize: 12,
                       cursor: "pointer",
                       display: "flex",
@@ -1119,15 +1292,16 @@ export default function Produtos({ setTela }: ProdutosProps) {
                     <FontAwesomeIcon icon={faEdit} size="xs" />
                     Editar
                   </button>
+
                   <button
                     onClick={() => removerProduto(produto.id, produto.name)}
                     style={{
                       flex: 1,
-                      padding: "6px",
-                      borderRadius: 6,
-                      border: "none",
-                      background: "#ef4444",
-                      color: "#fff",
+                      padding: "7px",
+                      borderRadius: 7,
+                      border: "1px solid #fecaca",
+                      background: "#fffafa",
+                      color: "#dc2626",
                       fontSize: 12,
                       cursor: "pointer",
                       display: "flex",

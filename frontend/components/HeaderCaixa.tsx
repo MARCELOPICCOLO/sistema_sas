@@ -1,20 +1,38 @@
 import React from "react";
+import { FiltrosCaixa } from "./FiltrosCaixa";
+
+interface ExpenseCategory {
+  id: number;
+  name: string;
+  icon: string;
+  color: string;
+  is_active: boolean;
+}
 
 interface HeaderCaixaProps {
   mesSelecionado: number;
   setMesSelecionado: (mes: number) => void;
   anoSelecionado: number;
   setAnoSelecionado: (ano: number) => void;
+
   showEntradas: boolean;
   setShowEntradas: (show: boolean) => void;
+
   showSaidas: boolean;
   setShowSaidas: (show: boolean) => void;
+
   totalEntradas: number;
   totalSaidas: number;
   saldoGeral: number;
+
   formatCurrency: (value: any) => string;
+
   anos: number[];
   meses: { value: number; label: string }[];
+
+  categorias: ExpenseCategory[];
+  filtroCategoria: number | null;
+  setFiltroCategoria: (id: number | null) => void;
 }
 
 export const HeaderCaixa: React.FC<HeaderCaixaProps> = ({
@@ -32,77 +50,27 @@ export const HeaderCaixa: React.FC<HeaderCaixaProps> = ({
   formatCurrency,
   anos,
   meses,
+  categorias,
+  filtroCategoria,
+  setFiltroCategoria,
 }) => {
   return (
     <div
       style={{
-        background: "#fff",
-        padding: "16px 20px",
-        borderRadius: 8,
+        background: "#ffffff",
+        borderRadius: 10,
         marginBottom: 20,
         border: "1px solid #e5e7eb",
+        overflow: "hidden",
       }}
     >
+      {/* HEADER */}
       <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: 12,
+          padding: "18px 20px",
         }}
       >
-        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>
-          Fluxo de Caixa
-        </h2>
-        <div style={{ display: "flex", gap: 10 }}>
-          <select
-            value={mesSelecionado}
-            onChange={(e) => setMesSelecionado(Number(e.target.value))}
-            style={{
-              padding: "6px 10px",
-              borderRadius: 6,
-              border: "1px solid #e5e7eb",
-              background: "#fff",
-              fontSize: 13,
-              cursor: "pointer",
-            }}
-          >
-            {meses.map((mes) => (
-              <option key={mes.value} value={mes.value}>
-                {mes.label}
-              </option>
-            ))}
-          </select>
-          <select
-            value={anoSelecionado}
-            onChange={(e) => setAnoSelecionado(Number(e.target.value))}
-            style={{
-              padding: "6px 10px",
-              borderRadius: 6,
-              border: "1px solid #e5e7eb",
-              background: "#fff",
-              fontSize: 13,
-              cursor: "pointer",
-            }}
-          >
-            {anos.map((ano) => (
-              <option key={ano} value={ano}>
-                {ano}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <div
-        style={{
-          marginTop: 14,
-          padding: "10px 0",
-          borderTop: "1px solid #e5e7eb",
-          borderBottom: "1px solid #e5e7eb",
-        }}
-      >
+        {/* TÍTULO + PERÍODO */}
         <div
           style={{
             display: "flex",
@@ -112,81 +80,223 @@ export const HeaderCaixa: React.FC<HeaderCaixaProps> = ({
             gap: 12,
           }}
         >
-          <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
-            <div>
-              <div style={{ fontSize: 11, color: "#6b7280" }}>Entradas</div>
-              <div
-                style={{
-                  fontSize: 18,
-                  fontWeight: "bold",
-                  color: "#10b981",
-                }}
-              >
-                {formatCurrency(totalEntradas)}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: 11, color: "#6b7280" }}>Saídas</div>
-              <div
-                style={{
-                  fontSize: 18,
-                  fontWeight: "bold",
-                  color: "#dc2626",
-                }}
-              >
-                {formatCurrency(totalSaidas)}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: 11, color: "#6b7280" }}>Saldo</div>
-              <div
-                style={{
-                  fontSize: 18,
-                  fontWeight: "bold",
-                  color: saldoGeral >= 0 ? "#10b981" : "#dc2626",
-                }}
-              >
-                {formatCurrency(saldoGeral)}
-              </div>
-            </div>
-          </div>
+          <h2
+            style={{
+              margin: 0,
+              fontSize: 18,
+              fontWeight: 600,
+              color: "#1f2937",
+            }}
+          >
+            Fluxo de Caixa
+          </h2>
 
-          <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
-            <button
-              onClick={() => setShowEntradas(!showEntradas)}
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+            }}
+          >
+            <select
+              value={mesSelecionado}
+              onChange={(e) => setMesSelecionado(Number(e.target.value))}
               style={{
-                padding: "5px 14px",
-                borderRadius: 20,
-                border: "1px solid #10b981",
-                background: showEntradas ? "#10b981" : "#fff",
-                color: showEntradas ? "#fff" : "#10b981",
+                padding: "7px 10px",
+                borderRadius: 6,
+                border: "1px solid #e5e7eb",
+                background: "#ffffff",
+                color: "#374151",
+                fontSize: 12,
                 cursor: "pointer",
-                fontSize: 11,
-                fontWeight: 500,
-                whiteSpace: "nowrap",
+                outline: "none",
               }}
             >
-              Entradas
-            </button>
-            <button
-              onClick={() => setShowSaidas(!showSaidas)}
+              {meses.map((mes) => (
+                <option key={mes.value} value={mes.value}>
+                  {mes.label}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={anoSelecionado}
+              onChange={(e) => setAnoSelecionado(Number(e.target.value))}
               style={{
-                padding: "5px 14px",
-                borderRadius: 20,
-                border: "1px solid #dc2626",
-                background: showSaidas ? "#dc2626" : "#fff",
-                color: showSaidas ? "#fff" : "#dc2626",
+                padding: "7px 10px",
+                borderRadius: 6,
+                border: "1px solid #e5e7eb",
+                background: "#ffffff",
+                color: "#374151",
+                fontSize: 12,
                 cursor: "pointer",
-                fontSize: 11,
-                fontWeight: 500,
-                whiteSpace: "nowrap",
+                outline: "none",
               }}
             >
-              Saídas
-            </button>
+              {anos.map((ano) => (
+                <option key={ano} value={ano}>
+                  {ano}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* RESUMO */}
+        <div
+          style={{
+            marginTop: 16,
+            paddingTop: 16,
+            borderTop: "1px solid #f0f1f3",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 20,
+            }}
+          >
+            {/* VALORES */}
+            <div
+              style={{
+                display: "flex",
+                gap: 32,
+                flexWrap: "wrap",
+              }}
+            >
+              {/* ENTRADAS */}
+              <div>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: "#6b7280",
+                    marginBottom: 3,
+                  }}
+                >
+                  Entradas
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 17,
+                    fontWeight: 600,
+                    color: "#059669",
+                  }}
+                >
+                  {formatCurrency(totalEntradas)}
+                </div>
+              </div>
+
+              {/* SAÍDAS */}
+              <div>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: "#6b7280",
+                    marginBottom: 3,
+                  }}
+                >
+                  Saídas
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 17,
+                    fontWeight: 600,
+                    color: "#374151",
+                  }}
+                >
+                  {formatCurrency(totalSaidas)}
+                </div>
+              </div>
+
+              {/* SALDO */}
+              <div>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: "#6b7280",
+                    marginBottom: 3,
+                  }}
+                >
+                  Saldo
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 17,
+                    fontWeight: 600,
+                    color: saldoGeral >= 0 ? "#059669" : "#374151",
+                  }}
+                >
+                  {formatCurrency(saldoGeral)}
+                </div>
+              </div>
+            </div>
+
+            {/* FILTRO ENTRADAS / SAÍDAS */}
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                flexShrink: 0,
+              }}
+            >
+              <button
+                onClick={() => setShowEntradas(!showEntradas)}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: 6,
+                  border: "1px solid #e5e7eb",
+                  background: showEntradas ? "#f3f4f6" : "#ffffff",
+                  color: showEntradas ? "#374151" : "#6b7280",
+                  cursor: "pointer",
+                  fontSize: 11,
+                  fontWeight: 500,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Entradas
+              </button>
+
+              <button
+                onClick={() => setShowSaidas(!showSaidas)}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: 6,
+                  border: "1px solid #e5e7eb",
+                  background: showSaidas ? "#f3f4f6" : "#ffffff",
+                  color: showSaidas ? "#374151" : "#6b7280",
+                  cursor: "pointer",
+                  fontSize: 11,
+                  fontWeight: 500,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Saídas
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* FILTRO DE CATEGORIAS */}
+      {categorias.length > 0 && (
+        <div
+          style={{
+            borderTop: "1px solid #f0f1f3",
+            padding: "12px 20px",
+          }}
+        >
+          <FiltrosCaixa
+            categorias={categorias}
+            filtroCategoria={filtroCategoria}
+            setFiltroCategoria={setFiltroCategoria}
+          />
+        </div>
+      )}
     </div>
   );
 };

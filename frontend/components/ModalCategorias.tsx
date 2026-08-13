@@ -1,10 +1,10 @@
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faSave,
   faTimes,
-  faEdit,
+  faPen,
   faTrash,
+  faCheck,
 } from "@fortawesome/free-solid-svg-icons";
 
 interface Category {
@@ -40,206 +40,445 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
 }) => {
   if (!showModalCategoria) return null;
 
+  const fecharModal = () => {
+    setShowModalCategoria(false);
+    setEditandoCategoria(null);
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    boxSizing: "border-box",
+    height: 42,
+    padding: "0 12px",
+    borderRadius: 8,
+    border: "1px solid #e5e7eb",
+    background: "#fff",
+    color: "#111827",
+    fontSize: 13,
+    outline: "none",
+  };
+
   return (
     <div
       style={{
         position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: "rgba(0,0,0,0.5)",
+        inset: 0,
+        background: "rgba(15, 23, 42, 0.5)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         zIndex: 1001,
+        padding: 20,
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
-          setShowModalCategoria(false);
-          setEditandoCategoria(null);
+          fecharModal();
         }
       }}
     >
       <div
         style={{
-          background: "#fff",
-          borderRadius: 12,
-          padding: 24,
-          width: "90%",
+          width: "100%",
           maxWidth: 500,
-          maxHeight: "80vh",
-          overflowY: "auto",
+          maxHeight: "90vh",
+          background: "#fff",
+          borderRadius: 14,
+          overflow: "hidden",
+          boxShadow: "0 20px 50px rgba(0,0,0,0.15)",
+          display: "flex",
+          flexDirection: "column",
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ margin: "0 0 20px 0", fontSize: 20 }}>
-          Gerenciar Categorias
-        </h2>
-
+        {/* HEADER */}
         <div
           style={{
-            marginBottom: 20,
-            padding: 16,
-            background: "#f9fafb",
-            borderRadius: 8,
+            padding: "20px 22px",
+            borderBottom: "1px solid #f1f5f9",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
           }}
         >
-          <h3 style={{ margin: "0 0 12px 0", fontSize: 14 }}>Nova Categoria</h3>
-          <div style={{ display: "flex", gap: 8 }}>
-            <input
-              type="text"
-              placeholder="Nome da categoria"
-              value={novaCategoria.name}
-              onChange={(e) => setNovaCategoria({ name: e.target.value })}
+          <div>
+            <h2
               style={{
-                flex: 1,
-                padding: "8px 12px",
-                borderRadius: 6,
-                border: "1px solid #e5e7eb",
-                fontSize: 14,
-                outline: "none",
-              }}
-            />
-            <button
-              onClick={adicionarCategoria}
-              style={{
-                padding: "8px 16px",
-                background: "#10b981",
-                color: "#fff",
-                border: "none",
-                borderRadius: 6,
-                cursor: "pointer",
-                fontWeight: 500,
+                margin: 0,
+                fontSize: 17,
+                fontWeight: 600,
+                color: "#111827",
               }}
             >
-              Adicionar
-            </button>
+              Categorias
+            </h2>
+
+            <p
+              style={{
+                margin: "4px 0 0",
+                fontSize: 12,
+                color: "#9ca3af",
+              }}
+            >
+              Adicione, edite ou remova categorias de produtos.
+            </p>
           </div>
+
+          <button
+            type="button"
+            onClick={fecharModal}
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              border: "none",
+              background: "#f8fafc",
+              color: "#6b7280",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            title="Fechar"
+          >
+            <FontAwesomeIcon icon={faTimes} style={{ fontSize: 14 }} />
+          </button>
         </div>
 
-        <div>
-          <h3 style={{ margin: "0 0 12px 0", fontSize: 14 }}>
-            Categorias Existentes
-          </h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {categorias.map((cat) => (
-              <div
-                key={cat.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "10px 12px",
-                  background: "#fff",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: 8,
-                }}
-              >
-                {editandoCategoria?.id === cat.id ? (
-                  <div style={{ flex: 1, display: "flex", gap: 8 }}>
-                    <input
-                      type="text"
-                      value={editandoCategoria.name}
-                      onChange={(e) =>
-                        setEditandoCategoria({
-                          ...editandoCategoria,
-                          name: e.target.value,
-                        })
-                      }
-                      style={{
-                        flex: 1,
-                        padding: "6px 10px",
-                        borderRadius: 6,
-                        border: "1px solid #e5e7eb",
-                        fontSize: 14,
-                      }}
-                      autoFocus
-                    />
-                    <button
-                      onClick={editarCategoria}
-                      style={{
-                        padding: "6px 12px",
-                        background: "#10b981",
-                        color: "#fff",
-                        border: "none",
-                        borderRadius: 6,
-                        cursor: "pointer",
-                      }}
-                    >
-                      <FontAwesomeIcon icon={faSave} />
-                    </button>
-                    <button
-                      onClick={() => setEditandoCategoria(null)}
-                      style={{
-                        padding: "6px 12px",
-                        background: "#6b7280",
-                        color: "#fff",
-                        border: "none",
-                        borderRadius: 6,
-                        cursor: "pointer",
-                      }}
-                    >
-                      <FontAwesomeIcon icon={faTimes} />
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <span style={{ fontSize: 14 }}>{cat.name}</span>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button
-                        onClick={() => setEditandoCategoria(cat)}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          color: "#6b7280",
-                          fontSize: 16,
-                        }}
-                        title="Editar"
-                      >
-                        <FontAwesomeIcon icon={faEdit} />
-                      </button>
-                      <button
-                        onClick={() => excluirCategoria(cat.id, cat.name)}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          color: "#dc2626",
-                          fontSize: 16,
-                        }}
-                        title="Excluir"
-                      >
-                        <FontAwesomeIcon icon={faTrash} />
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <button
-          onClick={() => {
-            setShowModalCategoria(false);
-            setEditandoCategoria(null);
-          }}
+        {/* CONTEÚDO */}
+        <div
           style={{
-            marginTop: 20,
-            width: "100%",
-            padding: "10px",
-            borderRadius: 8,
-            border: "1px solid #e5e7eb",
-            background: "#fff",
-            color: "#374151",
-            fontWeight: "bold",
-            cursor: "pointer",
+            padding: "22px",
+            overflowY: "auto",
           }}
         >
-          Fechar
-        </button>
+          {/* NOVA CATEGORIA */}
+          <div style={{ marginBottom: 24 }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: 7,
+                fontSize: 12,
+                fontWeight: 500,
+                color: "#374151",
+              }}
+            >
+              Nova categoria
+            </label>
+
+            <div
+              style={{
+                display: "flex",
+                gap: 10,
+              }}
+            >
+              <input
+                type="text"
+                placeholder="Nome da categoria"
+                value={novaCategoria.name}
+                onChange={(e) =>
+                  setNovaCategoria({
+                    name: e.target.value,
+                  })
+                }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    adicionarCategoria();
+                  }
+                }}
+                style={{
+                  ...inputStyle,
+                  flex: 1,
+                }}
+              />
+
+              <button
+                type="button"
+                onClick={adicionarCategoria}
+                disabled={!novaCategoria.name.trim()}
+                style={{
+                  height: 42,
+                  padding: "0 16px",
+                  borderRadius: 8,
+                  border: "none",
+                  background: novaCategoria.name.trim() ? "#059669" : "#e5e7eb",
+                  color: novaCategoria.name.trim() ? "#fff" : "#9ca3af",
+                  cursor: novaCategoria.name.trim() ? "pointer" : "not-allowed",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Adicionar
+              </button>
+            </div>
+          </div>
+
+          {/* DIVISOR */}
+          <div
+            style={{
+              height: 1,
+              background: "#f1f5f9",
+              marginBottom: 20,
+            }}
+          />
+
+          {/* LISTA */}
+          <div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 10,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: "#374151",
+                }}
+              >
+                Categorias cadastradas
+              </span>
+
+              <span
+                style={{
+                  fontSize: 11,
+                  color: "#9ca3af",
+                }}
+              >
+                {categorias.length}{" "}
+                {categorias.length === 1 ? "categoria" : "categorias"}
+              </span>
+            </div>
+
+            {categorias.length === 0 ? (
+              <div
+                style={{
+                  padding: "28px 20px",
+                  border: "1px dashed #e5e7eb",
+                  borderRadius: 10,
+                  textAlign: "center",
+                  color: "#9ca3af",
+                }}
+              >
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 12,
+                  }}
+                >
+                  Nenhuma categoria cadastrada.
+                </p>
+              </div>
+            ) : (
+              <div
+                style={{
+                  border: "1px solid #eef2f7",
+                  borderRadius: 10,
+                  overflow: "hidden",
+                }}
+              >
+                {categorias.map((cat, index) => {
+                  const editando = editandoCategoria?.id === cat.id;
+
+                  return (
+                    <div
+                      key={cat.id}
+                      style={{
+                        padding: "11px 12px",
+                        borderBottom:
+                          index !== categorias.length - 1
+                            ? "1px solid #f1f5f9"
+                            : "none",
+                        background: editando ? "#fafafa" : "#fff",
+                      }}
+                    >
+                      {editando ? (
+                        /* MODO EDIÇÃO */
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                          }}
+                        >
+                          <input
+                            type="text"
+                            value={editandoCategoria.name}
+                            onChange={(e) =>
+                              setEditandoCategoria({
+                                ...editandoCategoria,
+                                name: e.target.value,
+                              })
+                            }
+                            style={{
+                              ...inputStyle,
+                              height: 38,
+                              flex: 1,
+                            }}
+                            autoFocus
+                          />
+
+                          <button
+                            type="button"
+                            onClick={editarCategoria}
+                            style={{
+                              width: 36,
+                              height: 36,
+                              borderRadius: 8,
+                              border: "none",
+                              background: "#ecfdf5",
+                              color: "#059669",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                            title="Salvar"
+                          >
+                            <FontAwesomeIcon
+                              icon={faCheck}
+                              style={{ fontSize: 13 }}
+                            />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setEditandoCategoria(null)}
+                            style={{
+                              width: 36,
+                              height: 36,
+                              borderRadius: 8,
+                              border: "1px solid #e5e7eb",
+                              background: "#fff",
+                              color: "#6b7280",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                            title="Cancelar edição"
+                          >
+                            <FontAwesomeIcon
+                              icon={faTimes}
+                              style={{ fontSize: 13 }}
+                            />
+                          </button>
+                        </div>
+                      ) : (
+                        /* MODO NORMAL */
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: 12,
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: 13,
+                              fontWeight: 500,
+                              color: "#374151",
+                            }}
+                          >
+                            {cat.name}
+                          </span>
+
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 4,
+                            }}
+                          >
+                            {/* EDITAR */}
+                            <button
+                              type="button"
+                              onClick={() => setEditandoCategoria(cat)}
+                              style={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: 7,
+                                border: "none",
+                                background: "transparent",
+                                color: "#6b7280",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                              title="Editar categoria"
+                            >
+                              <FontAwesomeIcon
+                                icon={faPen}
+                                style={{ fontSize: 12 }}
+                              />
+                            </button>
+
+                            {/* EXCLUIR */}
+                            <button
+                              type="button"
+                              onClick={() => excluirCategoria(cat.id, cat.name)}
+                              style={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: 7,
+                                border: "none",
+                                background: "transparent",
+                                color: "#9ca3af",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                              title="Excluir categoria"
+                            >
+                              <FontAwesomeIcon
+                                icon={faTrash}
+                                style={{ fontSize: 12 }}
+                              />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* FOOTER */}
+        <div
+          style={{
+            padding: "14px 22px",
+            borderTop: "1px solid #f1f5f9",
+            display: "flex",
+            justifyContent: "flex-end",
+          }}
+        >
+          <button
+            type="button"
+            onClick={fecharModal}
+            style={{
+              padding: "10px 18px",
+              borderRadius: 8,
+              border: "1px solid #e5e7eb",
+              background: "#fff",
+              color: "#374151",
+              cursor: "pointer",
+              fontSize: 13,
+              fontWeight: 500,
+            }}
+          >
+            Fechar
+          </button>
+        </div>
       </div>
     </div>
   );

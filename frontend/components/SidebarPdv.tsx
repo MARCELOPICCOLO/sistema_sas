@@ -1,5 +1,5 @@
 // components/pdv/SidebarPdv.tsx
-import React, { useState } from "react";
+import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faStore,
@@ -38,29 +38,36 @@ const SidebarPdv: React.FC<SidebarPdvProps> = ({
   return (
     <div
       style={{
-        background: "#1f2937",
+        background: "#ffffff",
         display: "flex",
         flexDirection: "column",
         height: "100%",
         width: "100%",
+        color: "#111827",
+        borderRight: "1px solid #e5e7eb",
       }}
     >
       {/* CABEÇALHO */}
-      <div style={{ padding: "16px 20px", borderBottom: "1px solid #374151" }}>
+      <div
+        style={{
+          padding: "20px",
+          borderBottom: "1px solid #f1f5f9",
+        }}
+      >
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 10,
-            marginBottom: 16,
+            gap: 12,
+            marginBottom: 20,
           }}
         >
           <div
             style={{
-              width: 36,
-              height: 36,
-              background: "#374151",
-              borderRadius: 8,
+              width: 42,
+              height: 42,
+              background: "#ecfdf5",
+              borderRadius: 10,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -68,34 +75,54 @@ const SidebarPdv: React.FC<SidebarPdvProps> = ({
           >
             <FontAwesomeIcon
               icon={faStore}
-              style={{ fontSize: 18, color: "#10b981" }}
+              style={{
+                fontSize: 19,
+                color: "#059669",
+              }}
             />
           </div>
+
           <div>
             <h2
               style={{
                 margin: 0,
-                fontSize: 16,
+                fontSize: 17,
                 fontWeight: 600,
-                color: "#fff",
+                color: "#111827",
               }}
-            ></h2>
-            <p style={{ margin: "2px 0 0", fontSize: 11, color: "#9ca3af" }}>
+            >
+              Pontos de Venda
+            </h2>
+
+            <p
+              style={{
+                margin: "3px 0 0",
+                fontSize: 12,
+                color: "#6b7280",
+              }}
+            >
               Gerencie seus pontos
             </p>
           </div>
         </div>
 
         {/* Input de adicionar compacto */}
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            alignItems: "center",
+          }}
+        >
           <div
             style={{
               display: "flex",
               alignItems: "center",
               gap: 8,
-              background: "#374151",
-              borderRadius: 6,
-              padding: "2px",
+              background: "#f3f4f6",
+              borderRadius: 8,
+              padding: "3px",
+              width: "100%",
             }}
           >
             <input
@@ -104,22 +131,23 @@ const SidebarPdv: React.FC<SidebarPdvProps> = ({
               onChange={(e) => onNovoPontoCodigoChange(e.target.value)}
               placeholder="Número"
               style={{
-                width: "100px",
-                padding: "6px 10px",
-                borderRadius: 6,
-                border: "none",
+                width: "100%",
+                padding: "8px 10px",
+                borderRadius: 7,
+                border: "1px solid #e5e7eb",
                 fontSize: 12,
                 outline: "none",
-                background: "#374151",
-                color: "#fff",
+                background: "#ffffff",
+                color: "#111827",
               }}
               onKeyPress={(e) => e.key === "Enter" && onAdicionarPonto()}
             />
+
             <button
               onClick={onAdicionarPonto}
               style={{
-                padding: "6px 14px",
-                borderRadius: 6,
+                padding: "8px 12px",
+                borderRadius: 7,
                 border: "none",
                 background: "#10b981",
                 color: "#fff",
@@ -130,6 +158,7 @@ const SidebarPdv: React.FC<SidebarPdvProps> = ({
                 alignItems: "center",
                 gap: 6,
                 transition: "all 0.2s",
+                whiteSpace: "nowrap",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = "#059669";
@@ -146,12 +175,18 @@ const SidebarPdv: React.FC<SidebarPdvProps> = ({
       </div>
 
       {/* LISTA DE PONTOS */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          padding: "20px",
+        }}
+      >
         <div
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))",
-            gap: 12,
+            gap: 10,
           }}
         >
           {pontos
@@ -169,27 +204,32 @@ const SidebarPdv: React.FC<SidebarPdvProps> = ({
                     background: isBalcao
                       ? "#10b981"
                       : isActive
-                        ? "#374151"
-                        : "#111827",
+                        ? "#ecfdf5"
+                        : "#ffffff",
                     borderRadius: 10,
-                    padding: "12px 8px",
+                    padding: "14px 8px",
                     cursor: "pointer",
                     transition: "all 0.2s",
                     border: isActive
-                      ? "1px solid #10b981"
-                      : "1px solid #374151",
+                      ? "1px solid #a7f3d0"
+                      : "1px solid #e5e7eb",
                     textAlign: "center",
+                    boxShadow: isActive
+                      ? "0 1px 3px rgba(0,0,0,0.06)"
+                      : "0 1px 2px rgba(0,0,0,0.04)",
                   }}
                   onMouseEnter={(e) => {
                     if (!isActive) {
                       e.currentTarget.style.transform = "translateY(-1px)";
                       e.currentTarget.style.boxShadow =
-                        "0 2px 8px rgba(0,0,0,0.2)";
+                        "0 2px 8px rgba(15,23,42,0.08)";
                     }
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow = "none";
+                    e.currentTarget.style.boxShadow = isActive
+                      ? "0 1px 3px rgba(0,0,0,0.06)"
+                      : "0 1px 2px rgba(0,0,0,0.04)";
                   }}
                 >
                   {/* Ícone estilizado */}
@@ -199,7 +239,7 @@ const SidebarPdv: React.FC<SidebarPdvProps> = ({
                       height: 40,
                       background: isBalcao
                         ? "rgba(255,255,255,0.2)"
-                        : "rgba(255,255,255,0.05)",
+                        : "#f3f4f6",
                       borderRadius: 10,
                       display: "flex",
                       alignItems: "center",
@@ -211,7 +251,7 @@ const SidebarPdv: React.FC<SidebarPdvProps> = ({
                       icon={isBalcao ? faUsers : faUser}
                       style={{
                         fontSize: 18,
-                        color: isBalcao ? "#fff" : "#9ca3af",
+                        color: isBalcao ? "#fff" : "#6b7280",
                       }}
                     />
                   </div>
@@ -220,9 +260,9 @@ const SidebarPdv: React.FC<SidebarPdvProps> = ({
                   <div
                     style={{
                       fontSize: 13,
-                      fontWeight: "bold",
-                      color: "#fff",
-                      marginBottom: 2,
+                      fontWeight: 600,
+                      color: isBalcao ? "#fff" : "#111827",
+                      marginBottom: 3,
                     }}
                   >
                     {isBalcao
@@ -233,7 +273,7 @@ const SidebarPdv: React.FC<SidebarPdvProps> = ({
                   <div
                     style={{
                       fontSize: 10,
-                      color: "#9ca3af",
+                      color: isBalcao ? "rgba(255,255,255,0.85)" : "#6b7280",
                     }}
                   >
                     {isBalcao ? "Atendimento geral" : "Ponto de venda"}
@@ -247,8 +287,9 @@ const SidebarPdv: React.FC<SidebarPdvProps> = ({
                         position: "absolute",
                         bottom: 6,
                         right: 6,
-                        background: "rgba(0,0,0,0.6)",
-                        borderRadius: 4,
+                        background: "#f3f4f6",
+                        border: "1px solid #e5e7eb",
+                        borderRadius: 5,
                         width: 22,
                         height: 22,
                         display: "flex",
@@ -258,15 +299,20 @@ const SidebarPdv: React.FC<SidebarPdvProps> = ({
                         transition: "all 0.2s",
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = "#10b981";
+                        e.currentTarget.style.background = "#ecfdf5";
+                        e.currentTarget.style.borderColor = "#a7f3d0";
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.background = "rgba(0,0,0,0.6)";
+                        e.currentTarget.style.background = "#f3f4f6";
+                        e.currentTarget.style.borderColor = "#e5e7eb";
                       }}
                     >
                       <FontAwesomeIcon
                         icon={faEllipsisV}
-                        style={{ fontSize: 10, color: "#fff" }}
+                        style={{
+                          fontSize: 10,
+                          color: "#6b7280",
+                        }}
                       />
                     </div>
                   )}
@@ -279,12 +325,18 @@ const SidebarPdv: React.FC<SidebarPdvProps> = ({
       {/* RODAPÉ */}
       <div
         style={{
-          padding: "10px 16px",
-          borderTop: "1px solid #374151",
-          background: "#111827",
+          padding: "16px 20px",
+          borderTop: "1px solid #f1f5f9",
+          background: "#fafafa",
         }}
       >
-        <div style={{ fontSize: 10, color: "#9ca3af", textAlign: "center" }}>
+        <div
+          style={{
+            fontSize: 12,
+            color: "#9ca3af",
+            textAlign: "center",
+          }}
+        >
           Total: {pontos.length} pontos
         </div>
       </div>

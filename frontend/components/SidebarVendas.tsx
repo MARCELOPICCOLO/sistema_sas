@@ -25,15 +25,21 @@ export const SidebarVendas: React.FC<SidebarVendasProps> = ({
   return (
     <div
       style={{
-        background: "#1f2937",
+        background: "#ffffff",
         display: "flex",
         flexDirection: "column",
         height: "100%",
         overflowY: "auto",
+        borderRight: "1px solid #e5e7eb",
       }}
     >
       {/* Botão Voltar ao Dashboard */}
-      <div style={{ padding: "16px 20px", borderBottom: "1px solid #374151" }}>
+      <div
+        style={{
+          padding: "16px 20px",
+          borderBottom: "1px solid #f1f5f9",
+        }}
+      >
         <button
           onClick={onVoltarDashboard}
           style={{
@@ -41,22 +47,24 @@ export const SidebarVendas: React.FC<SidebarVendasProps> = ({
             alignItems: "center",
             gap: 8,
             width: "100%",
-            padding: "10px 16px",
-            background: "transparent",
-            border: "1px solid #374151",
+            padding: "9px 12px",
+            background: "#f8fafc",
+            border: "1px solid #e5e7eb",
             borderRadius: 8,
             cursor: "pointer",
             transition: "all 0.2s",
-            color: "#9ca3af",
+            color: "#6b7280",
             fontSize: 13,
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = "#374151";
-            e.currentTarget.style.color = "#fff";
+            e.currentTarget.style.background = "#ecfdf5";
+            e.currentTarget.style.borderColor = "#a7f3d0";
+            e.currentTarget.style.color = "#059669";
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = "transparent";
-            e.currentTarget.style.color = "#9ca3af";
+            e.currentTarget.style.background = "#f8fafc";
+            e.currentTarget.style.borderColor = "#e5e7eb";
+            e.currentTarget.style.color = "#6b7280";
           }}
         >
           <FontAwesomeIcon icon={faArrowLeft} />
@@ -65,13 +73,24 @@ export const SidebarVendas: React.FC<SidebarVendasProps> = ({
       </div>
 
       {/* Cabeçalho */}
-      <div style={{ padding: "24px 20px", borderBottom: "1px solid #374151" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <div
+        style={{
+          padding: "24px 20px",
+          borderBottom: "1px solid #f1f5f9",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
           <div
             style={{
-              width: 40,
-              height: 40,
-              background: "#374151",
+              width: 42,
+              height: 42,
+              background: "#ecfdf5",
               borderRadius: 10,
               display: "flex",
               alignItems: "center",
@@ -80,21 +99,32 @@ export const SidebarVendas: React.FC<SidebarVendasProps> = ({
           >
             <FontAwesomeIcon
               icon={faCashRegister}
-              style={{ fontSize: 20, color: "#10b981" }}
+              style={{
+                fontSize: 19,
+                color: "#059669",
+              }}
             />
           </div>
+
           <div>
             <h2
               style={{
                 margin: 0,
-                fontSize: 18,
+                fontSize: 17,
                 fontWeight: 600,
-                color: "#fff",
+                color: "#111827",
               }}
             >
               Gestão de Vendas
             </h2>
-            <p style={{ margin: "2px 0 0", fontSize: 12, color: "#9ca3af" }}>
+
+            <p
+              style={{
+                margin: "3px 0 0",
+                fontSize: 12,
+                color: "#6b7280",
+              }}
+            >
               Gerenciar vendas
             </p>
           </div>
@@ -110,26 +140,27 @@ export const SidebarVendas: React.FC<SidebarVendasProps> = ({
             alignItems: "center",
             gap: 12,
             width: "100%",
-            padding: "12px 16px",
-            background: "#10b981",
+            padding: "11px 12px",
+            background: "transparent",
             border: "none",
             borderRadius: 8,
             cursor: "pointer",
             transition: "all 0.2s",
-            color: "#fff",
+            color: "#374151",
+            textAlign: "left",
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = "#059669";
+            e.currentTarget.style.background = "#f8fafc";
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = "#10b981";
+            e.currentTarget.style.background = "transparent";
           }}
         >
           <div
             style={{
               width: 32,
               height: 32,
-              background: "rgba(255,255,255,0.2)",
+              background: "#ecfdf5",
               borderRadius: 8,
               display: "flex",
               alignItems: "center",
@@ -138,15 +169,28 @@ export const SidebarVendas: React.FC<SidebarVendasProps> = ({
           >
             <FontAwesomeIcon
               icon={faPlus}
-              style={{ fontSize: 14, color: "#fff" }}
+              style={{
+                fontSize: 13,
+                color: "#059669",
+              }}
             />
           </div>
-          <div style={{ flex: 1, textAlign: "left" }}>
-            <div style={{ fontSize: 14, fontWeight: 500 }}>Nova Venda</div>
+
+          <div style={{ flex: 1 }}>
+            <div
+              style={{
+                fontSize: 13,
+                fontWeight: 500,
+                color: "#374151",
+              }}
+            >
+              Nova Venda
+            </div>
+
             <div
               style={{
                 fontSize: 11,
-                color: "rgba(255,255,255,0.8)",
+                color: "#9ca3af",
                 marginTop: 2,
               }}
             >
@@ -158,52 +202,161 @@ export const SidebarVendas: React.FC<SidebarVendasProps> = ({
 
       {/* Navegação por Abas */}
       <div style={{ padding: "0 20px 20px" }}>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 6,
+          }}
+        >
           <button
             onClick={() => onAbaChange("produtos")}
             style={{
-              flex: 1,
-              padding: "10px",
-              borderRadius: 8,
-              border:
-                abaAtiva === "produtos"
-                  ? "1px solid #10b981"
-                  : "1px solid #374151",
-              background: abaAtiva === "produtos" ? "#10b981" : "transparent",
-              color: abaAtiva === "produtos" ? "#fff" : "#9ca3af",
-              cursor: "pointer",
-              fontSize: 13,
-              fontWeight: 500,
               display: "flex",
               alignItems: "center",
-              gap: 8,
-              justifyContent: "center",
+              gap: 12,
+              width: "100%",
+              padding: "11px 12px",
+              background: abaAtiva === "produtos" ? "#ecfdf5" : "transparent",
+              border:
+                abaAtiva === "produtos"
+                  ? "1px solid #a7f3d0"
+                  : "1px solid transparent",
+              borderRadius: 8,
+              cursor: "pointer",
+              color: abaAtiva === "produtos" ? "#047857" : "#374151",
+              fontSize: 13,
+              fontWeight: 500,
+              transition: "all 0.2s",
+              textAlign: "left",
+            }}
+            onMouseEnter={(e) => {
+              if (abaAtiva !== "produtos") {
+                e.currentTarget.style.background = "#f8fafc";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (abaAtiva !== "produtos") {
+                e.currentTarget.style.background = "transparent";
+              }
             }}
           >
-            <FontAwesomeIcon icon={faBoxes} /> Produtos
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                background: abaAtiva === "produtos" ? "#d1fae5" : "#f3f4f6",
+                borderRadius: 8,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <FontAwesomeIcon
+                icon={faBoxes}
+                style={{
+                  fontSize: 13,
+                  color: abaAtiva === "produtos" ? "#059669" : "#6b7280",
+                }}
+              />
+            </div>
+
+            <div style={{ flex: 1 }}>
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: abaAtiva === "produtos" ? "#047857" : "#374151",
+                }}
+              >
+                Produtos
+              </div>
+
+              <div
+                style={{
+                  fontSize: 11,
+                  color: "#9ca3af",
+                  marginTop: 2,
+                }}
+              >
+                Produtos da venda
+              </div>
+            </div>
           </button>
+
           <button
             onClick={() => onAbaChange("comandas")}
             style={{
-              flex: 1,
-              padding: "10px",
-              borderRadius: 8,
-              border:
-                abaAtiva === "comandas"
-                  ? "1px solid #10b981"
-                  : "1px solid #374151",
-              background: abaAtiva === "comandas" ? "#10b981" : "transparent",
-              color: abaAtiva === "comandas" ? "#fff" : "#9ca3af",
-              cursor: "pointer",
-              fontSize: 13,
-              fontWeight: 500,
               display: "flex",
               alignItems: "center",
-              gap: 8,
-              justifyContent: "center",
+              gap: 12,
+              width: "100%",
+              padding: "11px 12px",
+              background: abaAtiva === "comandas" ? "#ecfdf5" : "transparent",
+              border:
+                abaAtiva === "comandas"
+                  ? "1px solid #a7f3d0"
+                  : "1px solid transparent",
+              borderRadius: 8,
+              cursor: "pointer",
+              color: abaAtiva === "comandas" ? "#047857" : "#374151",
+              fontSize: 13,
+              fontWeight: 500,
+              transition: "all 0.2s",
+              textAlign: "left",
+            }}
+            onMouseEnter={(e) => {
+              if (abaAtiva !== "comandas") {
+                e.currentTarget.style.background = "#f8fafc";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (abaAtiva !== "comandas") {
+                e.currentTarget.style.background = "transparent";
+              }
             }}
           >
-            <FontAwesomeIcon icon={faClipboardList} /> Comandas
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                background: abaAtiva === "comandas" ? "#d1fae5" : "#f3f4f6",
+                borderRadius: 8,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <FontAwesomeIcon
+                icon={faClipboardList}
+                style={{
+                  fontSize: 13,
+                  color: abaAtiva === "comandas" ? "#059669" : "#6b7280",
+                }}
+              />
+            </div>
+
+            <div style={{ flex: 1 }}>
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: abaAtiva === "comandas" ? "#047857" : "#374151",
+                }}
+              >
+                Comandas
+              </div>
+
+              <div
+                style={{
+                  fontSize: 11,
+                  color: "#9ca3af",
+                  marginTop: 2,
+                }}
+              >
+                Gerenciar comandas
+              </div>
+            </div>
           </button>
         </div>
       </div>
