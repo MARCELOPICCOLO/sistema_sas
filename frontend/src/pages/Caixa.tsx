@@ -13,9 +13,17 @@ import {
   faArrowLeft,
   faTimes,
   faBars,
+  faWallet,
 } from "@fortawesome/free-solid-svg-icons";
-
 const API_URL = import.meta.env.VITE_API_URL;
+
+interface ExpenseCategory {
+  id: number;
+  name: string;
+  icon: string;
+  color: string;
+  is_active: boolean;
+}
 
 interface Transaction {
   id: number;
@@ -30,14 +38,6 @@ interface Transaction {
   source?: "pdv" | "manual";
 }
 
-interface ExpenseCategory {
-  id: number;
-  name: string;
-  icon: string;
-  color: string;
-  is_active: boolean;
-}
-
 interface Order {
   id: number;
   customer_name: string;
@@ -46,6 +46,14 @@ interface Order {
   payment_method: string;
   status: string;
   table_id: number;
+}
+
+interface DailySummary {
+  date: string;
+  total_vendas: number;
+  total_entradas: number | string;
+  total_saidas: number | string;
+  saldo: number | string;
 }
 
 interface CaixaProps {
@@ -77,13 +85,25 @@ export default function Caixa({ setTela }: CaixaProps) {
   const [anoSelecionado, setAnoSelecionado] = useState(anoAtual);
   const [mesSelecionado, setMesSelecionado] = useState(mesAtual);
 
-  const [transacoes, setTransacoes] = useState<Transaction[]>([]);
-  const [categorias, setCategorias] = useState<ExpenseCategory[]>([]);
-  const [loading, setLoading] = useState(false);
+  // =========================================================
+  // NOVA ESTRUTURA DO CAIXA
+  // =========================================================
 
-  const [diasExpandidos, setDiasExpandidos] = useState<{
-    [key: string]: boolean;
-  }>({});
+  const [resumoDiario, setResumoDiario] = useState<DailySummary[]>([]);
+
+  const [transacoesPorData, setTransacoesPorData] = useState<
+    Record<string, Transaction[]>
+  >({});
+
+  const [diasExpandidos, setDiasExpandidos] = useState<Record<string, boolean>>(
+    {},
+  );
+
+  const [loadingResumo, setLoadingResumo] = useState(false);
+
+  const [loadingDias, setLoadingDias] = useState<Record<string, boolean>>({});
+
+  const [categorias, setCategorias] = useState<ExpenseCategory[]>([]);
 
   const [showEntradas, setShowEntradas] = useState(true);
   const [showSaidas, setShowSaidas] = useState(true);
@@ -121,7 +141,7 @@ export default function Caixa({ setTela }: CaixaProps) {
   const [importing, setImporting] = useState(false);
 
   // =========================================================
-  // CORES DAS CATEGORIAS
+  // CORES
   // =========================================================
 
   const cores = [
@@ -259,63 +279,127 @@ export default function Caixa({ setTela }: CaixaProps) {
   }, [anoSelecionado, mesSelecionado]);
 
   // =========================================================
-  // ENTRADAS / VENDAS
+  // RESUMO DIÁRIO
   // =========================================================
 
-  const fetchEntradas = useCallback(async () => {
+  const fetchResumoDiario = useCallback(async () => {
     try {
       const token = getToken();
 
       if (!token) {
-        return [];
+        return;
       }
+
+      setLoadingResumo(true);
 
       const { startDate, endDate } = obterPeriodoSelecionado();
 
-      const response = await fetch(`${API_URL}/orders`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
+      const response = await fetch(
+        `${API_URL}/orders/daily-summary?start_date=${startDate}&end_date=${endDate}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
         },
-      });
+      );
 
       if (!response.ok) {
-        throw new Error(`Erro ao buscar vendas: ${response.status}`);
+        throw new Error(`Erro ao buscar resumo diário: ${response.status}`);
       }
 
       const responseData = await response.json();
 
-      const orders: Order[] = Array.isArray(responseData)
+      const resumo: DailySummary[] = Array.isArray(responseData)
         ? responseData
         : responseData.data || [];
 
-      const extrairData = (data: string): string => {
-        if (!data) {
-          return "";
-        }
+      setResumoDiario(resumo);
 
-        return data.split("T")[0].split(" ")[0];
-      };
+      setTransacoesPorData({});
+      setDiasExpandidos({});
+      setLoadingDias({});
+    } catch (error) {
+      console.error("Erro ao buscar resumo diário:", error);
 
-      const ordensFiltradas = orders.filter((order) => {
-        if (order.status !== "fechado" && order.status !== "pendente") {
-          return false;
-        }
+      setResumoDiario([]);
+      setTransacoesPorData({});
+      setDiasExpandidos({});
+    } finally {
+      setLoadingResumo(false);
+    }
+  }, [obterPeriodoSelecionado]);
 
-        if (!order.closed_at) {
-          return false;
-        }
+  // =========================================================
+  // TRANSAÇÕES DE UM DIA
+  // =========================================================
 
-        const orderDate = extrairData(order.closed_at);
+  const carregarTransacoesDoDia = useCallback(async (data: string) => {
+    try {
+      const token = getToken();
 
-        return orderDate >= startDate && orderDate <= endDate;
-      });
+      if (!token) {
+        return;
+      }
 
-      const entradas: Transaction[] = ordensFiltradas.map((order) => {
-        const orderDate = extrairData(order.closed_at);
+      setLoadingDias((prev) => ({
+        ...prev,
+        [data]: true,
+      }));
 
-        return {
+      const ordersUrl =
+        `${API_URL}/orders` + `?start_date=${data}` + `&end_date=${data}`;
+
+      const expensesUrl =
+        `${API_URL}/expenses` + `?start_date=${data}` + `&end_date=${data}`;
+
+      const [ordersResponse, expensesResponse] = await Promise.all([
+        fetch(ordersUrl, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        }),
+
+        fetch(expensesUrl, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        }),
+      ]);
+
+      if (!ordersResponse.ok) {
+        throw new Error(
+          `Erro ao buscar vendas do dia: ${ordersResponse.status}`,
+        );
+      }
+
+      if (!expensesResponse.ok) {
+        throw new Error(
+          `Erro ao buscar despesas do dia: ${expensesResponse.status}`,
+        );
+      }
+
+      const ordersResponseData = await ordersResponse.json();
+      const expensesResponseData = await expensesResponse.json();
+
+      const orders: Order[] = Array.isArray(ordersResponseData)
+        ? ordersResponseData
+        : ordersResponseData.data || [];
+
+      const expenses = Array.isArray(expensesResponseData)
+        ? expensesResponseData
+        : expensesResponseData.data || [];
+
+      const entradas: Transaction[] = orders
+        .filter(
+          (order) => order.status === "fechado" || order.status === "pendente",
+        )
+        .map((order) => ({
           id: order.id,
 
           description: order.customer_name?.trim()
@@ -324,7 +408,7 @@ export default function Caixa({ setTela }: CaixaProps) {
 
           amount: Number(order.total) || 0,
 
-          date: orderDate || new Date().toISOString().split("T")[0],
+          date: data,
 
           category_id: 0,
 
@@ -337,55 +421,9 @@ export default function Caixa({ setTela }: CaixaProps) {
           }`,
 
           source: "pdv",
-        };
-      });
+        }));
 
-      return entradas;
-    } catch (error) {
-      console.error("Erro ao buscar vendas:", error);
-
-      return [];
-    }
-  }, [obterPeriodoSelecionado]);
-
-  // =========================================================
-  // SAÍDAS / DESPESAS
-  // =========================================================
-
-  const fetchSaidas = useCallback(async () => {
-    try {
-      const token = getToken();
-
-      if (!token) {
-        return [];
-      }
-
-      const { startDate, endDate } = obterPeriodoSelecionado();
-
-      const url =
-        `${API_URL}/expenses` +
-        `?start_date=${startDate}` +
-        `&end_date=${endDate}`;
-
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Erro ao buscar saídas: ${response.status}`);
-      }
-
-      const responseData = await response.json();
-
-      const data = Array.isArray(responseData)
-        ? responseData
-        : responseData.data || [];
-
-      const saidas: Transaction[] = data.map((item: any) => ({
+      const saidas: Transaction[] = expenses.map((item: any) => ({
         id: item.id,
 
         description: item.description,
@@ -394,7 +432,7 @@ export default function Caixa({ setTela }: CaixaProps) {
 
         date: item.expense_date
           ? item.expense_date.split("T")[0].split(" ")[0]
-          : hoje,
+          : data,
 
         category_id: Number(item.expense_category_id) || 0,
 
@@ -409,42 +447,28 @@ export default function Caixa({ setTela }: CaixaProps) {
         source: "manual",
       }));
 
-      return saidas;
+      const transacoes = [...entradas, ...saidas];
+
+      transacoes.sort((a, b) => String(b.date).localeCompare(String(a.date)));
+
+      setTransacoesPorData((prev) => ({
+        ...prev,
+        [data]: transacoes,
+      }));
     } catch (error) {
-      console.error("Erro ao buscar saídas:", error);
+      console.error(`Erro ao buscar transações do dia ${data}:`, error);
 
-      return [];
-    }
-  }, [obterPeriodoSelecionado, hoje]);
-
-  // =========================================================
-  // TODAS AS TRANSAÇÕES
-  // =========================================================
-
-  const fetchTransacoes = useCallback(async () => {
-    setLoading(true);
-
-    try {
-      const [entradas, saidas] = await Promise.all([
-        fetchEntradas(),
-        fetchSaidas(),
-      ]);
-
-      const todasTransacoes = [...entradas, ...saidas];
-
-      todasTransacoes.sort((a, b) =>
-        String(b.date).localeCompare(String(a.date)),
-      );
-
-      setTransacoes(todasTransacoes);
-    } catch (error) {
-      console.error("Erro ao buscar transações:", error);
-
-      setTransacoes([]);
+      setTransacoesPorData((prev) => ({
+        ...prev,
+        [data]: [],
+      }));
     } finally {
-      setLoading(false);
+      setLoadingDias((prev) => ({
+        ...prev,
+        [data]: false,
+      }));
     }
-  }, [fetchEntradas, fetchSaidas]);
+  }, []);
 
   // =========================================================
   // CARREGAMENTO INICIAL
@@ -455,8 +479,8 @@ export default function Caixa({ setTela }: CaixaProps) {
   }, [fetchCategorias]);
 
   useEffect(() => {
-    fetchTransacoes();
-  }, [fetchTransacoes]);
+    fetchResumoDiario();
+  }, [fetchResumoDiario]);
 
   // =========================================================
   // ADICIONAR CATEGORIA
@@ -580,10 +604,13 @@ export default function Caixa({ setTela }: CaixaProps) {
   // =========================================================
 
   const excluirCategoria = async (id: number, name: string) => {
-    const temSaidas = transacoes.some(
-      (transaction) =>
-        transaction.type === "saida" && transaction.expense_category_id === id,
-    );
+    const temSaidas = Object.values(transacoesPorData)
+      .flat()
+      .some(
+        (transaction) =>
+          transaction.type === "saida" &&
+          transaction.expense_category_id === id,
+      );
 
     const mensagem = temSaidas
       ? `A categoria "${name}" possui gastos associados. Excluir mesmo assim?`
@@ -622,8 +649,6 @@ export default function Caixa({ setTela }: CaixaProps) {
       if (filtroCategoria === id) {
         setFiltroCategoria(null);
       }
-
-      await fetchTransacoes();
 
       alert("Categoria excluída com sucesso!");
     } catch (error) {
@@ -675,15 +700,10 @@ export default function Caixa({ setTela }: CaixaProps) {
         },
         body: JSON.stringify({
           description: novaSaida.descricao.trim(),
-
           amount: Number(novaSaida.valor),
-
           expense_date: novaSaida.data,
-
           expense_category_id: Number(novaSaida.category_id),
-
           type: "saida",
-
           notes: null,
         }),
       });
@@ -706,7 +726,11 @@ export default function Caixa({ setTela }: CaixaProps) {
 
       setShowModalSaida(false);
 
-      await fetchTransacoes();
+      await fetchResumoDiario();
+
+      if (transacoesPorData[novaSaida.data]) {
+        await carregarTransacoesDoDia(novaSaida.data);
+      }
 
       alert("Saída adicionada com sucesso!");
     } catch (error) {
@@ -747,6 +771,12 @@ export default function Caixa({ setTela }: CaixaProps) {
         return;
       }
 
+      const transacao = Object.values(transacoesPorData)
+        .flat()
+        .find((item) => item.id === id);
+
+      const dataTransacao = transacao?.date;
+
       const response = await fetch(`${API_URL}/expenses/${id}`, {
         method: "DELETE",
         headers: {
@@ -763,7 +793,11 @@ export default function Caixa({ setTela }: CaixaProps) {
         return;
       }
 
-      await fetchTransacoes();
+      await fetchResumoDiario();
+
+      if (dataTransacao) {
+        await carregarTransacoesDoDia(dataTransacao);
+      }
 
       alert("Removido com sucesso!");
     } catch (error) {
@@ -825,7 +859,7 @@ export default function Caixa({ setTela }: CaixaProps) {
   };
 
   // =========================================================
-  // PROCESSAR CSV GENÉRICO
+  // PROCESSAR CSV
   // =========================================================
 
   const processCSV = (file: File, callback: (data: CSVPreview[]) => void) => {
@@ -896,6 +930,7 @@ export default function Caixa({ setTela }: CaixaProps) {
 
       if (hasHeader) {
         headers = parseRow(lines[0]);
+
         startRow = 1;
       } else {
         const firstRow = parseRow(lines[0]);
@@ -997,7 +1032,6 @@ export default function Caixa({ setTela }: CaixaProps) {
 
       if (linhas.length < 2) {
         alert("Arquivo vazio ou formato inválido");
-
         return;
       }
 
@@ -1027,11 +1061,8 @@ export default function Caixa({ setTela }: CaixaProps) {
         }
 
         const dataOriginal = partes[0] || "";
-
         const descricao = partes[1] || "";
-
         const valorRaw = partes[2] || "";
-
         const categoriaRaw = partes[3] || "";
 
         if (!dataOriginal || !descricao || !valorRaw) {
@@ -1068,23 +1099,15 @@ export default function Caixa({ setTela }: CaixaProps) {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-
               Accept: "application/json",
-
               Authorization: `Bearer ${token}`,
             },
-
             body: JSON.stringify({
               description: descricao,
-
               amount: valor,
-
               expense_date: dataFormatada,
-
               expense_category_id: categoriaId,
-
               type: "saida",
-
               notes: "Importado via CSV",
             }),
           });
@@ -1112,11 +1135,10 @@ export default function Caixa({ setTela }: CaixaProps) {
       );
 
       setShowModalImportarGastos(false);
-
       setImportFile(null);
       setImportPreview([]);
 
-      await fetchTransacoes();
+      await fetchResumoDiario();
     } catch (error) {
       console.error("Erro ao processar CSV:", error);
 
@@ -1223,7 +1245,6 @@ export default function Caixa({ setTela }: CaixaProps) {
 
       if (linhas.length < 2) {
         alert("Arquivo vazio ou formato inválido");
-
         return;
       }
 
@@ -1295,23 +1316,15 @@ export default function Caixa({ setTela }: CaixaProps) {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-
               Accept: "application/json",
-
               Authorization: `Bearer ${token}`,
             },
-
             body: JSON.stringify({
               table_id: 1,
-
               customer_name: cliente,
-
               status: "fechado",
-
               total: valorNumerico,
-
               payment_method: pagamento.toLowerCase(),
-
               closed_at: dataFormatada,
             }),
           });
@@ -1339,11 +1352,10 @@ export default function Caixa({ setTela }: CaixaProps) {
       );
 
       setShowModalImportarVendas(false);
-
       setImportFile(null);
       setImportPreview([]);
 
-      await fetchTransacoes();
+      await fetchResumoDiario();
     } catch (error) {
       console.error("Erro ao processar vendas:", error);
 
@@ -1357,11 +1369,23 @@ export default function Caixa({ setTela }: CaixaProps) {
   // CONTROLES
   // =========================================================
 
-  const toggleDia = (data: string) => {
+  const toggleDia = async (data: string) => {
+    const estaExpandido = diasExpandidos[data];
+
     setDiasExpandidos((prev) => ({
       ...prev,
       [data]: !prev[data],
     }));
+
+    if (estaExpandido) {
+      return;
+    }
+
+    if (transacoesPorData[data]) {
+      return;
+    }
+
+    await carregarTransacoesDoDia(data);
   };
 
   const formatCurrency = (value: any): string => {
@@ -1379,86 +1403,57 @@ export default function Caixa({ setTela }: CaixaProps) {
   };
 
   // =========================================================
-  // TOTAIS
+  // TOTAIS DO MÊS
   // =========================================================
 
-  const totalEntradas = transacoes
-    .filter((t) => t.type === "entrada")
-    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+  const totalEntradas = resumoDiario.reduce(
+    (sum, item) => sum + (Number(item.total_entradas) || 0),
+    0,
+  );
 
-  const totalSaidas = transacoes
-    .filter((t) => t.type === "saida")
-    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+  const totalSaidas = resumoDiario.reduce(
+    (sum, item) => sum + (Number(item.total_saidas) || 0),
+    0,
+  );
 
   const saldoGeral = totalEntradas - totalSaidas;
 
   // =========================================================
-  // FILTROS
+  // TRANSAÇÕES FILTRADAS
   // =========================================================
 
-  const transacoesFiltradas = transacoes.filter((t) => {
-    const matchCategoria =
-      filtroCategoria !== null
-        ? t.expense_category_id === filtroCategoria
-        : true;
+  const transacoesFiltradasPorData: Record<string, Transaction[]> = {};
 
-    const matchTipo =
-      (t.type === "entrada" && showEntradas) ||
-      (t.type === "saida" && showSaidas);
+  Object.entries(transacoesPorData).forEach(([data, transacoes]) => {
+    transacoesFiltradasPorData[data] = transacoes.filter((t) => {
+      const matchCategoria =
+        filtroCategoria !== null
+          ? t.expense_category_id === filtroCategoria
+          : true;
 
-    return matchCategoria && matchTipo;
+      const matchTipo =
+        (t.type === "entrada" && showEntradas) ||
+        (t.type === "saida" && showSaidas);
+
+      return matchCategoria && matchTipo;
+    });
   });
 
   // =========================================================
-  // AGRUPAMENTO POR DATA
+  // TOTAIS POR DATA
   // =========================================================
 
-  const transacoesPorData = transacoesFiltradas.reduce(
-    (acc: Record<string, Transaction[]>, transacao) => {
-      const data = transacao.date;
+  const totalEntradasPorData: Record<string, number> = {};
+  const totalSaidasPorData: Record<string, number> = {};
+  const saldoPorData: Record<string, number> = {};
 
-      if (!acc[data]) {
-        acc[data] = [];
-      }
+  resumoDiario.forEach((item) => {
+    totalEntradasPorData[item.date] = Number(item.total_entradas) || 0;
 
-      acc[data].push(transacao);
+    totalSaidasPorData[item.date] = Number(item.total_saidas) || 0;
 
-      return acc;
-    },
-    {},
-  );
-
-  const totalEntradasPorData = Object.keys(transacoesPorData).reduce(
-    (acc: Record<string, number>, data) => {
-      acc[data] = transacoesPorData[data]
-        .filter((t) => t.type === "entrada")
-        .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
-
-      return acc;
-    },
-    {},
-  );
-
-  const totalSaidasPorData = Object.keys(transacoesPorData).reduce(
-    (acc: Record<string, number>, data) => {
-      acc[data] = transacoesPorData[data]
-        .filter((t) => t.type === "saida")
-        .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
-
-      return acc;
-    },
-    {},
-  );
-
-  const saldoPorData = Object.keys(transacoesPorData).reduce(
-    (acc: Record<string, number>, data) => {
-      acc[data] =
-        (totalEntradasPorData[data] || 0) - (totalSaidasPorData[data] || 0);
-
-      return acc;
-    },
-    {},
-  );
+    saldoPorData[item.date] = Number(item.saldo) || 0;
+  });
 
   // =========================================================
   // ANOS / MESES
@@ -1482,7 +1477,7 @@ export default function Caixa({ setTela }: CaixaProps) {
   ];
 
   // =========================================================
-  // COMPONENTES DOS MODAIS
+  // MODAIS
   // =========================================================
 
   const modais = (
@@ -1494,7 +1489,7 @@ export default function Caixa({ setTela }: CaixaProps) {
           categorias={categorias}
           editandoCategoria={editandoCategoria}
           setEditandoCategoria={setEditandoCategoria}
-          transacoes={transacoes}
+          transacoes={Object.values(transacoesPorData).flat()}
           editarCategoria={editarCategoria}
           excluirCategoria={excluirCategoria}
           setShowModalCategoria={setShowModalCategoria}
@@ -1594,12 +1589,14 @@ export default function Caixa({ setTela }: CaixaProps) {
           />
 
           <TabelaGastos
-            transacoesPorData={transacoesPorData}
+            resumoDiario={resumoDiario}
+            transacoesPorData={transacoesFiltradasPorData}
             diasExpandidos={diasExpandidos}
             totalEntradasPorData={totalEntradasPorData}
             totalSaidasPorData={totalSaidasPorData}
             saldoPorData={saldoPorData}
-            loading={loading}
+            loading={loadingResumo}
+            diasCarregando={loadingDias}
             formatDate={formatDate}
             formatCurrency={formatCurrency}
             toggleDia={toggleDia}
@@ -1653,13 +1650,14 @@ export default function Caixa({ setTela }: CaixaProps) {
               justifyContent: "center",
             }}
           >
-            <span
+            {/* ÍCONE DO CAIXA CORRIGIDO */}
+            <FontAwesomeIcon
+              icon={faWallet}
               style={{
-                fontSize: 20,
+                fontSize: 18,
+                color: "#16a34a",
               }}
-            >
-              💰
-            </span>
+            />
           </div>
 
           <h1
@@ -1762,7 +1760,7 @@ export default function Caixa({ setTela }: CaixaProps) {
                   border: "none",
                   fontSize: 20,
                   cursor: "pointer",
-                  color: "#6b7280",
+                  color: "#333",
                 }}
               >
                 <FontAwesomeIcon icon={faTimes} />
@@ -1955,12 +1953,13 @@ export default function Caixa({ setTela }: CaixaProps) {
         />
 
         <TabelaGastos
-          transacoesPorData={transacoesPorData}
+          resumoDiario={resumoDiario}
+          transacoesPorData={transacoesFiltradasPorData}
           diasExpandidos={diasExpandidos}
           totalEntradasPorData={totalEntradasPorData}
           totalSaidasPorData={totalSaidasPorData}
           saldoPorData={saldoPorData}
-          loading={loading}
+          loading={loadingResumo}
           formatDate={formatDate}
           formatCurrency={formatCurrency}
           toggleDia={toggleDia}
