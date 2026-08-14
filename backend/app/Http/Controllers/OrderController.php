@@ -3,10 +3,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Expense;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Services\CurrentCompany;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
@@ -160,48 +162,69 @@ class OrderController extends Controller
     public function addItem(Request $request, $orderId)
     {
         try {
+
             $request->validate([
                 'product_id' => 'required|exists:products,id',
                 'quantity' => 'sometimes|integer|min:1',
                 'price' => 'sometimes|numeric|min:0'
             ]);
 
-            $order = Order::findOrFail($orderId);
+            $partnerCompanyId = CurrentCompany::id();
+
+            // 🔐 Busca o pedido somente dentro da empresa
+            $order = Order::where('id', $orderId)
+                ->where('partner_company_id', $partnerCompanyId)
+                ->firstOrFail();
 
             if ($order->status !== 'aberto') {
-                return response()->json(['message' => 'Esta venda já foi finalizada'], 400);
+                return response()->json([
+                    'message' => 'Esta venda já foi finalizada'
+                ], 400);
             }
+
+            // 🔐 Busca o produto somente dentro da empresa
+            $product = DB::select("
+            SELECT prod.*
+            FROM products prod
+            INNER JOIN categories cat
+                ON prod.category_id = cat.id
+                AND cat.partner_company_id = ?
+            WHERE prod.id = ?
+        ", [
+                $partnerCompanyId,
+                $request->product_id
+            ]);
+
+            if (!$product) {
+                return response()->json([
+                    'message' => 'Produto não pertence à empresa atual'
+                ], 403);
+            }
+
+            $product = $product[0];
 
             $orderItem = new OrderItem();
             $orderItem->order_id = $order->id;
             $orderItem->product_id = $request->product_id;
             $orderItem->quantity = $request->quantity ?? 1;
-
-            if ($request->has('price') && $request->price > 0) {
-                $orderItem->price = $request->price;
-            } else {
-                $product = \App\Models\Product::findOrFail($request->product_id);
-                $orderItem->price = $product->price;
-            }
+            $orderItem->price =  $request->quantity * $product->price;
 
             $orderItem->save();
-
-            $order->total = $order->items()->sum(\DB::raw('price * quantity'));
-            $order->save();
-
-            $orderItem->load('product');
 
             return response()->json([
                 'message' => 'Item adicionado com sucesso',
                 'item' => $orderItem
             ], 201);
         } catch (\Illuminate\Validation\ValidationException $e) {
+
             return response()->json([
                 'message' => 'Erro de validação',
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
+
             \Log::error('Erro ao adicionar item: ' . $e->getMessage());
+
             return response()->json([
                 'message' => 'Erro ao adicionar item',
                 'error' => $e->getMessage()
@@ -414,6 +437,167 @@ class OrderController extends Controller
             return response()->json([
                 'message' => 'Erro ao buscar resumo de vendas',
                 'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    public function byDate(string $date)
+    {
+        try {
+            $companyId = CurrentCompany::id();
+
+            if (!$companyId) {
+                return response()->json([
+                    'message' => 'Empresa não identificada.'
+                ], 403);
+            }
+
+            // Validar formato da data
+            try {
+                $data = \Carbon\Carbon::createFromFormat('Y-m-d', $date);
+            } catch (\Exception $e) {
+                return response()->json([
+                    'message' => 'Data inválida. Use o formato YYYY-MM-DD.'
+                ], 422);
+            }
+
+            $inicio = $data->copy()->startOfDay();
+            $fim = $data->copy()->endOfDay();
+
+            $orders = Order::where('partner_company_id', $companyId)
+                ->where('closed_at', '>=', $inicio)
+                ->where('closed_at', '<=', $fim)
+                ->whereIn('status', ['fechado', 'pendente'])
+                ->orderBy('closed_at', 'desc')
+                ->get();
+
+            return response()->json($orders);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erro ao buscar vendas do dia.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function dailySummary(Request $request)
+    {
+        try {
+            $companyId = CurrentCompany::id();
+
+            if (!$companyId) {
+                return response()->json([
+                    'message' => 'Empresa não identificada.'
+                ], 403);
+            }
+
+            $startDate = $request->query('start_date');
+            $endDate = $request->query('end_date');
+
+            if (!$startDate || !$endDate) {
+                return response()->json([
+                    'message' => 'start_date e end_date são obrigatórios.'
+                ], 422);
+            }
+
+            // =========================
+            // VENDAS
+            // =========================
+
+            $orders = Order::where('partner_company_id', $companyId)
+                ->where('status', 'fechado')
+                ->whereNotNull('closed_at')
+                ->whereDate('closed_at', '>=', $startDate)
+                ->whereDate('closed_at', '<=', $endDate)
+                ->selectRaw('
+                DATE(closed_at) as date,
+                COUNT(*) as total_vendas,
+                SUM(total) as total_entradas
+            ')
+                ->groupByRaw('DATE(closed_at)')
+                ->get()
+                ->keyBy('date');
+
+
+            // =========================
+            // DESPESAS
+            // =========================
+
+            $expenses = Expense::where('partner_company_id', $companyId)
+                ->whereDate('expense_date', '>=', $startDate)
+                ->whereDate('expense_date', '<=', $endDate)
+                ->selectRaw('
+                DATE(expense_date) as date,
+                SUM(amount) as total_saidas
+            ')
+                ->groupByRaw('DATE(expense_date)')
+                ->get()
+                ->keyBy('date');
+
+
+            // =========================
+            // UNIR DATAS
+            // =========================
+
+            $dates = $orders->keys()
+                ->merge($expenses->keys())
+                ->unique()
+                ->sortDesc()
+                ->values();
+
+
+            // =========================
+            // MONTAR RESUMO
+            // =========================
+
+            $summary = $dates->map(function ($date) use ($orders, $expenses) {
+
+                $order = $orders->get($date);
+                $expense = $expenses->get($date);
+
+                $totalEntradas = $order
+                    ? (float) $order->total_entradas
+                    : 0;
+
+                $totalSaidas = $expense
+                    ? (float) $expense->total_saidas
+                    : 0;
+
+                return [
+                    'date' => $date,
+
+                    'total_vendas' => $order
+                        ? (int) $order->total_vendas
+                        : 0,
+
+                    'total_entradas' => number_format(
+                        $totalEntradas,
+                        2,
+                        '.',
+                        ''
+                    ),
+
+                    'total_saidas' => number_format(
+                        $totalSaidas,
+                        2,
+                        '.',
+                        ''
+                    ),
+
+                    'saldo' => number_format(
+                        $totalEntradas - $totalSaidas,
+                        2,
+                        '.',
+                        ''
+                    ),
+                ];
+            });
+
+            return response()->json($summary);
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'message' => 'Erro ao buscar resumo diário.',
+                'error' => $e->getMessage(),
             ], 500);
         }
     }

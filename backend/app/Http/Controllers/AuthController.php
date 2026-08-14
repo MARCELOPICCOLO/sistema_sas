@@ -13,6 +13,7 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
+
         $credentials = $request->validate([
             'username' => 'required|string',
             'password' => 'required|string',

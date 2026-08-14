@@ -59,13 +59,15 @@ Route::middleware('auth:api')->group(function () {
 
     // ========== COMANDAS (ORDERS) ==========
     Route::prefix('orders')->group(function () {
-        // ✅ Adicione explicitamente POST
-        Route::match(['GET', 'POST'], '/summary', [OrderController::class, 'salesSummary']);
 
-        // OU apenas POST
         Route::post('/summary', [OrderController::class, 'salesSummary']);
 
-        // Depois as outras rotas
+        // Resumo diário do caixa
+        Route::get('/daily-summary', [OrderController::class, 'dailySummary']);
+
+        // Transações de um dia específico
+        Route::get('/by-date/{date}', [OrderController::class, 'byDate']);
+
         Route::get('/', [OrderController::class, 'index']);
         Route::get('/{id}', [OrderController::class, 'show']);
         Route::post('/', [OrderController::class, 'store']);
