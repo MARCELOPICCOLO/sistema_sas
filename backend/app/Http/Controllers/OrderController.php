@@ -544,7 +544,6 @@ class OrderController extends Controller
                 ->sortDesc()
                 ->values();
 
-
             // =========================
             // MONTAR RESUMO
             // =========================

@@ -3,26 +3,58 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\CurrentCompany;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-    /**
-     * Lista todos os usuários.
-     */
     public function index()
     {
-        return response()->json(User::all());
+        $usuarioAutenticado = Auth::guard('api')->user();
+
+        if (!$usuarioAutenticado) {
+            return response()->json([
+                'message' => 'Usuário não autenticado.'
+            ], 401);
+        }
+
+        $partnerCompanyId = CurrentCompany::id();
+
+        if (!$partnerCompanyId) {
+            return response()->json([
+                'message' => 'Usuário não está vinculado a uma empresa ativa.'
+            ], 422);
+        }
+
+        $usuarios = User::whereHas('partnerCompanies', function ($query) use ($partnerCompanyId) {
+            $query->where('partner_companies.id', $partnerCompanyId);
+        })
+            ->orderBy('full_name', 'asc')
+            ->get();
+
+        return response()->json($usuarios);
     }
 
-    /**
-     * Cadastra um novo usuário.
-     */
     public function store(Request $request)
     {
-        $user = Auth::guard('api')->user();
+        $usuarioAutenticado = Auth::guard('api')->user();
+
+        if (!$usuarioAutenticado) {
+            return response()->json([
+                'message' => 'Usuário não autenticado.'
+            ], 401);
+        }
+
+        $partnerCompanyId = CurrentCompany::id();
+
+        if (!$partnerCompanyId) {
+            return response()->json([
+                'message' => 'Usuário não está vinculado a uma empresa ativa.'
+            ], 422);
+        }
 
         $validated = $request->validate([
             'full_name' => 'required|string|max:255',
@@ -30,15 +62,50 @@ class UserController extends Controller
             'email'     => 'required|email|max:255|unique:users,email',
             'contact'   => 'nullable|string|max:20',
             'password'  => 'required|string|min:6',
-            'active'    => 'boolean',
-            'is_master' => 'boolean',
+            'role'      => 'required|in:ADMIN,USER',
         ]);
 
-        $validated['password'] = Hash::make($validated['password']);
+        try {
+            $novoUsuario = DB::transaction(function () use (
+                $validated,
+                $partnerCompanyId
+            ) {
+                $novoUsuario = User::create([
+                    'full_name' => $validated['full_name'],
+                    'username'  => $validated['username'],
+                    'email'     => $validated['email'],
+                    'contact'   => $validated['contact'] ?? null,
+                    'password'  => Hash::make($validated['password']),
+                    'active'    => true,
+                    'is_master' => false,
+                ]);
 
-        $user = User::create($validated);
+                $novoUsuario->partnerCompanies()->attach(
+                    $partnerCompanyId,
+                    [
+                        'role'   => $validated['role'],
+                        'active' => true,
+                    ]
+                );
 
-        return response()->json($user, 201);
+                return $novoUsuario;
+            });
+
+            return response()->json([
+                'message' => 'Usuário cadastrado com sucesso.',
+                'user' => $novoUsuario,
+            ], 201);
+        } catch (\Throwable $e) {
+            \Log::error('Erro ao cadastrar usuário.', [
+                'message' => $e->getMessage(),
+                'user_id' => $usuarioAutenticado->id ?? null,
+                'partner_company_id' => $partnerCompanyId,
+            ]);
+
+            return response()->json([
+                'message' => 'Não foi possível cadastrar o usuário.'
+            ], 500);
+        }
     }
 
     /**
@@ -57,6 +124,7 @@ class UserController extends Controller
     public function update(Request $request, int $id)
     {
         $user = Auth::guard('api')->user();
+
 
         $validated = $request->validate([
             'full_name' => 'sometimes|required|string|max:255',
