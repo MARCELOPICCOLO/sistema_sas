@@ -88,7 +88,7 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
         "Gerencie colaboradores, permissões e controle de acesso ao sistema",
       icon: faUsers,
       cor: "#059669",
-      tela: "equipe",
+      tela: "gestao_equipe",
     },
   ];
 

@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import Login from "./pages/Login";
 import Produtos from "./pages/Produtos";
 import Caixa from "./pages/Caixa";
-import Relatorio from "./pages/Relatorio";
 import Dashboard from "./pages/Dashboard";
 import GestaoPontosVenda from "./pages/GestaoPontosVenda";
 import GestaoVendas from "./pages/GestaoVendas";
+import GerenciamentoEquipe from "./pages/GerenciamentoEquipe";
 import api from "./api/axios";
 
 interface User {
@@ -14,13 +14,24 @@ interface User {
   email: string;
 }
 
+type Tela =
+  | "dashboard"
+  | "gestao_pontos"
+  | "produtos"
+  | "caixa"
+  | "vendas"
+  | "gestao_equipe";
+
 export default function App() {
-  const [tela, setTela] = useState("dashboard");
+  const [tela, setTela] = useState<Tela>("dashboard");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Verificar se o usuário já está logado
+  // =========================================================
+  // VERIFICAR AUTENTICAÇÃO
+  // =========================================================
+
   useEffect(() => {
     async function checkAuth() {
       const token = localStorage.getItem("auth_token");
@@ -35,7 +46,7 @@ export default function App() {
 
         const user = response.data;
 
-        const userData = {
+        const userData: User = {
           id: user.id,
           login: user.username,
           email: user.email,
@@ -61,19 +72,33 @@ export default function App() {
 
     checkAuth();
   }, []);
+
+  // =========================================================
+  // LOGIN
+  // =========================================================
+
   const handleLoginSuccess = (userData: User) => {
     setUser(userData);
     setIsAuthenticated(true);
     setTela("dashboard");
   };
 
+  // =========================================================
+  // LOGOUT
+  // =========================================================
+
   const handleLogout = () => {
     localStorage.removeItem("auth_token");
     localStorage.removeItem("user");
+
     setUser(null);
     setIsAuthenticated(false);
     setTela("dashboard");
   };
+
+  // =========================================================
+  // LOADING
+  // =========================================================
 
   if (loading) {
     return (
@@ -98,11 +123,22 @@ export default function App() {
               margin: "0 auto",
             }}
           />
-          <p style={{ marginTop: 16, color: "#6b7280" }}>Carregando...</p>
+
+          <p
+            style={{
+              marginTop: 16,
+              color: "#6b7280",
+            }}
+          >
+            Carregando...
+          </p>
+
           <style>
             {`
               @keyframes spin {
-                to { transform: rotate(360deg); }
+                to {
+                  transform: rotate(360deg);
+                }
               }
             `}
           </style>
@@ -111,26 +147,59 @@ export default function App() {
     );
   }
 
+  // =========================================================
+  // LOGIN
+  // =========================================================
+
   if (!isAuthenticated) {
     return <Login onLoginSuccess={handleLoginSuccess} />;
   }
 
-  // Passar o usuário e logout para as telas que precisam
+  // =========================================================
+  // PROPS COMPARTILHADAS
+  // =========================================================
+
   const commonProps = {
     user,
     onLogout: handleLogout,
   };
 
+  // =========================================================
+  // APLICAÇÃO
+  // =========================================================
+
   return (
-    <div style={{ height: "100vh", background: "#FAFAFA", overflow: "auto" }}>
+    <div
+      style={{
+        height: "100vh",
+        background: "#FAFAFA",
+        overflow: "auto",
+      }}
+    >
       {tela === "dashboard" && <Dashboard setTela={setTela} {...commonProps} />}
+
       {tela === "gestao_pontos" && (
         <GestaoPontosVenda setTela={setTela} {...commonProps} />
       )}
+
       {tela === "produtos" && <Produtos setTela={setTela} {...commonProps} />}
+
       {tela === "caixa" && <Caixa setTela={setTela} {...commonProps} />}
-      {/* {tela === "relatorio" && <Relatorio {...commonProps} />} */}
+
       {tela === "vendas" && <GestaoVendas setTela={setTela} {...commonProps} />}
+
+      {tela === "gestao_equipe" && (
+        <GerenciamentoEquipe setTela={setTela} {...commonProps} />
+      )}
+
+      {/* 
+      {tela === "relatorio" && (
+        <Relatorio
+          setTela={setTela}
+          {...commonProps}
+        />
+      )}
+      */}
     </div>
   );
 }

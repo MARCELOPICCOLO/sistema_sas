@@ -4,6 +4,8 @@ import SidebarPdv from "../../components/SidebarPdv";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 interface Mesa {
   id: number;
   number: number;
@@ -23,9 +25,7 @@ export default function GestaoPontosVenda({ setTela }: GestaoPontosVendaProps) {
   useEffect(() => {
     async function loadData() {
       try {
-        const response = await fetch(
-          "http://localhost:8000/api/tables?restaurant_id=1",
-        );
+        const response = await fetch(`${API_URL}/tables?restaurant_id=1`);
         const tablesData = await response.json();
         setPontosVenda(tablesData);
 
