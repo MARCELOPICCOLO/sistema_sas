@@ -35,7 +35,7 @@ interface GerenciamentoEquipeProps {
   onAlterarStatus?: (usuario: Usuario) => void;
 }
 
-interface NovoUsuario {
+interface FormularioUsuario {
   full_name: string;
   username: string;
   email: string;
@@ -43,6 +43,15 @@ interface NovoUsuario {
   password: string;
   role: "ADMIN" | "USER";
 }
+
+const formularioInicial: FormularioUsuario = {
+  full_name: "",
+  username: "",
+  email: "",
+  contact: "",
+  password: "",
+  role: "USER",
+};
 
 const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
   usuarios = [],
@@ -64,22 +73,28 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
   const [carregandoUsuarios, setCarregandoUsuarios] = useState(false);
 
   // =========================================================
-  // MODAL NOVO USUÁRIO
+  // MODAL USUÁRIO
   // =========================================================
 
   const [modalNovoUsuario, setModalNovoUsuario] = useState(false);
 
+  const [usuarioEditando, setUsuarioEditando] = useState<Usuario | null>(null);
+
   const [mostrarSenha, setMostrarSenha] = useState(false);
 
-  const [formularioNovoUsuario, setFormularioNovoUsuario] =
-    useState<NovoUsuario>({
-      full_name: "",
-      username: "",
-      email: "",
-      contact: "",
-      password: "",
-      role: "USER",
-    });
+  const [salvandoUsuario, setSalvandoUsuario] = useState(false);
+
+  const [formularioUsuario, setFormularioUsuario] =
+    useState<FormularioUsuario>(formularioInicial);
+
+  // =========================================================
+  // MODAL TOGGLE STATUS
+  // =========================================================
+
+  const [modalToggleStatus, setModalToggleStatus] = useState<Usuario | null>(
+    null,
+  );
+  const [togglingStatus, setTogglingStatus] = useState(false);
 
   // =========================================================
   // CARREGAR USUÁRIOS
@@ -217,8 +232,11 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
   // MODAL - ALTERAR CAMPO
   // =========================================================
 
-  const alterarCampoNovoUsuario = (campo: keyof NovoUsuario, valor: string) => {
-    setFormularioNovoUsuario((anterior) => ({
+  const alterarCampoUsuario = (
+    campo: keyof FormularioUsuario,
+    valor: string,
+  ) => {
+    setFormularioUsuario((anterior) => ({
       ...anterior,
       [campo]: valor,
     }));
@@ -228,34 +246,54 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
   // MODAL - LIMPAR
   // =========================================================
 
-  const limparFormularioNovoUsuario = () => {
-    setFormularioNovoUsuario({
-      full_name: "",
-      username: "",
-      email: "",
-      contact: "",
-      password: "",
-      role: "USER",
+  const limparFormularioUsuario = () => {
+    setFormularioUsuario({
+      ...formularioInicial,
     });
 
+    setUsuarioEditando(null);
     setMostrarSenha(false);
+    setSalvandoUsuario(false);
   };
 
   // =========================================================
-  // MODAL - ABRIR
+  // MODAL - ABRIR NOVO USUÁRIO
   // =========================================================
 
   const abrirModalNovoUsuario = () => {
+    limparFormularioUsuario();
+
+    setModalNovoUsuario(true);
+  };
+
+  // =========================================================
+  // MODAL - ABRIR EDIÇÃO
+  // =========================================================
+
+  const abrirModalEditarUsuario = (usuario: Usuario) => {
+    setUsuarioEditando(usuario);
+
+    setFormularioUsuario({
+      full_name: usuario.full_name || "",
+      username: usuario.username || "",
+      email: usuario.email || "",
+      contact: usuario.contact || "",
+      password: "",
+      role: usuario.role === "ADMIN" ? "ADMIN" : "USER",
+    });
+
     setMostrarSenha(false);
     setModalNovoUsuario(true);
+
+    onEditarUsuario?.(usuario);
   };
 
   // =========================================================
   // MODAL - FECHAR
   // =========================================================
 
-  const fecharModalNovoUsuario = () => {
-    limparFormularioNovoUsuario();
+  const fecharModalUsuario = () => {
+    limparFormularioUsuario();
     setModalNovoUsuario(false);
   };
 
@@ -263,57 +301,224 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
   // CADASTRAR NOVO USUÁRIO
   // =========================================================
 
-  const salvarNovoUsuario = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const salvarNovoUsuario = async () => {
+    const token = localStorage.getItem("auth_token");
+
+    if (!token) {
+      alert("Sua sessão expirou. Faça login novamente.");
+      return;
+    }
+
+    const response = await fetch(`${API_URL}/users`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        full_name: formularioUsuario.full_name,
+        username: formularioUsuario.username,
+        email: formularioUsuario.email,
+        contact: formularioUsuario.contact,
+        password: formularioUsuario.password,
+        role: formularioUsuario.role,
+      }),
+    });
+
+    const dados = await response.json();
+
+    if (!response.ok) {
+      console.error("Erro ao cadastrar usuário:", dados);
+
+      alert(dados?.message || "Não foi possível cadastrar o colaborador.");
+
+      return;
+    }
+
+    console.log("Usuário cadastrado:", dados);
+
+    alert("Colaborador cadastrado com sucesso!");
+
+    await carregarUsuarios();
+
+    fecharModalUsuario();
+  };
+
+  // =========================================================
+  // ATUALIZAR USUÁRIO
+  // =========================================================
+
+  const atualizarUsuario = async () => {
+    if (!usuarioEditando) {
+      return;
+    }
+
+    const token = localStorage.getItem("auth_token");
+
+    if (!token) {
+      alert("Sua sessão expirou. Faça login novamente.");
+      return;
+    }
+
+    const corpo: Record<string, string> = {
+      full_name: formularioUsuario.full_name,
+      username: formularioUsuario.username,
+      email: formularioUsuario.email,
+      contact: formularioUsuario.contact,
+      role: formularioUsuario.role,
+    };
+
+    /*
+     * A senha é opcional na edição.
+     *
+     * Quando o campo estiver vazio, não enviamos
+     * password para o backend, mantendo a senha atual.
+     */
+    if (formularioUsuario.password.trim() !== "") {
+      corpo.password = formularioUsuario.password;
+    }
 
     try {
-      const token = localStorage.getItem("auth_token");
-
-      if (!token) {
-        alert("Sua sessão expirou. Faça login novamente.");
-        return;
-      }
-
-      const response = await fetch(`${API_URL}/users`, {
-        method: "POST",
+      const response = await fetch(`${API_URL}/users/${usuarioEditando.id}`, {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          full_name: formularioNovoUsuario.full_name,
-          username: formularioNovoUsuario.username,
-          email: formularioNovoUsuario.email,
-          contact: formularioNovoUsuario.contact,
-          password: formularioNovoUsuario.password,
-          role: formularioNovoUsuario.role,
-        }),
+        body: JSON.stringify(corpo),
       });
 
       const dados = await response.json();
 
       if (!response.ok) {
-        console.error("Erro ao cadastrar usuário:", dados);
+        console.error("Erro ao atualizar usuário:", dados);
 
-        alert(dados?.message || "Não foi possível cadastrar o colaborador.");
+        alert(dados?.message || "Não foi possível atualizar o colaborador.");
 
         return;
       }
 
-      console.log("Usuário cadastrado:", dados);
+      console.log("Usuário atualizado:", dados);
 
-      alert("Colaborador cadastrado com sucesso!");
+      alert("Colaborador atualizado com sucesso!");
 
       await carregarUsuarios();
 
-      fecharModalNovoUsuario();
+      fecharModalUsuario();
     } catch (erro) {
       console.error("Erro na requisição:", erro);
 
       alert(
         "Não foi possível conectar ao servidor. Verifique se a API está disponível.",
       );
+    }
+  };
+
+  // =========================================================
+  // SALVAR FORMULÁRIO
+  // =========================================================
+
+  const salvarUsuario = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      setSalvandoUsuario(true);
+
+      if (usuarioEditando) {
+        await atualizarUsuario();
+      } else {
+        await salvarNovoUsuario();
+      }
+    } catch (erro) {
+      console.error("Erro na requisição:", erro);
+
+      alert(
+        "Não foi possível conectar ao servidor. Verifique se a API está disponível.",
+      );
+    } finally {
+      setSalvandoUsuario(false);
+    }
+  };
+
+  // =========================================================
+  // ABRIR MODAL TOGGLE STATUS
+  // =========================================================
+
+  const abrirModalToggleStatus = (usuario: Usuario) => {
+    setModalToggleStatus(usuario);
+  };
+
+  // =========================================================
+  // FECHAR MODAL TOGGLE STATUS
+  // =========================================================
+
+  const fecharModalToggleStatus = () => {
+    if (togglingStatus) {
+      return;
+    }
+
+    setModalToggleStatus(null);
+  };
+
+  // =========================================================
+  // TOGGLE STATUS DO USUÁRIO (ATIVAR/DESATIVAR)
+  // =========================================================
+
+  const toggleUsuarioStatus = async () => {
+    if (!modalToggleStatus) {
+      return;
+    }
+
+    const token = localStorage.getItem("auth_token");
+
+    if (!token) {
+      alert("Sua sessão expirou. Faça login novamente.");
+      return;
+    }
+
+    try {
+      setTogglingStatus(true);
+
+      const acao = modalToggleStatus.active ? "desativar" : "ativar";
+      const endpoint = `${API_URL}/partner-company-users/${modalToggleStatus.id}/deactivate`;
+
+      const response = await fetch(endpoint, {
+        method: "PATCH",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const dados = await response.json();
+
+      if (!response.ok) {
+        console.error(`Erro ao ${acao} usuário:`, dados);
+
+        alert(dados?.message || `Não foi possível ${acao} o colaborador.`);
+
+        return;
+      }
+
+      console.log(`Usuário ${acao}do:`, dados);
+
+      alert(
+        `Colaborador ${modalToggleStatus.active ? "desativado" : "ativado"} com sucesso.`,
+      );
+
+      await carregarUsuarios();
+
+      fecharModalToggleStatus();
+    } catch (erro) {
+      console.error("Erro na requisição:", erro);
+
+      alert(
+        "Não foi possível conectar ao servidor. Verifique se a API está disponível.",
+      );
+    } finally {
+      setTogglingStatus(false);
     }
   };
 
@@ -442,6 +647,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
         >
           <div style={summaryCardStyle}>
             <div style={summaryLabelStyle}>Total de usuários</div>
+
             <div style={summaryValueStyle}>{usuariosLista.length}</div>
           </div>
 
@@ -794,14 +1000,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
                           </span>
                         </td>
 
-                        {/* =================================================
-                            AÇÕES
-                            
-                            PADRÃO VISUAL:
-                            Editar = azul
-                            Ativar = verde
-                            Desativar = vermelho
-                        ================================================== */}
+                        {/* AÇÕES */}
 
                         <td
                           style={{
@@ -823,7 +1022,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
                               type="button"
                               title="Editar usuário"
                               aria-label="Editar usuário"
-                              onClick={() => onEditarUsuario?.(usuario)}
+                              onClick={() => abrirModalEditarUsuario(usuario)}
                               style={actionButtonStyle}
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.background = "#eff6ff";
@@ -838,7 +1037,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
                               <FontAwesomeIcon icon={faPenToSquare} />
                             </button>
 
-                            {/* ATIVAR / DESATIVAR */}
+                            {/* TOGGLE STATUS - BOTÃO LIGA/DESLIGA */}
 
                             <button
                               type="button"
@@ -852,30 +1051,38 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
                                   ? "Desativar usuário"
                                   : "Ativar usuário"
                               }
-                              onClick={() => onAlterarStatus?.(usuario)}
+                              onClick={() => abrirModalToggleStatus(usuario)}
                               style={{
                                 ...actionButtonStyle,
-                                color: usuario.active ? "#dc2626" : "#059669",
+                                background: usuario.active
+                                  ? "#059669"
+                                  : "#6b7280",
+                                color: "#ffffff",
+                                width: 40,
+                                borderRadius: 20,
+                                padding: "0 4px",
+                                justifyContent: usuario.active
+                                  ? "flex-end"
+                                  : "flex-start",
                               }}
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.background =
-                                  usuario.active ? "#fef2f2" : "#ecfdf5";
-                                e.currentTarget.style.color = usuario.active
-                                  ? "#dc2626"
-                                  : "#059669";
+                                  usuario.active ? "#047857" : "#4b5563";
                               }}
                               onMouseLeave={(e) => {
                                 e.currentTarget.style.background =
-                                  "transparent";
-                                e.currentTarget.style.color = usuario.active
-                                  ? "#dc2626"
-                                  : "#059669";
+                                  usuario.active ? "#059669" : "#6b7280";
                               }}
                             >
-                              <FontAwesomeIcon
-                                icon={
-                                  usuario.active ? faUserSlash : faUserCheck
-                                }
+                              <div
+                                style={{
+                                  width: 20,
+                                  height: 20,
+                                  borderRadius: "50%",
+                                  background: "#ffffff",
+                                  boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                                  transition: "all 0.2s ease",
+                                }}
                               />
                             </button>
                           </div>
@@ -906,7 +1113,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
       </div>
 
       {/* =====================================================
-          MODAL NOVO USUÁRIO
+          MODAL NOVO / EDITAR USUÁRIO
       ====================================================== */}
 
       {modalNovoUsuario && (
@@ -925,7 +1132,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
           <div
             role="dialog"
             aria-modal="true"
-            aria-labelledby="novo-colaborador-titulo"
+            aria-labelledby="usuario-modal-titulo"
             style={{
               width: "100%",
               maxWidth: 520,
@@ -967,7 +1174,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
                   }}
                 >
                   <FontAwesomeIcon
-                    icon={faUserPlus}
+                    icon={usuarioEditando ? faPenToSquare : faUserPlus}
                     style={{
                       fontSize: 17,
                       color: "#059669",
@@ -977,7 +1184,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
 
                 <div>
                   <h2
-                    id="novo-colaborador-titulo"
+                    id="usuario-modal-titulo"
                     style={{
                       margin: 0,
                       fontSize: 17,
@@ -985,7 +1192,9 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
                       color: "#111827",
                     }}
                   >
-                    Novo colaborador
+                    {usuarioEditando
+                      ? "Editar colaborador"
+                      : "Novo colaborador"}
                   </h2>
 
                   <p
@@ -995,7 +1204,9 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
                       color: "#6b7280",
                     }}
                   >
-                    Cadastre um novo usuário no sistema
+                    {usuarioEditando
+                      ? "Atualize os dados do colaborador"
+                      : "Cadastre um novo usuário no sistema"}
                   </p>
                 </div>
               </div>
@@ -1003,7 +1214,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
               <button
                 type="button"
                 aria-label="Fechar"
-                onClick={fecharModalNovoUsuario}
+                onClick={fecharModalUsuario}
                 style={closeButtonStyle}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.background = "#f3f4f6";
@@ -1020,7 +1231,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
 
             {/* FORMULÁRIO */}
 
-            <form onSubmit={salvarNovoUsuario}>
+            <form onSubmit={salvarUsuario}>
               <div
                 style={{
                   padding: "22px",
@@ -1036,9 +1247,9 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
 
                   <input
                     type="text"
-                    value={formularioNovoUsuario.full_name}
+                    value={formularioUsuario.full_name}
                     onChange={(e) =>
-                      alterarCampoNovoUsuario("full_name", e.target.value)
+                      alterarCampoUsuario("full_name", e.target.value)
                     }
                     placeholder="Ex.: João da Silva"
                     required
@@ -1054,9 +1265,9 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
 
                   <input
                     type="text"
-                    value={formularioNovoUsuario.username}
+                    value={formularioUsuario.username}
                     onChange={(e) =>
-                      alterarCampoNovoUsuario("username", e.target.value)
+                      alterarCampoUsuario("username", e.target.value)
                     }
                     placeholder="Ex.: joao.silva"
                     required
@@ -1076,9 +1287,9 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
 
                   <input
                     type="email"
-                    value={formularioNovoUsuario.email}
+                    value={formularioUsuario.email}
                     onChange={(e) =>
-                      alterarCampoNovoUsuario("email", e.target.value)
+                      alterarCampoUsuario("email", e.target.value)
                     }
                     placeholder="joao@email.com"
                     required
@@ -1105,9 +1316,9 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
 
                   <input
                     type="text"
-                    value={formularioNovoUsuario.contact}
+                    value={formularioUsuario.contact}
                     onChange={(e) =>
-                      alterarCampoNovoUsuario("contact", e.target.value)
+                      alterarCampoUsuario("contact", e.target.value)
                     }
                     placeholder="(00) 00000-0000"
                     autoComplete="tel"
@@ -1118,7 +1329,20 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
                 {/* SENHA */}
 
                 <div>
-                  <label style={labelStyle}>Senha</label>
+                  <label style={labelStyle}>
+                    Senha
+                    {usuarioEditando && (
+                      <span
+                        style={{
+                          marginLeft: 5,
+                          fontWeight: 400,
+                          color: "#9ca3af",
+                        }}
+                      >
+                        (deixe em branco para manter a atual)
+                      </span>
+                    )}
+                  </label>
 
                   <div
                     style={{
@@ -1127,12 +1351,16 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
                   >
                     <input
                       type={mostrarSenha ? "text" : "password"}
-                      value={formularioNovoUsuario.password}
+                      value={formularioUsuario.password}
                       onChange={(e) =>
-                        alterarCampoNovoUsuario("password", e.target.value)
+                        alterarCampoUsuario("password", e.target.value)
                       }
-                      placeholder="Digite uma senha"
-                      required
+                      placeholder={
+                        usuarioEditando
+                          ? "Digite uma nova senha"
+                          : "Digite uma senha"
+                      }
+                      required={!usuarioEditando}
                       minLength={6}
                       autoComplete="new-password"
                       style={{
@@ -1166,9 +1394,9 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
                   <label style={labelStyle}>Perfil de acesso</label>
 
                   <select
-                    value={formularioNovoUsuario.role}
+                    value={formularioUsuario.role}
                     onChange={(e) =>
-                      alterarCampoNovoUsuario(
+                      alterarCampoUsuario(
                         "role",
                         e.target.value as "ADMIN" | "USER",
                       )
@@ -1176,6 +1404,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
                     style={inputStyle}
                   >
                     <option value="USER">Usuário</option>
+
                     <option value="ADMIN">Administrador</option>
                   </select>
 
@@ -1201,23 +1430,300 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
               >
                 <button
                   type="button"
-                  onClick={fecharModalNovoUsuario}
+                  onClick={fecharModalUsuario}
                   style={secondaryButtonStyle}
+                  disabled={salvandoUsuario}
                 >
                   Cancelar
                 </button>
 
-                <button type="submit" style={primaryButtonStyle}>
+                <button
+                  type="submit"
+                  style={{
+                    ...primaryButtonStyle,
+                    opacity: salvandoUsuario ? 0.7 : 1,
+                    cursor: salvandoUsuario ? "not-allowed" : "pointer",
+                  }}
+                  disabled={salvandoUsuario}
+                >
                   <FontAwesomeIcon
-                    icon={faUserPlus}
+                    icon={usuarioEditando ? faPenToSquare : faUserPlus}
                     style={{
                       marginRight: 7,
                     }}
                   />
-                  Cadastrar colaborador
+
+                  {salvandoUsuario
+                    ? "Salvando..."
+                    : usuarioEditando
+                      ? "Salvar alterações"
+                      : "Cadastrar colaborador"}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================
+          MODAL TOGGLE STATUS
+      ====================================================== */}
+
+      {modalToggleStatus && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.45)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 20,
+            zIndex: 10000,
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="toggle-status-modal-titulo"
+            style={{
+              width: "100%",
+              maxWidth: 430,
+              background: "#ffffff",
+              borderRadius: 12,
+              border: "1px solid #e5e7eb",
+              boxShadow: "0 20px 50px rgba(15, 23, 42, 0.15)",
+            }}
+          >
+            {/* CABEÇALHO */}
+
+            <div
+              style={{
+                padding: "20px 22px",
+                borderBottom: "1px solid #e5e7eb",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                }}
+              >
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 9,
+                    background: modalToggleStatus.active
+                      ? "#fef2f2"
+                      : "#ecfdf5",
+                    color: modalToggleStatus.active ? "#dc2626" : "#059669",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 17,
+                  }}
+                >
+                  <FontAwesomeIcon
+                    icon={modalToggleStatus.active ? faUserSlash : faUserCheck}
+                  />
+                </div>
+
+                <div>
+                  <h2
+                    id="toggle-status-modal-titulo"
+                    style={{
+                      margin: 0,
+                      fontSize: 17,
+                      fontWeight: 600,
+                      color: "#111827",
+                    }}
+                  >
+                    {modalToggleStatus.active ? "Desativar" : "Ativar"}{" "}
+                    colaborador
+                  </h2>
+
+                  <p
+                    style={{
+                      margin: "3px 0 0",
+                      fontSize: 12,
+                      color: "#6b7280",
+                    }}
+                  >
+                    Confirme a{" "}
+                    {modalToggleStatus.active ? "desativação" : "ativação"} do
+                    acesso
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                aria-label="Fechar"
+                onClick={fecharModalToggleStatus}
+                disabled={togglingStatus}
+                style={{
+                  ...closeButtonStyle,
+                  opacity: togglingStatus ? 0.5 : 1,
+                  cursor: togglingStatus ? "not-allowed" : "pointer",
+                }}
+                onMouseEnter={(e) => {
+                  if (!togglingStatus) {
+                    e.currentTarget.style.background = "#f3f4f6";
+                    e.currentTarget.style.color = "#374151";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!togglingStatus) {
+                    e.currentTarget.style.background = "transparent";
+                    e.currentTarget.style.color = "#9ca3af";
+                  }
+                }}
+              >
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+            </div>
+
+            {/* CONTEÚDO */}
+
+            <div
+              style={{
+                padding: "22px",
+              }}
+            >
+              <div
+                style={{
+                  padding: "12px 14px",
+                  marginBottom: 18,
+                  background: modalToggleStatus.active ? "#fffbeb" : "#ecfdf5",
+                  border: `1px solid ${modalToggleStatus.active ? "#fde68a" : "#a7f3d0"}`,
+                  borderRadius: 8,
+                  color: modalToggleStatus.active ? "#92400e" : "#065f46",
+                  fontSize: 12,
+                  lineHeight: 1.5,
+                }}
+              >
+                <strong>Atenção:</strong> você está prestes a{" "}
+                <strong>
+                  {modalToggleStatus.active ? "desativar" : "ativar"}
+                </strong>{" "}
+                o colaborador <strong>{modalToggleStatus.full_name}</strong>.
+                <br />
+                {modalToggleStatus.active
+                  ? "O usuário perderá o acesso à sua empresa, mas não será excluído do sistema."
+                  : "O usuário poderá acessar novamente a sua empresa."}
+              </div>
+
+              {/* USUÁRIO */}
+
+              <div
+                style={{
+                  marginBottom: 16,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 13,
+                    color: "#374151",
+                    marginBottom: 6,
+                  }}
+                >
+                  Colaborador
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#111827",
+                  }}
+                >
+                  {modalToggleStatus.full_name}
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 2,
+                    fontSize: 12,
+                    color: "#9ca3af",
+                  }}
+                >
+                  {modalToggleStatus.username}
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 4,
+                    fontSize: 12,
+                    color: modalToggleStatus.active ? "#059669" : "#9ca3af",
+                  }}
+                >
+                  Status atual: {modalToggleStatus.active ? "Ativo" : "Inativo"}
+                </div>
+              </div>
+            </div>
+
+            {/* RODAPÉ */}
+
+            <div
+              style={{
+                padding: "16px 22px",
+                borderTop: "1px solid #e5e7eb",
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 10,
+                background: "#fafafa",
+                borderRadius: "0 0 12px 12px",
+              }}
+            >
+              <button
+                type="button"
+                onClick={fecharModalToggleStatus}
+                disabled={togglingStatus}
+                style={{
+                  ...secondaryButtonStyle,
+                  opacity: togglingStatus ? 0.6 : 1,
+                  cursor: togglingStatus ? "not-allowed" : "pointer",
+                }}
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={toggleUsuarioStatus}
+                disabled={togglingStatus}
+                style={{
+                  height: 38,
+                  padding: "0 16px",
+                  borderRadius: 7,
+                  border: `1px solid ${modalToggleStatus.active ? "#dc2626" : "#059669"}`,
+                  background: modalToggleStatus.active ? "#dc2626" : "#059669",
+                  color: "#ffffff",
+                  cursor: togglingStatus ? "not-allowed" : "pointer",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  opacity: togglingStatus ? 0.55 : 1,
+                }}
+              >
+                <FontAwesomeIcon
+                  icon={modalToggleStatus.active ? faUserSlash : faUserCheck}
+                  style={{
+                    marginRight: 7,
+                  }}
+                />
+
+                {togglingStatus
+                  ? "Processando..."
+                  : modalToggleStatus.active
+                    ? "Desativar colaborador"
+                    : "Ativar colaborador"}
+              </button>
+            </div>
           </div>
         </div>
       )}
