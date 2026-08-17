@@ -122,12 +122,11 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('{id}', [UserController::class, 'destroy']);
     });
 
-
     Route::prefix('partner-company-users')->group(function () {
         Route::get('/', [PartnerCompanyUserController::class, 'index']);
         Route::post('/', [PartnerCompanyUserController::class, 'store']);
         Route::get('{id}', [PartnerCompanyUserController::class, 'show']);
         Route::put('{id}', [PartnerCompanyUserController::class, 'update']);
-        Route::delete('{id}', [PartnerCompanyUserController::class, 'destroy']);
+        Route::patch('{id}/deactivate', [PartnerCompanyUserController::class, 'deactivate']);
     });
 });
