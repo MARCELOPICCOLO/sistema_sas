@@ -79,7 +79,7 @@ export default function Dashboard({ setTela, user, onLogout }: DashboardProps) {
         "Análises de vendas, produtos, performance e métricas do negócio",
       icon: faChartLine,
       cor: "#059669",
-      tela: "relatorio",
+      tela: "gestao_relatorios",
     },
     {
       id: "equipe",

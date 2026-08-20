@@ -7,6 +7,7 @@ import GestaoPontosVenda from "./pages/GestaoPontosVenda";
 import GestaoVendas from "./pages/GestaoVendas";
 import GerenciamentoEquipe from "./pages/GerenciamentoEquipe";
 import api from "./api/axios";
+import GestaoRelatorios from "./pages/GestaoRelatorios";
 
 interface User {
   id: number;
@@ -192,14 +193,9 @@ export default function App() {
         <GerenciamentoEquipe setTela={setTela} {...commonProps} />
       )}
 
-      {/* 
-      {tela === "relatorio" && (
-        <Relatorio
-          setTela={setTela}
-          {...commonProps}
-        />
+      {tela === "gestao_relatorios" && (
+        <GestaoRelatorios setTela={setTela} {...commonProps} />
       )}
-      */}
     </div>
   );
 }

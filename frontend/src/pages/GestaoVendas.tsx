@@ -1,1083 +1,1101 @@
-// pages/GestaoVendas.tsx
-import { useState, useEffect, useCallback } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { SidebarVendas } from "../../components/SidebarVendas";
-import TabelaProdutosPdv from "../../components/TabelaProdutosPdv";
-import { DetalhesVenda } from "../../components/DetalheVenda";
-import { TabelaComandas } from "../../components/TabelaComandas";
-import { ModalFinalizarVenda } from "../../components/ModalFinalizarVenda";
-import { ModalAbrirComanda } from "../../components/ModalAbrirComanda";
 import {
-  faArrowLeft,
   faPlus,
-  faTimes,
-  faCashRegister,
-  faBars,
-  faBoxes,
-  faClipboardList,
-  faCheck,
+  faCartShopping,
+  faTableCells,
+  faUser,
+  faArrowRight,
+  faArrowLeft,
+  faFilter,
+  faRotate,
 } from "@fortawesome/free-solid-svg-icons";
+import NovaVenda from "../../components/NovaVenda";
+import { ModalAbrirComanda } from "../../components/ModalAbrirComanda";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-interface Product {
+interface Produto {
   id: number;
   name: string;
-  product_code: string;
+  product_code?: string;
   price: number;
-  quantity: number;
   category_id: number;
-  category?: {
-    id: number;
-    name: string;
-  };
-  active: boolean;
 }
 
-interface Category {
-  id: number;
-  name: string;
-  restaurant_id: number;
+interface ItemCarrinho {
+  produto: Produto;
+  quantidade: number;
 }
 
-interface PontoVenda {
+export interface Comanda {
   id: number;
-  number: number;
-  restaurant_id: number;
+  numero: number;
+  cliente: string;
+  mesa: number | null;
+  status: "aberta" | "fechada" | "pendente" | "cancelada";
+  payment_method?: string | null;
+  itens: ItemCarrinho[];
+  total: number;
+  order_date?: string;
+  closed_at?: string | null;
 }
 
-interface VendaItem {
+interface OrderApi {
   id: number;
-  product_id: number;
-  quantity: number;
-  price: number;
-  product?: {
-    name: string;
-    product_code?: string;
-  };
-}
-
-interface Venda {
-  id: number;
-  order_number?: string;
-  customer_name: string;
+  command_number: number;
+  sales_point_id?: number | null;
+  customer_name?: string | null;
   status: string;
-  total?: number;
-  items?: VendaItem[];
-  created_at?: string;
-  closed_at?: string;
-  table_id?: number;
-}
-
-interface GestaoVendasProps {
-  setTela?: (tela: string) => void;
-}
-
-export default function GestaoVendas({ setTela }: GestaoVendasProps) {
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [abaAtiva, setAbaAtiva] = useState<"produtos" | "comandas">("produtos");
-
-  // Estados para produtos
-  const [produtos, setProdutos] = useState<Product[]>([]);
-  const [categorias, setCategorias] = useState<Category[]>([]);
-
-  // Estados para vendas
-  const [pontosVenda, setPontosVenda] = useState<PontoVenda[]>([]);
-  const [vendas, setVendas] = useState<Venda[]>([]);
-  const [vendaSelecionada, setVendaSelecionada] = useState<Venda | null>(null);
-  const [showModalNovaVenda, setShowModalNovaVenda] = useState(false);
-  const [showModalFecharVenda, setShowModalFecharVenda] = useState(false);
-
-  // 🔥 TOAST
-  const [toast, setToast] = useState<{
-    show: boolean;
-    message: string;
-    type: "success" | "error";
-  }>({
-    show: false,
-    message: "",
-    type: "success",
-  });
-
-  const showToast = (
-    message: string,
-    type: "success" | "error" = "success",
-  ) => {
-    setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast({ show: false, message: "", type: "success" });
-    }, 900);
-  };
-
-  const ToastComponent = () => {
-    if (!toast.show) return null;
-    return (
-      <div
-        style={{
-          position: "fixed",
-          top: 20,
-          left: "50%",
-          transform: "translateX(-50%)",
-          zIndex: 10000,
-          background: toast.type === "success" ? "#10b981" : "#ef4444",
-          color: "#fff",
-          padding: "10px 20px",
-          borderRadius: 8,
-          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-          fontSize: 14,
-          fontWeight: 500,
-          animation: "slideDown 0.3s ease-out",
-          minWidth: 200,
-          textAlign: "center",
-        }}
-      >
-        <FontAwesomeIcon icon={faCheck} style={{ marginRight: 8 }} />
-        {toast.message}
-        <style>
-          {`
-            @keyframes slideDown {
-              from {
-                transform: translateX(-50%) translateY(-20px);
-                opacity: 0;
-              }
-              to {
-                transform: translateX(-50%) translateY(0);
-                opacity: 1;
-              }
-            }
-          `}
-        </style>
-      </div>
-    );
-  };
-
-  // Detectar mobile
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
+  payment_method?: string | null;
+  total?: number | string | null;
+  order_date?: string;
+  closed_at?: string | null;
+  items?: Array<{
+    id: number;
+    product_id: number;
+    quantity: number;
+    price: number | string;
+    product?: {
+      id: number;
+      name: string;
+      product_code?: string;
+      price?: number;
+      category_id?: number;
     };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  }>;
+}
 
-  // Buscar produtos
-  const fetchProdutos = useCallback(async () => {
+type FiltroStatus =
+  | "todas"
+  | "abertas"
+  | "fechadas"
+  | "pendentes"
+  | "nao_pagas";
+
+interface GestaoComandasProps {
+  setTela?: (tela: string) => void;
+  onAbrirComanda?: (comanda: Comanda) => void;
+}
+
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(value);
+};
+
+const normalizarComanda = (order: OrderApi): Comanda => {
+  const itens: ItemCarrinho[] = (order.items || []).map((item) => ({
+    produto: {
+      id: item.product?.id ?? item.product_id,
+      name: item.product?.name ?? `Produto ${item.product_id}`,
+      product_code: item.product?.product_code,
+      price: Number(item.price),
+      category_id: item.product?.category_id ?? 0,
+    },
+    quantidade: Number(item.quantity),
+  }));
+
+  let status: Comanda["status"] = "aberta";
+
+  if (order.status === "fechado") {
+    status = "fechado";
+  } else if (order.status === "pendente") {
+    status = "pendente";
+  } else if (order.status === "cancelado") {
+    status = "cancelada";
+  }
+
+  return {
+    id: order.id,
+    numero: Number(order.command_number),
+    cliente: order.customer_name || "Consumidor",
+    mesa: order.sales_point_id ?? null,
+    status,
+    payment_method: order.payment_method ?? null,
+    itens,
+    total: Number(order.total || 0),
+    order_date: order.order_date,
+    closed_at: order.closed_at ?? null,
+  };
+};
+
+export default function GestaoComandas({
+  setTela,
+  onAbrirComanda,
+}: GestaoComandasProps) {
+  const [comandas, setComandas] = useState<Comanda[]>([]);
+
+  const [comandaSelecionada, setComandaSelecionada] = useState<Comanda | null>(
+    null,
+  );
+
+  const [mostrarNovaVenda, setMostrarNovaVenda] = useState(false);
+
+  const [mostrarModalAbrirComanda, setMostrarModalAbrirComanda] =
+    useState(false);
+
+  const [filtro, setFiltro] = useState<FiltroStatus>("abertas");
+
+  const [loading, setLoading] = useState(true);
+
+  const [erro, setErro] = useState("");
+
+  const carregarComandas = async () => {
     try {
+      setLoading(true);
+      setErro("");
+
       const token = localStorage.getItem("auth_token");
-      console.log(token);
 
-      if (!token) {
-        console.error("JWT não encontrado.");
-        return;
-      }
-
-      const response = await fetch(`${API_URL}/products`, {
-        method: "GET",
+      const response = await axios.get(`${API_URL}/orders`, {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
         },
       });
 
-      if (!response.ok) {
-        throw new Error(`Erro ao buscar produtos: ${response.status}`);
-      }
+      const orders: OrderApi[] = Array.isArray(response.data)
+        ? response.data
+        : response.data?.orders || [];
 
-      const data = await response.json();
+      const comandasApi = orders.map(normalizarComanda);
 
-      const produtosFormatados = data.map((p: any) => ({
-        ...p,
-        price: typeof p.price === "number" ? p.price : Number(p.price) || 0,
-        quantity:
-          typeof p.quantity === "number" ? p.quantity : Number(p.quantity) || 0,
-      }));
+      setComandas(comandasApi);
 
-      setProdutos(produtosFormatados);
-    } catch (error) {
-      console.error("Erro ao buscar produtos:", error);
-    }
-  }, []);
+      setComandaSelecionada((atual) => {
+        if (!atual) {
+          return null;
+        }
 
-  // Buscar categorias
-  const fetchCategorias = async () => {
-    try {
-      const token = localStorage.getItem("auth_token");
+        const atualizada = comandasApi.find(
+          (comanda) => comanda.id === atual.id,
+        );
 
-      if (!token) {
-        console.error("JWT não encontrado.");
-        return;
-      }
-
-      const response = await fetch(`${API_URL}/categories`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+        return atualizada || atual;
       });
-
-      if (!response.ok) {
-        throw new Error(`Erro ao buscar categorias: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      setCategorias(data);
     } catch (error) {
-      console.error("Erro ao buscar categorias:", error);
+      console.error("Erro ao carregar comandas:", error);
+      setErro("Não foi possível carregar as comandas.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Buscar vendas
-  const fetchVendas = useCallback(async () => {
-    try {
-      const token = localStorage.getItem("auth_token");
-
-      if (!token) {
-        console.error("JWT não encontrado.");
-        return;
-      }
-
-      const response = await fetch(`${API_URL}/orders`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Erro ao buscar vendas: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      const vendasComTotal = data.map((venda: any) => ({
-        ...venda,
-        total:
-          venda.items?.reduce(
-            (sum: number, item: any) =>
-              sum + Number(item.price) * Number(item.quantity),
-            0,
-          ) || 0,
-      }));
-
-      setVendas(vendasComTotal);
-    } catch (error) {
-      console.error("Erro ao buscar vendas:", error);
-    }
+  useEffect(() => {
+    carregarComandas();
   }, []);
 
-  useEffect(() => {
-    fetchProdutos();
-    fetchCategorias();
-    fetchVendas();
-  }, [fetchProdutos, fetchVendas]);
+  const comandasFiltradas = useMemo(() => {
+    return comandas.filter((comanda) => {
+      switch (filtro) {
+        case "abertas":
+          return comanda.status === "aberta";
 
-  // Abrir nova venda
-  const abrirVenda = async (
-    salesPointId: number,
+        case "fechadas":
+          return (
+            comanda.status === "fechado" &&
+            comanda.payment_method !== "pendente"
+          );
+
+        case "pendentes":
+          return comanda.status === "pendente";
+
+        case "nao_pagas":
+          return comanda.payment_method === "pendente";
+
+        default:
+          return true;
+      }
+    });
+  }, [comandas, filtro]);
+
+  const quantidadeAbertas = useMemo(() => {
+    return comandas.filter((comanda) => comanda.status === "aberta").length;
+  }, [comandas]);
+
+  const quantidadeFechadas = useMemo(() => {
+    return comandas.filter(
+      (comanda) =>
+        comanda.status === "fechado" && comanda.payment_method !== "pendente",
+    ).length;
+  }, [comandas]);
+
+  const quantidadePendentes = useMemo(() => {
+    return comandas.filter((comanda) => comanda.status === "pendente").length;
+  }, [comandas]);
+
+  const quantidadeNaoPagas = useMemo(() => {
+    return comandas.filter((comanda) => comanda.payment_method === "pendente")
+      .length;
+  }, [comandas]);
+
+  const abrirModalNovaComanda = () => {
+    setMostrarModalAbrirComanda(true);
+  };
+
+  const fecharModalNovaComanda = () => {
+    setMostrarModalAbrirComanda(false);
+  };
+
+  const criarComanda = async (
+    numeroComanda: number,
     nomeCliente: string,
     dataComanda: string,
   ) => {
-    try {
-      const token = localStorage.getItem("auth_token");
+    const token = localStorage.getItem("auth_token");
 
-      if (!token) {
-        console.error("JWT não encontrado.");
-        showToast("Sessão expirada. Faça login novamente.", "error");
-        return;
-      }
-
-      const response = await fetch(`${API_URL}/orders`, {
-        method: "POST",
+    const response = await axios.post(
+      `${API_URL}/orders`,
+      {
+        sales_point_id: numeroComanda,
+        order_date: dataComanda,
+        customer_name: nomeCliente,
+        status: "aberto",
+        total: 0,
+      },
+      {
         headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          sales_point_id: salesPointId,
-          order_date: dataComanda,
-          customer_name: nomeCliente,
-          status: "aberto",
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-
-        showToast(error.message || "Erro ao abrir comanda", "error");
-
-        return;
-      }
-
-      const data = await response.json();
-
-      const novaVenda = data.order || data;
-
-      await fetchVendas();
-
-      setVendaSelecionada(novaVenda);
-      setShowModalNovaVenda(false);
-
-      const mensagem =
-        nomeCliente === "Venda Rápida"
-          ? `Comanda aberta com sucesso!`
-          : `Comanda - ${nomeCliente} aberta com sucesso!`;
-
-      showToast(mensagem, "success");
-    } catch (error) {
-      console.error("Erro ao abrir comanda:", error);
-
-      showToast("Erro ao conectar com o servidor", "error");
-    }
-  };
-
-  // Adicionar item à venda
-  const addItemToVenda = async (
-    produto: Product,
-    vendaId: number,
-    quantidade: number = 1,
-    precoPersonalizado?: number,
-  ) => {
-    try {
-      const token = localStorage.getItem("auth_token");
-
-      if (!token) {
-        console.error("JWT não encontrado.");
-        showToast("Sessão expirada. Faça login novamente.", "error");
-        return;
-      }
-
-      const headers = {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      };
-
-      const precoFinal = precoPersonalizado ?? produto.price;
-
-      // Adicionar item à venda
-      const response = await fetch(`${API_URL}/orders/${vendaId}/items`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          product_id: produto.id,
-          quantity: quantidade,
-          price: precoFinal,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-
-        showToast(error.message || "Erro ao adicionar item", "error");
-
-        return;
-      }
-
-      await fetchVendas();
-
-      // Buscar a venda atualizada
-      const updatedResponse = await fetch(`${API_URL}/orders/${vendaId}`, {
-        method: "GET",
-        headers,
-      });
-
-      if (!updatedResponse.ok) {
-        throw new Error(
-          `Erro ao buscar venda atualizada: ${updatedResponse.status}`,
-        );
-      }
-
-      const updatedVenda = await updatedResponse.json();
-
-      if (vendaSelecionada?.id === vendaId) {
-        setVendaSelecionada({
-          ...updatedVenda,
-          total:
-            updatedVenda.items?.reduce(
-              (sum: number, item: any) =>
-                sum + Number(item.price) * Number(item.quantity),
-              0,
-            ) || 0,
-        });
-      }
-
-      const mensagem = `${quantidade}x ${produto.name} adicionado${
-        precoPersonalizado
-          ? ` com preço especial de ${formatCurrency(precoPersonalizado)}`
-          : ""
-      }!`;
-
-      showToast(mensagem, "success");
-    } catch (error) {
-      console.error("Erro ao adicionar item:", error);
-
-      showToast("Erro ao conectar com o servidor", "error");
-    }
-  };
-
-  // Remover item da venda
-  const removerItem = async (vendaId: number, itemId: number) => {
-    if (!confirm("Remover este item da venda?")) return;
-
-    try {
-      const token = localStorage.getItem("auth_token");
-
-      if (!token) {
-        console.error("JWT não encontrado.");
-        showToast("Sessão expirada. Faça login novamente.", "error");
-        return;
-      }
-
-      const headers = {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      };
-
-      // Remover item da venda
-      const response = await fetch(`${API_URL}/order-items/${itemId}`, {
-        method: "DELETE",
-        headers,
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => null);
-
-        showToast(error?.message || "Erro ao remover item", "error");
-
-        return;
-      }
-
-      await fetchVendas();
-
-      // Buscar a venda atualizada
-      const updatedResponse = await fetch(`${API_URL}/orders/${vendaId}`, {
-        method: "GET",
-        headers,
-      });
-
-      if (!updatedResponse.ok) {
-        throw new Error(
-          `Erro ao buscar venda atualizada: ${updatedResponse.status}`,
-        );
-      }
-
-      const updatedVenda = await updatedResponse.json();
-
-      if (vendaSelecionada?.id === vendaId) {
-        setVendaSelecionada({
-          ...updatedVenda,
-          total:
-            updatedVenda.items?.reduce(
-              (sum: number, item: any) =>
-                sum + Number(item.price) * Number(item.quantity),
-              0,
-            ) || 0,
-        });
-      }
-
-      showToast("Item removido!", "success");
-    } catch (error) {
-      console.error("Erro ao remover item:", error);
-
-      showToast("Erro ao conectar com o servidor", "error");
-    }
-  };
-
-  const formatCurrency = (value: any): string => {
-    const num = typeof value === "number" ? value : Number(value) || 0;
-    return `R$ ${num.toFixed(2).replace(".", ",")}`;
-  };
-
-  const calcularTotal = (items?: VendaItem[]) => {
-    if (!items) return 0;
-    return items.reduce(
-      (sum, item) => sum + Number(item.price) * item.quantity,
-      0,
+      },
     );
+
+    const order: OrderApi = response.data.order;
+
+    const novaComanda = normalizarComanda(order);
+
+    setComandas((atual) => [...atual, novaComanda]);
+
+    setComandaSelecionada(novaComanda);
+    setMostrarNovaVenda(true);
+    setMostrarModalAbrirComanda(false);
+
+    onAbrirComanda?.(novaComanda);
   };
 
-  // Cancelar venda
-  const cancelarVenda = async (vendaId: number) => {
-    try {
-      const response = await fetch(`${API_URL}/orders/${vendaId}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-      });
+  const abrirComandaExistente = (comanda: Comanda) => {
+    setComandaSelecionada(comanda);
+    setMostrarNovaVenda(true);
 
-      if (!response.ok) {
-        const error = await response.json();
-        showToast(error.message || "Erro ao cancelar venda", "error");
-        return;
-      }
-
-      if (vendaSelecionada?.id === vendaId) {
-        setVendaSelecionada(null);
-      }
-      await fetchVendas();
-      showToast("Venda cancelada com sucesso!", "success");
-    } catch (error) {
-      console.error("Erro ao cancelar venda:", error);
-      showToast("Erro ao conectar com o servidor", "error");
-    }
+    onAbrirComanda?.(comanda);
   };
 
-  // Marcar venda como não paga
-  const marcarNaoPaga = async (vendaId: number) => {
-    try {
-      const token = localStorage.getItem("auth_token");
+  const voltarParaComandas = async () => {
+    setMostrarNovaVenda(false);
+    setComandaSelecionada(null);
 
-      if (!token) {
-        console.error("JWT não encontrado.");
-        showToast("Sessão expirada. Faça login novamente.", "error");
-        return;
+    await carregarComandas();
+  };
+
+  const atualizarComanda = (comandaId: number, dados: Partial<Comanda>) => {
+    setComandas((atual) =>
+      atual.map((comanda) =>
+        comanda.id === comandaId
+          ? {
+              ...comanda,
+              ...dados,
+            }
+          : comanda,
+      ),
+    );
+
+    setComandaSelecionada((atual) => {
+      if (!atual || atual.id !== comandaId) {
+        return atual;
       }
 
-      const headers = {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
+      return {
+        ...atual,
+        ...dados,
       };
-
-      // Marcar venda como não paga
-      const response = await fetch(`${API_URL}/orders/${vendaId}/close`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          payment_method: "pendente",
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => null);
-
-        showToast(
-          error?.message || "Erro ao marcar venda como não paga",
-          "error",
-        );
-
-        return;
-      }
-
-      await fetchVendas();
-
-      // Buscar venda atualizada
-      const updatedResponse = await fetch(`${API_URL}/orders/${vendaId}`, {
-        method: "GET",
-        headers,
-      });
-
-      if (!updatedResponse.ok) {
-        throw new Error(
-          `Erro ao buscar venda atualizada: ${updatedResponse.status}`,
-        );
-      }
-
-      const updatedVenda = await updatedResponse.json();
-
-      setVendaSelecionada(updatedVenda);
-
-      showToast("Venda marcada como não paga!", "success");
-    } catch (error) {
-      console.error("Erro ao marcar venda:", error);
-
-      showToast("Erro ao conectar com o servidor", "error");
-    }
+    });
   };
 
-  // Finalizar venda
-  const finalizarVenda = async (
-    vendaId: number,
-    formaPagamento: string,
-    valorRecebido?: number,
-  ) => {
-    try {
-      const token = localStorage.getItem("auth_token");
-
-      if (!token) {
-        console.error("JWT não encontrado.");
-        showToast("Sessão expirada. Faça login novamente.", "error");
-        return;
-      }
-
-      const response = await fetch(`${API_URL}/orders/${vendaId}/close`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          payment_method: formaPagamento,
-          ...(valorRecebido !== undefined && {
-            valor_recebido: valorRecebido,
-          }),
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => null);
-
-        showToast(error?.message || "Erro ao finalizar venda", "error");
-
-        return;
-      }
-
-      setVendaSelecionada(null);
-
-      await fetchVendas();
-
-      setShowModalFecharVenda(false);
-
-      showToast("Venda finalizada com sucesso!", "success");
-    } catch (error) {
-      console.error("Erro ao finalizar venda:", error);
-
-      showToast("Erro ao conectar com o servidor", "error");
+  const getStatusInfo = (comanda: Comanda) => {
+    if (comanda.payment_method === "pendente") {
+      return {
+        label: "Não paga",
+        background: "#fef2f2",
+        color: "#dc2626",
+      };
     }
+
+    if (comanda.status === "aberta") {
+      return {
+        label: "Aberta",
+        background: "#ecfdf5",
+        color: "#059669",
+      };
+    }
+
+    if (comanda.status === "pendente") {
+      return {
+        label: "Pendente",
+        background: "#fffbeb",
+        color: "#d97706",
+      };
+    }
+
+    if (comanda.status === "fechado") {
+      return {
+        label: "Fechada",
+        background: "#f3f4f6",
+        color: "#6b7280",
+      };
+    }
+
+    return {
+      label: "Cancelada",
+      background: "#f3f4f6",
+      color: "#6b7280",
+    };
   };
 
-  const vendasAbertas = vendas.filter((v) => v.status === "aberto");
+  const getQuantidadeItens = (comanda: Comanda) => {
+    return comanda.itens.reduce((total, item) => total + item.quantidade, 0);
+  };
 
-  // Versão Desktop
-  if (!isMobile) {
+  if (mostrarNovaVenda && comandaSelecionada) {
     return (
-      <>
-        <ToastComponent />
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "280px 1fr 380px",
-            height: "100%",
-            background: "#f8fafc",
-          }}
-        >
-          <SidebarVendas
-            abaAtiva={abaAtiva}
-            onAbaChange={setAbaAtiva}
-            onNovaVenda={() => setShowModalNovaVenda(true)}
-            onVoltarDashboard={() => setTela && setTela("dashboard")}
-          />
+      <NovaVenda
+        comanda={comandaSelecionada}
+        onVoltar={voltarParaComandas}
+        onAtualizarComanda={(dados) => {
+          atualizarComanda(comandaSelecionada.id, dados);
+        }}
+        onFinalizar={() => {
+          atualizarComanda(comandaSelecionada.id, {
+            status: "fechado",
+          });
 
-          <div
-            style={{
-              padding: "20px",
-              overflowY: "auto",
-              height: "100vh",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            {abaAtiva === "produtos" ? (
-              <TabelaProdutosPdv
-                produtos={produtos}
-                categorias={categorias}
-                pontosVenda={pontosVenda}
-                onProductSelect={(produto, vendaId, precoPersonalizado) =>
-                  addItemToVenda(produto, vendaId, 1, precoPersonalizado)
-                }
-                vendasAbertas={vendasAbertas}
-                disabled={false}
-                isMobile={false}
-              />
-            ) : (
-              <TabelaComandas
-                vendas={vendas}
-                pontosVenda={pontosVenda}
-                vendaSelecionada={vendaSelecionada}
-                onVendaClick={setVendaSelecionada}
-                isMobile={false}
-                formatCurrency={formatCurrency}
-              />
-            )}
-          </div>
-
-          <DetalhesVenda
-            venda={vendaSelecionada}
-            pontosVenda={pontosVenda}
-            onRemoverItem={removerItem}
-            onFinalizarVenda={() => setShowModalFecharVenda(true)}
-            onCancelarVenda={cancelarVenda}
-            onMarcarNaoPaga={marcarNaoPaga}
-            formatCurrency={formatCurrency}
-            isMobile={false}
-          />
-        </div>
-
-        <ModalAbrirComanda
-          showModal={showModalNovaVenda}
-          onClose={() => setShowModalNovaVenda(false)}
-          onConfirm={abrirVenda}
-        />
-
-        {showModalFecharVenda && (
-          <ModalFinalizarVenda
-            isOpen={showModalFecharVenda}
-            venda={vendaSelecionada}
-            onClose={() => setShowModalFecharVenda(false)}
-            onConfirm={async (
-              formaPagamento,
-              valorRecebido,
-              comandaNaoPaga,
-            ) => {
-              if (!vendaSelecionada) return;
-
-              if (comandaNaoPaga) {
-                await marcarNaoPaga(vendaSelecionada.id);
-              } else {
-                await finalizarVenda(
-                  vendaSelecionada.id,
-                  formaPagamento,
-                  valorRecebido,
-                );
-              }
-            }}
-            formatCurrency={formatCurrency}
-          />
-        )}
-      </>
+          voltarParaComandas();
+        }}
+      />
     );
   }
 
-  // Versão Mobile
   return (
-    <>
-      <ToastComponent />
+    <div
+      style={{
+        minHeight: "100%",
+        width: "100%",
+        background: "#f8fafc",
+        color: "#111827",
+        boxSizing: "border-box",
+        overflowX: "hidden",
+      }}
+    >
       <div
         style={{
-          background: "#f8fafc",
-          minHeight: "100vh",
-          paddingBottom:
-            vendaSelecionada && vendaSelecionada.status === "aberto"
-              ? "80px"
-              : "0",
+          width: "100%",
+          maxWidth: 1600,
+          margin: "0 auto",
+          padding: "18px 20px 24px",
+          boxSizing: "border-box",
         }}
       >
-        {/* Header Mobile */}
-        <div
-          style={{
-            padding: "16px",
-            background: "#ffffff",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            borderBottom: "1px solid #e5e7eb",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div
+        {/* BOTÃO VOLTAR */}
+        {setTela && (
+          <div
+            style={{
+              marginBottom: 14,
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setTela("dashboard")}
               style={{
-                width: 36,
-                height: 36,
-                background: "#ecfdf5",
-                borderRadius: 8,
-                display: "flex",
+                display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
+                gap: 7,
+                padding: "7px 10px",
+                background: "#f8fafc",
+                border: "1px solid #e5e7eb",
+                borderRadius: 7,
+                cursor: "pointer",
+                color: "#6b7280",
+                fontSize: 11,
+                fontWeight: 500,
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#ecfdf5";
+                e.currentTarget.style.borderColor = "#a7f3d0";
+                e.currentTarget.style.color = "#059669";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#f8fafc";
+                e.currentTarget.style.borderColor = "#e5e7eb";
+                e.currentTarget.style.color = "#6b7280";
               }}
             >
               <FontAwesomeIcon
-                icon={faCashRegister}
-                style={{ fontSize: 18, color: "#10b981" }}
+                icon={faArrowLeft}
+                style={{
+                  fontSize: 10,
+                }}
               />
-            </div>
+              Voltar ao Dashboard
+            </button>
+          </div>
+        )}
+
+        {/* HEADER */}
+        <div
+          className="gestao-comandas-header"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 16,
+            marginBottom: 18,
+          }}
+        >
+          <div>
             <h1
               style={{
                 margin: 0,
-                fontSize: 18,
+                fontSize: 20,
                 fontWeight: 600,
                 color: "#111827",
               }}
             >
-              Gestão de Vendas
+              Gestão de Comandas
             </h1>
+
+            <p
+              style={{
+                margin: "5px 0 0",
+                fontSize: 12,
+                color: "#6b7280",
+              }}
+            >
+              Controle das comandas abertas e mesas em atendimento
+            </p>
           </div>
+
           <button
-            onClick={() => setShowMobileMenu(true)}
+            type="button"
+            onClick={abrirModalNovaComanda}
             style={{
-              background: "#f3f4f6",
-              border: "none",
-              borderRadius: 8,
-              padding: "8px 12px",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              height: 34,
+              padding: "0 11px",
+              borderRadius: 7,
+              border: "1px solid #d1fae5",
+              background: "#ecfdf5",
+              color: "#047857",
               cursor: "pointer",
-              color: "#374151",
+              fontSize: 11,
+              fontWeight: 600,
+              whiteSpace: "nowrap",
+              flexShrink: 0,
             }}
           >
-            <FontAwesomeIcon icon={faBars} />
+            <FontAwesomeIcon
+              icon={faPlus}
+              style={{
+                fontSize: 10,
+              }}
+            />
+            Abrir comanda
           </button>
         </div>
 
-        {/* Botão Voltar ao Dashboard */}
-        <div style={{ padding: "12px 16px" }}>
-          <button
-            onClick={() => setTela && setTela("dashboard")}
+        {/* FILTROS */}
+        <div
+          className="gestao-comandas-filtros"
+          style={{
+            background: "#fff",
+            border: "1px solid #e5e7eb",
+            borderRadius: 10,
+            padding: 10,
+            marginBottom: 18,
+            display: "flex",
+            alignItems: "center",
+            gap: 7,
+            flexWrap: "wrap",
+          }}
+        >
+          <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 8,
-              width: "100%",
-              padding: "10px 16px",
-              background: "#fff",
-              border: "1px solid #e5e7eb",
-              borderRadius: 8,
-              cursor: "pointer",
-              color: "#374151",
-              fontSize: 14,
+              gap: 6,
+              marginRight: 4,
+              color: "#6b7280",
+              fontSize: 11,
+              fontWeight: 500,
             }}
           >
-            <FontAwesomeIcon icon={faArrowLeft} /> Voltar ao Dashboard
+            <FontAwesomeIcon
+              icon={faFilter}
+              style={{
+                fontSize: 10,
+              }}
+            />
+            Filtros
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setFiltro("todas")}
+            style={filtroButtonStyle(filtro === "todas")}
+          >
+            Todas
+            <span>{comandas.length}</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setFiltro("abertas")}
+            style={filtroButtonStyle(filtro === "abertas")}
+          >
+            Abertas
+            <span>{quantidadeAbertas}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFiltro("fechadas")}
+            style={filtroButtonStyle(filtro === "fechadas")}
+          >
+            Fechadas
+            <span>{quantidadeFechadas}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFiltro("pendentes")}
+            style={filtroButtonStyle(filtro === "pendentes", "orange")}
+          >
+            Pendentes
+            <span>{quantidadePendentes}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFiltro("nao_pagas")}
+            style={filtroButtonStyle(filtro === "nao_pagas", "red")}
+          >
+            Não pagas
+            <span>{quantidadeNaoPagas}</span>
+          </button>
+
+          <div
+            style={{
+              marginLeft: "auto",
+            }}
+          >
+            <button
+              type="button"
+              onClick={carregarComandas}
+              disabled={loading}
+              title="Atualizar comandas"
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 7,
+                border: "1px solid #e5e7eb",
+                background: "#fff",
+                color: "#6b7280",
+                cursor: loading ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                opacity: loading ? 0.6 : 1,
+              }}
+            >
+              <FontAwesomeIcon
+                icon={faRotate}
+                spin={loading}
+                style={{
+                  fontSize: 11,
+                }}
+              />
+            </button>
+          </div>
         </div>
 
-        {/* Abas Mobile */}
+        {/* CONTEÚDO */}
         <div
+          className="gestao-comandas-layout"
           style={{
-            padding: "0 16px",
-            display: "flex",
-            gap: 8,
-            marginBottom: 16,
+            display: "grid",
+            gridTemplateColumns: "minmax(0, 1fr) 360px",
+            gap: 18,
+            alignItems: "start",
           }}
         >
-          <button
-            onClick={() => setAbaAtiva("produtos")}
+          {/* ÁREA PRINCIPAL */}
+          <div
             style={{
-              flex: 1,
-              padding: "10px",
-              borderRadius: 8,
-              border:
-                abaAtiva === "produtos"
-                  ? "1px solid #10b981"
-                  : "1px solid #e5e7eb",
-              background: abaAtiva === "produtos" ? "#10b981" : "#fff",
-              color: abaAtiva === "produtos" ? "#fff" : "#374151",
-              cursor: "pointer",
-              fontWeight: 500,
+              background: "#fff",
+              border: "1px solid #e5e7eb",
+              borderRadius: 10,
+              overflow: "hidden",
+              minWidth: 0,
             }}
           >
-            <FontAwesomeIcon icon={faBoxes} /> Produtos
-          </button>
-          <button
-            onClick={() => setAbaAtiva("comandas")}
-            style={{
-              flex: 1,
-              padding: "10px",
-              borderRadius: 8,
-              border:
-                abaAtiva === "comandas"
-                  ? "1px solid #10b981"
-                  : "1px solid #e5e7eb",
-              background: abaAtiva === "comandas" ? "#10b981" : "#fff",
-              color: abaAtiva === "comandas" ? "#fff" : "#374151",
-              cursor: "pointer",
-              fontWeight: 500,
-            }}
-          >
-            <FontAwesomeIcon icon={faClipboardList} /> Comandas
-          </button>
-        </div>
-
-        {/* Menu Mobile */}
-        {showMobileMenu && (
-          <>
             <div
               style={{
-                position: "fixed",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: "rgba(0,0,0,0.5)",
-                zIndex: 1000,
+                padding: "16px 18px",
+                borderBottom: "1px solid #f1f5f9",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
               }}
-              onClick={() => setShowMobileMenu(false)}
-            />
+            >
+              <FontAwesomeIcon
+                icon={faTableCells}
+                style={{
+                  color: "#059669",
+                  fontSize: 13,
+                }}
+              />
+
+              <strong
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "#374151",
+                }}
+              >
+                Comandas
+              </strong>
+
+              <span
+                style={{
+                  fontSize: 11,
+                  color: "#9ca3af",
+                }}
+              >
+                {comandasFiltradas.length} encontradas
+              </span>
+            </div>
+
             <div
               style={{
-                position: "fixed",
-                top: 0,
-                left: 0,
-                bottom: 0,
-                width: "280px",
-                background: "#ffffff",
-                zIndex: 1001,
-                padding: "20px",
-                overflowY: "auto",
-                borderRight: "1px solid #e5e7eb",
+                padding: 18,
+              }}
+            >
+              {loading ? (
+                <div
+                  style={{
+                    minHeight: 250,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#9ca3af",
+                    fontSize: 12,
+                  }}
+                >
+                  Carregando comandas...
+                </div>
+              ) : erro ? (
+                <div
+                  style={{
+                    minHeight: 250,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    textAlign: "center",
+                    color: "#dc2626",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 12,
+                    }}
+                  >
+                    {erro}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={carregarComandas}
+                    style={{
+                      marginTop: 10,
+                      padding: "7px 12px",
+                      borderRadius: 7,
+                      border: "1px solid #e5e7eb",
+                      background: "#fff",
+                      color: "#374151",
+                      cursor: "pointer",
+                      fontSize: 11,
+                      fontWeight: 500,
+                    }}
+                  >
+                    Tentar novamente
+                  </button>
+                </div>
+              ) : comandasFiltradas.length === 0 ? (
+                <div
+                  style={{
+                    minHeight: 150,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    textAlign: "center",
+                    color: "#9ca3af",
+                  }}
+                >
+                  <FontAwesomeIcon
+                    icon={faCartShopping}
+                    style={{
+                      fontSize: 14,
+                      marginBottom: 12,
+                    }}
+                  />
+
+                  <strong
+                    style={{
+                      fontSize: 13,
+                      color: "#6b7280",
+                    }}
+                  >
+                    Nenhuma comanda encontrada
+                  </strong>
+
+                  <span
+                    style={{
+                      marginTop: 5,
+                      fontSize: 11,
+                    }}
+                  >
+                    Não existem comandas para esse filtro.
+                  </span>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(190px, 1fr))",
+                    gap: 12,
+                  }}
+                >
+                  {comandasFiltradas.map((comanda) => {
+                    const status = getStatusInfo(comanda);
+
+                    return (
+                      <button
+                        key={comanda.id}
+                        type="button"
+                        onClick={() => abrirComandaExistente(comanda)}
+                        style={{
+                          textAlign: "left",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: 9,
+                          background: "#fff",
+                          padding: 14,
+                          cursor: "pointer",
+                          minWidth: 0,
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: 10,
+                          }}
+                        >
+                          <strong
+                            style={{
+                              fontSize: 13,
+                              color: "#111827",
+                              minWidth: 0,
+                            }}
+                          >
+                            Comanda #{comanda.numero}
+                          </strong>
+
+                          <FontAwesomeIcon
+                            icon={faArrowRight}
+                            style={{
+                              color: "#9ca3af",
+                              fontSize: 11,
+                              flexShrink: 0,
+                            }}
+                          />
+                        </div>
+
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            marginTop: 10,
+                            fontSize: 11,
+                            color: "#6b7280",
+                            minWidth: 0,
+                          }}
+                        >
+                          <FontAwesomeIcon
+                            icon={faUser}
+                            style={{
+                              fontSize: 10,
+                              flexShrink: 0,
+                            }}
+                          />
+
+                          <span
+                            style={{
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {comanda.cliente || "Consumidor"}
+                          </span>
+                        </div>
+
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: 10,
+                            marginTop: 12,
+                          }}
+                        >
+                          <span
+                            style={{
+                              padding: "4px 7px",
+                              borderRadius: 20,
+                              background: status.background,
+                              color: status.color,
+                              fontSize: 9,
+                              fontWeight: 600,
+                            }}
+                          >
+                            {status.label}
+                          </span>
+
+                          <span
+                            style={{
+                              fontSize: 10,
+                              color: "#9ca3af",
+                            }}
+                          >
+                            {getQuantidadeItens(comanda)} itens
+                          </span>
+
+                          <strong
+                            style={{
+                              fontSize: 13,
+                              color: "#059669",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {formatCurrency(comanda.total)}
+                          </strong>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* COMANDAS ABERTAS */}
+          <div
+            style={{
+              background: "#fff",
+              border: "1px solid #e5e7eb",
+              borderRadius: 10,
+              overflow: "hidden",
+              minWidth: 0,
+            }}
+          >
+            <div
+              style={{
+                padding: "16px 18px",
+                borderBottom: "1px solid #f1f5f9",
               }}
             >
               <div
                 style={{
                   display: "flex",
-                  justifyContent: "flex-end",
-                  marginBottom: 20,
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 10,
                 }}
               >
-                <button
-                  onClick={() => setShowMobileMenu(false)}
+                <strong
                   style={{
-                    background: "transparent",
-                    border: "none",
-                    fontSize: 20,
-                    cursor: "pointer",
+                    fontSize: 13,
+                    fontWeight: 600,
                     color: "#374151",
                   }}
                 >
-                  <FontAwesomeIcon icon={faTimes} />
-                </button>
-              </div>
-              <button
-                onClick={() => {
-                  setShowModalNovaVenda(true);
-                  setShowMobileMenu(false);
-                }}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  width: "100%",
-                  padding: "12px 16px",
-                  background: "#10b981",
-                  border: "none",
-                  borderRadius: 8,
-                  cursor: "pointer",
-                  color: "#fff",
-                  marginBottom: 12,
-                }}
-              >
-                <FontAwesomeIcon icon={faPlus} /> <span>Nova Venda</span>
-              </button>
-            </div>
-          </>
-        )}
+                  Comandas abertas
+                </strong>
 
-        {/* Conteúdo Mobile */}
-        <div style={{ padding: "16px" }}>
-          {abaAtiva === "produtos" ? (
-            <>
-              <TabelaProdutosPdv
-                produtos={produtos}
-                categorias={categorias}
-                pontosVenda={pontosVenda}
-                onProductSelect={(produto, vendaId, precoPersonalizado) =>
-                  addItemToVenda(produto, vendaId, 1, precoPersonalizado)
-                }
-                vendasAbertas={vendasAbertas}
-                disabled={false}
-                isMobile={true}
-              />
-              {vendaSelecionada && vendaSelecionada.status === "aberto" && (
-                <div
+                <span
                   style={{
-                    position: "fixed",
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    background: "#fff",
-                    borderTop: "1px solid #e5e7eb",
-                    padding: "16px",
-                    boxShadow: "0 -2px 10px rgba(0,0,0,0.1)",
-                    zIndex: 100,
+                    minWidth: 22,
+                    height: 22,
+                    padding: "0 6px",
+                    borderRadius: 20,
+                    background: "#ecfdf5",
+                    color: "#059669",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 10,
+                    fontWeight: 600,
                   }}
                 >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      marginBottom: 8,
-                    }}
-                  >
-                    <span>{vendaSelecionada.customer_name}</span>
-                    <span
-                      style={{
-                        fontWeight: "bold",
-                        color: "#059669",
-                        fontSize: 18,
-                      }}
-                    >
-                      {formatCurrency(calcularTotal(vendaSelecionada.items))}
-                    </span>
-                  </div>
+                  {quantidadeAbertas}
+                </span>
+              </div>
+            </div>
+
+            <div>
+              {comandas
+                .filter((comanda) => comanda.status === "aberta")
+                .map((comanda) => (
                   <button
-                    onClick={() => setShowModalFecharVenda(true)}
+                    key={comanda.id}
+                    type="button"
+                    onClick={() => abrirComandaExistente(comanda)}
                     style={{
                       width: "100%",
-                      padding: "10px",
-                      background: "#10b981",
-                      color: "#fff",
+                      padding: "13px 16px",
                       border: "none",
-                      borderRadius: 8,
+                      borderBottom: "1px solid #f1f5f9",
+                      background: "#fff",
                       cursor: "pointer",
+                      textAlign: "left",
                     }}
                   >
-                    Finalizar Venda
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 10,
+                      }}
+                    >
+                      <strong
+                        style={{
+                          fontSize: 12,
+                          color: "#374151",
+                        }}
+                      >
+                        Comanda #{comanda.numero}
+                      </strong>
+
+                      <span
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: "#059669",
+                        }}
+                      >
+                        {formatCurrency(comanda.total)}
+                      </span>
+                    </div>
+
+                    <div
+                      style={{
+                        marginTop: 5,
+                        fontSize: 10,
+                        color: "#9ca3af",
+                      }}
+                    >
+                      {comanda.mesa ? `Mesa ${comanda.mesa}` : "Sem mesa"} •{" "}
+                      {comanda.cliente || "Consumidor"}
+                    </div>
                   </button>
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              <TabelaComandas
-                vendas={vendas}
-                pontosVenda={pontosVenda}
-                vendaSelecionada={vendaSelecionada}
-                onVendaClick={setVendaSelecionada}
-                isMobile={true}
-                formatCurrency={formatCurrency}
-              />
-              <DetalhesVenda
-                venda={vendaSelecionada}
-                pontosVenda={pontosVenda}
-                onRemoverItem={removerItem}
-                onFinalizarVenda={() => setShowModalFecharVenda(true)}
-                onCancelarVenda={cancelarVenda}
-                onMarcarNaoPaga={marcarNaoPaga}
-                formatCurrency={formatCurrency}
-                isMobile={true}
-              />
-            </>
-          )}
+                ))}
+            </div>
+          </div>
         </div>
-
-        <ModalAbrirComanda
-          showModal={showModalNovaVenda}
-          onClose={() => setShowModalNovaVenda(false)}
-          onConfirm={abrirVenda}
-        />
-
-        {showModalFecharVenda && (
-          <ModalFinalizarVenda
-            isOpen={showModalFecharVenda}
-            venda={vendaSelecionada}
-            onClose={() => setShowModalFecharVenda(false)}
-            onConfirm={async (
-              formaPagamento,
-              valorRecebido,
-              comandaNaoPaga,
-            ) => {
-              if (!vendaSelecionada) return;
-
-              if (comandaNaoPaga) {
-                await marcarNaoPaga(vendaSelecionada.id);
-              } else {
-                await finalizarVenda(
-                  vendaSelecionada.id,
-                  formaPagamento,
-                  valorRecebido,
-                );
-              }
-            }}
-            formatCurrency={formatCurrency}
-          />
-        )}
       </div>
-    </>
+
+      <ModalAbrirComanda
+        showModal={mostrarModalAbrirComanda}
+        onClose={fecharModalNovaComanda}
+        onConfirm={criarComanda}
+      />
+
+      <style>
+        {`
+          * {
+            box-sizing: border-box;
+          }
+
+          @media (max-width: 900px) {
+            .gestao-comandas-layout {
+              grid-template-columns: 1fr !important;
+            }
+          }
+
+          @media (max-width: 600px) {
+            .gestao-comandas-header {
+              align-items: flex-start !important;
+            }
+
+            .gestao-comandas-filtros {
+              align-items: flex-start !important;
+            }
+          }
+        `}
+      </style>
+    </div>
   );
 }
+
+const filtroButtonStyle = (
+  ativo: boolean,
+  tipo: "green" | "orange" | "red" = "green",
+): React.CSSProperties => {
+  const cores = {
+    green: {
+      border: "#a7f3d0",
+      background: "#ecfdf5",
+      color: "#059669",
+    },
+    orange: {
+      border: "#fde68a",
+      background: "#fffbeb",
+      color: "#d97706",
+    },
+    red: {
+      border: "#fecaca",
+      background: "#fef2f2",
+      color: "#dc2626",
+    },
+  };
+
+  const cor = cores[tipo];
+
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    height: 32,
+    padding: "0 10px",
+    borderRadius: 20,
+    border: ativo ? `1px solid ${cor.border}` : "1px solid #e5e7eb",
+    background: ativo ? cor.background : "#fff",
+    color: ativo ? cor.color : "#6b7280",
+    cursor: "pointer",
+    fontSize: 10,
+    fontWeight: ativo ? 600 : 500,
+    whiteSpace: "nowrap",
+  };
+};

@@ -157,6 +157,7 @@ const TabelaProdutosPdv: React.FC<TabelaProdutosPdvProps> = ({
     setPrecoPersonalizado("");
     setUsarPrecoPersonalizado(false);
     setVendaSelecionadaId(null);
+    setQuantidade(1); // Reset quantidade ao abrir modal
     setModalVisible(true);
   };
 
@@ -184,7 +185,9 @@ const TabelaProdutosPdv: React.FC<TabelaProdutosPdvProps> = ({
         quantidadeFinal,
       );
 
-      showToast(`✅ ${produtoSelecionado.name} adicionado!`);
+      showToast(
+        `✅ ${quantidadeFinal}x ${produtoSelecionado.name} adicionado!`,
+      );
       closeModal();
     } else if (vendaSelecionadaId) {
       onProductSelect(
@@ -194,7 +197,9 @@ const TabelaProdutosPdv: React.FC<TabelaProdutosPdvProps> = ({
         quantidadeFinal,
       );
 
-      showToast(`✅ ${produtoSelecionado.name} adicionado!`);
+      showToast(
+        `✅ ${quantidadeFinal}x ${produtoSelecionado.name} adicionado!`,
+      );
       closeModal();
     } else {
       showToast("⚠️ Selecione uma venda");
@@ -207,6 +212,7 @@ const TabelaProdutosPdv: React.FC<TabelaProdutosPdvProps> = ({
     setPrecoPersonalizado("");
     setVendaSelecionadaId(null);
     setUsarPrecoPersonalizado(false);
+    setQuantidade(1);
   };
 
   // =========================
@@ -604,6 +610,8 @@ const TabelaProdutosPdv: React.FC<TabelaProdutosPdvProps> = ({
               vendasAbertas={vendasAbertas}
               vendaSelecionadaId={vendaSelecionadaId}
               setVendaSelecionadaId={setVendaSelecionadaId}
+              quantidade={quantidade}
+              setQuantidade={setQuantidade}
               precoPersonalizado={precoPersonalizado}
               setPrecoPersonalizado={setPrecoPersonalizado}
               usarPrecoPersonalizado={usarPrecoPersonalizado}
