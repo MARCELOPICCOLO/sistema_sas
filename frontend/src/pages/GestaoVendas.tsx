@@ -25,8 +25,10 @@ interface Produto {
 }
 
 interface ItemCarrinho {
+  id: number;
   produto: Produto;
   quantidade: number;
+  preco: number;
 }
 
 export interface Comanda {
@@ -34,7 +36,7 @@ export interface Comanda {
   numero: number;
   cliente: string;
   mesa: number | null;
-  status: "aberta" | "fechada" | "pendente" | "cancelada";
+  status: "aberta" | "fechado" | "pendente" | "cancelada";
   payment_method?: string | null;
   itens: ItemCarrinho[];
   total: number;
@@ -54,14 +56,18 @@ interface OrderApi {
   closed_at?: string | null;
   items?: Array<{
     id: number;
+    order_id?: number;
     product_id: number;
     quantity: number;
     price: number | string;
+    note?: string | null;
+    created_at?: string;
+    updated_at?: string;
     product?: {
       id: number;
       name: string;
       product_code?: string;
-      price?: number;
+      price?: number | string;
       category_id?: number;
     };
   }>;
@@ -88,14 +94,16 @@ const formatCurrency = (value: number) => {
 
 const normalizarComanda = (order: OrderApi): Comanda => {
   const itens: ItemCarrinho[] = (order.items || []).map((item) => ({
+    id: Number(item.id),
     produto: {
       id: item.product?.id ?? item.product_id,
       name: item.product?.name ?? `Produto ${item.product_id}`,
       product_code: item.product?.product_code,
-      price: Number(item.price),
+      price: Number(item.product?.price ?? item.price),
       category_id: item.product?.category_id ?? 0,
     },
     quantidade: Number(item.quantity),
+    preco: Number(item.price),
   }));
 
   let status: Comanda["status"] = "aberta";
@@ -244,35 +252,40 @@ export default function GestaoComandas({
     nomeCliente: string,
     dataComanda: string,
   ) => {
-    const token = localStorage.getItem("auth_token");
+    try {
+      const token = localStorage.getItem("auth_token");
 
-    const response = await axios.post(
-      `${API_URL}/orders`,
-      {
-        sales_point_id: numeroComanda,
-        order_date: dataComanda,
-        customer_name: nomeCliente,
-        status: "aberto",
-        total: 0,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
+      const response = await axios.post(
+        `${API_URL}/orders`,
+        {
+          sales_point_id: numeroComanda,
+          order_date: dataComanda,
+          customer_name: nomeCliente,
+          status: "aberto",
+          total: 0,
         },
-      },
-    );
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
 
-    const order: OrderApi = response.data.order;
+      const order: OrderApi = response.data.order;
 
-    const novaComanda = normalizarComanda(order);
+      const novaComanda = normalizarComanda(order);
 
-    setComandas((atual) => [...atual, novaComanda]);
+      setComandas((atual) => [...atual, novaComanda]);
 
-    setComandaSelecionada(novaComanda);
-    setMostrarNovaVenda(true);
-    setMostrarModalAbrirComanda(false);
+      setComandaSelecionada(novaComanda);
+      setMostrarNovaVenda(true);
+      setMostrarModalAbrirComanda(false);
 
-    onAbrirComanda?.(novaComanda);
+      onAbrirComanda?.(novaComanda);
+    } catch (error) {
+      console.error("Erro ao criar comanda:", error);
+      setErro("Não foi possível criar a comanda.");
+    }
   };
 
   const abrirComandaExistente = (comanda: Comanda) => {
@@ -396,7 +409,6 @@ export default function GestaoComandas({
           boxSizing: "border-box",
         }}
       >
-        {/* BOTÃO VOLTAR */}
         {setTela && (
           <div
             style={{
@@ -443,7 +455,6 @@ export default function GestaoComandas({
           </div>
         )}
 
-        {/* HEADER */}
         <div
           className="gestao-comandas-header"
           style={{
@@ -508,7 +519,6 @@ export default function GestaoComandas({
           </button>
         </div>
 
-        {/* FILTROS */}
         <div
           className="gestao-comandas-filtros"
           style={{
@@ -623,7 +633,6 @@ export default function GestaoComandas({
           </div>
         </div>
 
-        {/* CONTEÚDO */}
         <div
           className="gestao-comandas-layout"
           style={{
@@ -633,7 +642,6 @@ export default function GestaoComandas({
             alignItems: "start",
           }}
         >
-          {/* ÁREA PRINCIPAL */}
           <div
             style={{
               background: "#fff",
@@ -908,7 +916,6 @@ export default function GestaoComandas({
             </div>
           </div>
 
-          {/* COMANDAS ABERTAS */}
           <div
             style={{
               background: "#fff",
