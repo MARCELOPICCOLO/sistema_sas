@@ -115,7 +115,6 @@ class ExpenseController extends Controller
             ], 500);
         }
     }
-
     public function show($id)
     {
         try {
@@ -127,7 +126,6 @@ class ExpenseController extends Controller
             ], 404);
         }
     }
-
     public function update(Request $request, $id)
     {
         try {
@@ -155,7 +153,6 @@ class ExpenseController extends Controller
             ], 500);
         }
     }
-
     public function destroy($id)
     {
         try {

@@ -12,6 +12,7 @@ use App\Http\Controllers\PartnerCompanyController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PartnerCompanyUserController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\OrderItemController;
 
 /*
 |--------------------------------------------------------------------------
@@ -68,19 +69,23 @@ Route::middleware('auth:api')->group(function () {
         // Transações de um dia específico
         Route::get('/by-date/{date}', [OrderController::class, 'byDate']);
 
+        // Relatório de entradas por ano
+        Route::get('/reports/entries', [OrderController::class, 'reportEntries']);
+        Route::put('/{id}', [OrderController::class, 'update']);
+
         Route::get('/', [OrderController::class, 'index']);
         Route::get('/{id}', [OrderController::class, 'show']);
         Route::post('/', [OrderController::class, 'store']);
         Route::delete('/{id}', [OrderController::class, 'destroy']);
         Route::post('/{id}/close', [OrderController::class, 'close']);
-        Route::post('/{id}/items', [OrderController::class, 'addItem']);
-        Route::get('/{id}/items', [OrderController::class, 'getItems']);
     });
 
     // ========== ORDER ITEMS ==========
-    Route::prefix('order-items')->group(function () {
-        Route::put('/{id}', [OrderController::class, 'updateItem']);
-        Route::delete('/{id}', [OrderController::class, 'removeItem']);
+    Route::prefix('order-items/')->group(function () {
+        Route::put('/{id}', [OrderItemController::class, 'updateItem']);
+        Route::delete('/{id}', [OrderItemController::class, 'destroy']);
+        Route::post('order/{id}/item', [OrderItemController::class, 'store']);
+        Route::get('/{id}/items', [OrderItemController::class, 'getItems']);
     });
 
     // ========== GASTOS (EXPENSES) ==========

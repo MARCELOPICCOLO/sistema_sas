@@ -17,33 +17,30 @@ class ProductController extends Controller
         $partnerCompanyId = CurrentCompany::id();
 
         $products = DB::select("
-    SELECT
-        prod.id,
-        prod.name,
-        prod.product_code,
-        prod.description,
-        prod.price,
-        prod.quantity,
-        prod.active,
-        prod.created_at,
-        prod.updated_at
-    FROM products prod
-    INNER JOIN categories cat
-        ON prod.category_id = cat.id
-    WHERE cat.partner_company_id = ?
-      AND cat.active = 1
-      AND prod.active = 1
-    ORDER BY prod.name
-", [$partnerCompanyId]);
+        SELECT
+            prod.id,
+            prod.name,
+            prod.product_code,
+            prod.description,
+            prod.price,
+            prod.quantity 
+        FROM products prod
+        INNER JOIN categories cat
+            ON prod.category_id = cat.id
+        WHERE cat.partner_company_id = ?
+        AND cat.active = 1
+        AND prod.active = 1
+        ORDER BY prod.name
+    ", [$partnerCompanyId]);
 
         foreach ($products as $prod) {
             $cat = DB::select(
                 "
-        SELECT cat.id, cat.name 
-        FROM categories cat 
-        INNER JOIN products prod 
-            ON prod.category_id = cat.id 
-        WHERE prod.id = " . $prod->id
+            SELECT cat.id, cat.name 
+            FROM categories cat 
+            INNER JOIN products prod 
+                ON prod.category_id = cat.id 
+            WHERE prod.id = " . $prod->id
             );
 
 
