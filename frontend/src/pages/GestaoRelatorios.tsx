@@ -11,6 +11,11 @@ import {
   faReceipt,
   faPercent,
   faCalendarDays,
+  faChevronLeft,
+  faChevronRight,
+  faCrown,
+  faMedal,
+  faTrophy,
 } from "@fortawesome/free-solid-svg-icons";
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -37,13 +42,50 @@ interface FaturamentoMensal {
   valor: number;
 }
 
+interface Despesa {
+  id: number;
+  description: string;
+  expense_date: string;
+  amount: number | string;
+  expense_category_id: number;
+  category?: {
+    id: number;
+    name: string;
+    description?: string;
+  } | null;
+  payment_method?: string;
+  status?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface DespesaAgrupada {
+  categoria: string;
+  valor: number;
+}
+
+interface ProdutoVendido {
+  product: string;
+  quantity: number;
+  value: number;
+}
+
 export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
   const [entradas, setEntradas] = useState<Entrada[]>([]);
   const [loadingEntradas, setLoadingEntradas] = useState(true);
   const [erroEntradas, setErroEntradas] = useState("");
 
-  const anoAtual = new Date().getFullYear();
+  const [despesas, setDespesas] = useState<Despesa[]>([]);
+  const [loadingDespesas, setLoadingDespesas] = useState(true);
+  const [erroDespesas, setErroDespesas] = useState("");
 
+  const [produtosVendidos, setProdutosVendidos] = useState<ProdutoVendido[]>(
+    [],
+  );
+  const [loadingProdutos, setLoadingProdutos] = useState(true);
+  const [erroProdutos, setErroProdutos] = useState("");
+
+  const anoAtual = new Date().getFullYear();
   const [anoSelecionado, setAnoSelecionado] = useState(anoAtual);
 
   // =========================
@@ -74,25 +116,135 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
 
       if (!response.ok) {
         const data = await response.json().catch(() => null);
-
         throw new Error(
           data?.message || "Erro ao buscar entradas do relatório.",
         );
       }
 
       const data: Entrada[] = await response.json();
-
       setEntradas(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Erro ao carregar entradas:", error);
-
       setErroEntradas(
         error instanceof Error ? error.message : "Erro ao carregar entradas.",
       );
-
       setEntradas([]);
     } finally {
       setLoadingEntradas(false);
+    }
+  };
+
+  // =========================
+  // CARREGAR DESPESAS
+  // =========================
+
+  useEffect(() => {
+    carregarDespesas();
+  }, [anoSelecionado]);
+
+  const carregarDespesas = async () => {
+    try {
+      setLoadingDespesas(true);
+      setErroDespesas("");
+
+      const token = localStorage.getItem("auth_token");
+
+      const startDate = `${anoSelecionado}-01-01`;
+      const endDate = `${anoSelecionado}-12-31`;
+
+      const response = await fetch(
+        `${API_URL}/expenses?start_date=${startDate}&end_date=${endDate}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(
+          data?.message || "Erro ao buscar despesas do relatório.",
+        );
+      }
+
+      const data: Despesa[] = await response.json();
+      setDespesas(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Erro ao carregar despesas:", error);
+      setErroDespesas(
+        error instanceof Error ? error.message : "Erro ao carregar despesas.",
+      );
+      setDespesas([]);
+    } finally {
+      setLoadingDespesas(false);
+    }
+  };
+
+  // =========================
+  // CARREGAR PRODUTOS MAIS VENDIDOS
+  // =========================
+
+  useEffect(() => {
+    carregarProdutosVendidos();
+  }, [anoSelecionado]);
+
+  const carregarProdutosVendidos = async () => {
+    try {
+      setLoadingProdutos(true);
+      setErroProdutos("");
+
+      const token = localStorage.getItem("auth_token");
+
+      const response = await fetch(
+        `${API_URL}/order-items/products-summary?year=${anoSelecionado}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(
+          data?.message || "Erro ao buscar produtos mais vendidos.",
+        );
+      }
+
+      const data = await response.json();
+      setProdutosVendidos(Array.isArray(data.data) ? data.data : []);
+    } catch (error) {
+      console.error("Erro ao carregar produtos:", error);
+      setErroProdutos(
+        error instanceof Error ? error.message : "Erro ao carregar produtos.",
+      );
+      setProdutosVendidos([]);
+    } finally {
+      setLoadingProdutos(false);
+    }
+  };
+
+  // =========================
+  // NAVEGAÇÃO DO ANO
+  // =========================
+
+  const handleAnoAnterior = () => {
+    setAnoSelecionado(anoSelecionado - 1);
+  };
+
+  const handleProximoAno = () => {
+    setAnoSelecionado(anoSelecionado + 1);
+  };
+
+  const handleAnoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const valor = parseInt(e.target.value);
+    if (!isNaN(valor) && valor > 0) {
+      setAnoSelecionado(valor);
     }
   };
 
@@ -114,7 +266,6 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
     if (entradas.length === 0) {
       return 0;
     }
-
     return faturamentoAtual / entradas.length;
   }, [entradas, faturamentoAtual]);
 
@@ -149,9 +300,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
 
     return meses.map(([chave, valor]) => {
       const [ano, mes] = chave.split("-");
-
       const data = new Date(Number(ano), Number(mes) - 1, 1);
-
       const nomeMes = data.toLocaleDateString("pt-BR", {
         month: "short",
       });
@@ -165,45 +314,69 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
   }, [entradas]);
 
   // =========================
-  // DESPESAS TEMPORÁRIAS
+  // DESPESAS POR CATEGORIA
   // =========================
 
-  const despesas = [
-    { categoria: "Pessoal", valor: 12400 },
-    { categoria: "Mercadorias", valor: 9800 },
-    { categoria: "Aluguel", valor: 4200 },
-    { categoria: "Operacionais", valor: 3100 },
-    { categoria: "Impostos", valor: 2800 },
-  ];
+  const despesasPorCategoria = useMemo<DespesaAgrupada[]>(() => {
+    const agrupado: Record<string, number> = {};
+
+    despesas.forEach((despesa) => {
+      const categoria =
+        despesa.category?.name ||
+        `Categoria ${despesa.expense_category_id}` ||
+        "Sem categoria";
+      agrupado[categoria] =
+        (agrupado[categoria] || 0) + Number(despesa.amount || 0);
+    });
+
+    return Object.entries(agrupado)
+      .map(([categoria, valor]) => ({
+        categoria,
+        valor,
+      }))
+      .sort((a, b) => b.valor - a.valor);
+  }, [despesas]);
 
   // =========================
-  // VENDAS POR CATEGORIA
+  // TOTAL DE DESPESAS
   // =========================
 
-  const vendasPorCategoria = [
-    { categoria: "Produtos", valor: 18500 },
-    { categoria: "Serviços", valor: 12600 },
-    { categoria: "Outros", valor: 10500 },
-  ];
+  const totalDespesas = useMemo(() => {
+    return despesas.reduce((total, despesa) => {
+      return total + Number(despesa.amount || 0);
+    }, 0);
+  }, [despesas]);
 
-  const despesasAtual = 22300;
+  // =========================
+  // LUCRO E MARGEM
+  // =========================
 
-  const lucroAtual = faturamentoAtual - despesasAtual;
-
+  const lucroAtual = faturamentoAtual - totalDespesas;
   const margem =
     faturamentoAtual > 0 ? (lucroAtual / faturamentoAtual) * 100 : 0;
+
+  // =========================
+  // MÁXIMO FATURAMENTO
+  // =========================
 
   const maxFaturamento =
     faturamentoMensal.length > 0
       ? Math.max(...faturamentoMensal.map((item) => item.valor))
       : 0;
 
-  const maxDespesas = Math.max(...despesas.map((item) => item.valor));
+  // =========================
+  // TOTAL PRODUTOS
+  // =========================
 
-  const totalCategorias = vendasPorCategoria.reduce(
-    (total, item) => total + item.valor,
-    0,
-  );
+  const totalProdutos = useMemo(() => {
+    return produtosVendidos.reduce((total, item) => {
+      return total + item.value;
+    }, 0);
+  }, [produtosVendidos]);
+
+  // =========================
+  // FORMATAR MOEDA
+  // =========================
 
   const formatarMoeda = (valor: number) => {
     return valor.toLocaleString("pt-BR", {
@@ -212,8 +385,13 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
     });
   };
 
+  // =========================
+  // RENDER
+  // =========================
+
   return (
     <div
+      className="relatorios-page"
       style={{
         height: "100vh",
         background: "#f8fafc",
@@ -222,6 +400,8 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
         overflow: "hidden",
       }}
     >
+      <RelatoriosResponsiveStyles />
+
       {/* Botão Voltar ao Dashboard */}
       <div
         style={{
@@ -258,6 +438,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
 
       {/* Conteúdo */}
       <div
+        className="relatorios-content"
         style={{
           flex: 1,
           overflowY: "auto",
@@ -266,6 +447,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
         }}
       >
         <div
+          className="relatorios-container"
           style={{
             maxWidth: 1400,
             margin: "0 auto",
@@ -305,13 +487,13 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
               </p>
             </div>
 
-            {/* Seleção do ano */}
+            {/* Seleção do ano - EDITÁVEL */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
-                padding: "9px 14px",
+                padding: "6px 12px",
                 border: "1px solid #e5e7eb",
                 borderRadius: 7,
                 background: "#ffffff",
@@ -325,32 +507,77 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                 }}
               />
 
-              <select
-                value={anoSelecionado}
-                onChange={(e) => setAnoSelecionado(Number(e.target.value))}
+              <button
+                onClick={handleAnoAnterior}
                 style={{
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "#6b7280",
+                  padding: "4px 6px",
+                  borderRadius: 4,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#f3f4f6";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                }}
+              >
+                <FontAwesomeIcon icon={faChevronLeft} size="xs" />
+              </button>
+
+              <input
+                type="number"
+                value={anoSelecionado}
+                onChange={handleAnoChange}
+                min="2000"
+                max="2099"
+                style={{
+                  width: 70,
                   border: "none",
                   outline: "none",
                   background: "#ffffff",
                   color: "#374151",
-                  fontSize: 13,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  textAlign: "center",
+                  padding: "4px 0",
+                }}
+                onFocus={(e) => e.target.select()}
+              />
+
+              <button
+                onClick={handleProximoAno}
+                style={{
+                  background: "transparent",
+                  border: "none",
                   cursor: "pointer",
+                  color: "#6b7280",
+                  padding: "4px 6px",
+                  borderRadius: 4,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#f3f4f6";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
                 }}
               >
-                {Array.from({ length: 6 }, (_, index) => {
-                  const ano = anoAtual - index;
-
-                  return (
-                    <option key={ano} value={ano}>
-                      {ano}
-                    </option>
-                  );
-                })}
-              </select>
+                <FontAwesomeIcon icon={faChevronRight} size="xs" />
+              </button>
             </div>
           </div>
 
-          {/* Erro */}
+          {/* Erros */}
           {erroEntradas && (
             <div
               style={{
@@ -367,8 +594,41 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
             </div>
           )}
 
+          {erroDespesas && (
+            <div
+              style={{
+                marginBottom: 20,
+                padding: "12px 14px",
+                borderRadius: 8,
+                border: "1px solid #fecaca",
+                background: "#fef2f2",
+                color: "#b91c1c",
+                fontSize: 13,
+              }}
+            >
+              {erroDespesas}
+            </div>
+          )}
+
+          {erroProdutos && (
+            <div
+              style={{
+                marginBottom: 20,
+                padding: "12px 14px",
+                borderRadius: 8,
+                border: "1px solid #fecaca",
+                background: "#fef2f2",
+                color: "#b91c1c",
+                fontSize: 13,
+              }}
+            >
+              {erroProdutos}
+            </div>
+          )}
+
           {/* Indicadores */}
           <div
+            className="indicadores-grid"
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
@@ -392,7 +652,9 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
 
             <Indicador
               titulo="Despesas"
-              valor={formatarMoeda(despesasAtual)}
+              valor={
+                loadingDespesas ? "Carregando..." : formatarMoeda(totalDespesas)
+              }
               variacao=""
               positivo={false}
               icon={faArrowTrendDown}
@@ -435,6 +697,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
 
           {/* Linha principal */}
           <div
+            className="relatorios-grid-principal"
             style={{
               display: "grid",
               gridTemplateColumns: "minmax(0, 2fr) minmax(300px, 1fr)",
@@ -572,101 +835,59 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
               </div>
             </div>
 
-            {/* Vendas por categoria */}
+            {/* Produtos Mais Vendidos - Curva ABC */}
             <div style={cardStyle}>
-              <div
-                style={{
-                  marginBottom: 24,
-                }}
-              >
-                <h2 style={cardTitleStyle}>Vendas por Categoria</h2>
+              <div style={{ marginBottom: 20 }}>
+                <h2 style={cardTitleStyle}>Produtos Mais Vendidos</h2>
 
                 <p style={cardSubtitleStyle}>
-                  Distribuição do faturamento atual.
+                  Ranking dos produtos com maior faturamento em {anoSelecionado}
+                  .
                 </p>
               </div>
 
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 20,
-                }}
-              >
-                {vendasPorCategoria.map((item, index) => {
-                  const percentual =
-                    totalCategorias > 0
-                      ? (item.valor / totalCategorias) * 100
-                      : 0;
-
-                  const cores = ["#059669", "#2563eb", "#7c3aed"];
-
-                  return (
-                    <div key={item.categoria}>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          marginBottom: 8,
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: 13,
-                            color: "#374151",
-                          }}
-                        >
-                          {item.categoria}
-                        </span>
-
-                        <span
-                          style={{
-                            fontSize: 13,
-                            fontWeight: 600,
-                            color: "#111827",
-                          }}
-                        >
-                          {percentual.toFixed(0)}%
-                        </span>
-                      </div>
-
-                      <div
-                        style={{
-                          width: "100%",
-                          height: 8,
-                          background: "#f1f5f9",
-                          borderRadius: 999,
-                          overflow: "hidden",
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: `${percentual}%`,
-                            height: "100%",
-                            background: cores[index],
-                            borderRadius: 999,
-                          }}
-                        />
-                      </div>
-
-                      <p
-                        style={{
-                          margin: "5px 0 0",
-                          fontSize: 11,
-                          color: "#9ca3af",
-                        }}
-                      >
-                        {formatarMoeda(item.valor)}
-                      </p>
-                    </div>
-                  );
-                })}
+              <div className="pizza-section">
+                {loadingProdutos ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      minHeight: 250,
+                      color: "#9ca3af",
+                      fontSize: 13,
+                    }}
+                  >
+                    Carregando produtos...
+                  </div>
+                ) : produtosVendidos.length === 0 ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      minHeight: 250,
+                      color: "#9ca3af",
+                      fontSize: 13,
+                      textAlign: "center",
+                    }}
+                  >
+                    Nenhum produto vendido encontrado em {anoSelecionado}.
+                  </div>
+                ) : (
+                  <ProdutosRanking
+                    data={produtosVendidos}
+                    total={totalProdutos}
+                    formatarMoeda={formatarMoeda}
+                  />
+                )}
               </div>
             </div>
           </div>
 
           {/* Linha inferior */}
           <div
+            className="relatorios-grid-inferior"
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
@@ -675,11 +896,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
           >
             {/* Despesas por categoria */}
             <div style={cardStyle}>
-              <div
-                style={{
-                  marginBottom: 24,
-                }}
-              >
+              <div style={{ marginBottom: 20 }}>
                 <h2 style={cardTitleStyle}>Despesas por Categoria</h2>
 
                 <p style={cardSubtitleStyle}>
@@ -687,62 +904,50 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                 </p>
               </div>
 
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 20,
-                }}
-              >
-                {despesas.map((item) => (
-                  <div key={item.categoria}>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        marginBottom: 8,
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: 13,
-                          color: "#374151",
-                        }}
-                      >
-                        {item.categoria}
-                      </span>
-
-                      <span
-                        style={{
-                          fontSize: 13,
-                          fontWeight: 600,
-                          color: "#111827",
-                        }}
-                      >
-                        {formatarMoeda(item.valor)}
-                      </span>
-                    </div>
-
-                    <div
-                      style={{
-                        width: "100%",
-                        height: 8,
-                        background: "#f1f5f9",
-                        borderRadius: 999,
-                        overflow: "hidden",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: `${(item.valor / maxDespesas) * 100}%`,
-                          height: "100%",
-                          background: "#dc2626",
-                          borderRadius: 999,
-                        }}
-                      />
-                    </div>
+              <div className="pizza-section">
+                {loadingDespesas ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      minHeight: 250,
+                      color: "#9ca3af",
+                      fontSize: 13,
+                    }}
+                  >
+                    Carregando despesas...
                   </div>
-                ))}
+                ) : despesasPorCategoria.length === 0 ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      minHeight: 250,
+                      color: "#9ca3af",
+                      fontSize: 13,
+                    }}
+                  >
+                    Nenhuma despesa encontrada em {anoSelecionado}.
+                  </div>
+                ) : (
+                  <PieChart
+                    data={despesasPorCategoria}
+                    total={totalDespesas}
+                    formatarMoeda={formatarMoeda}
+                    cores={[
+                      "#dc2626",
+                      "#f97316",
+                      "#eab308",
+                      "#8b5cf6",
+                      "#64748b",
+                      "#06b6d4",
+                      "#ec4899",
+                      "#14b8a6",
+                    ]}
+                  />
+                )}
               </div>
             </div>
 
@@ -766,43 +971,15 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                 />
               </div>
 
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 24,
-                }}
-              >
-                <Resultado
-                  titulo="Faturamento"
-                  valor={faturamentoAtual}
-                  percentual={100}
-                  cor="#059669"
-                />
+              {/* GRÁFICO VERTICAL */}
+              <ResultadoFinanceiro
+                faturamento={faturamentoAtual}
+                despesas={totalDespesas}
+                lucro={lucroAtual}
+                formatarMoeda={formatarMoeda}
+              />
 
-                <Resultado
-                  titulo="Despesas"
-                  valor={despesasAtual}
-                  percentual={
-                    faturamentoAtual > 0
-                      ? (despesasAtual / faturamentoAtual) * 100
-                      : 0
-                  }
-                  cor="#dc2626"
-                />
-
-                <Resultado
-                  titulo="Lucro"
-                  valor={lucroAtual}
-                  percentual={
-                    faturamentoAtual > 0
-                      ? (lucroAtual / faturamentoAtual) * 100
-                      : 0
-                  }
-                  cor="#2563eb"
-                />
-              </div>
-
+              {/* Resumo */}
               <div
                 style={{
                   display: "grid",
@@ -848,6 +1025,760 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
     </div>
   );
 }
+
+// =====================================================
+// PRODUTOS RANKING - CURVA ABC
+// =====================================================
+
+function ProdutosRanking({
+  data,
+  total,
+  formatarMoeda,
+}: {
+  data: ProdutoVendido[];
+  total: number;
+  formatarMoeda: (valor: number) => string;
+}) {
+  // Calcular percentual acumulado para classificação ABC
+  let acumulado = 0;
+
+  const produtosClassificados = data.map((item) => {
+    const percentual = total > 0 ? (item.value / total) * 100 : 0;
+    acumulado += percentual;
+
+    let classificacao = "C";
+    let icon = faMedal;
+    let cor = "#94a3b8";
+    let bgCor = "#f1f5f9";
+
+    if (acumulado <= 80) {
+      classificacao = "A";
+      icon = faCrown;
+      cor = "#059669";
+      bgCor = "#ecfdf5";
+    } else if (acumulado <= 95) {
+      classificacao = "B";
+      icon = faTrophy;
+      cor = "#2563eb";
+      bgCor = "#eff6ff";
+    } else {
+      classificacao = "C";
+      icon = faMedal;
+      cor = "#94a3b8";
+      bgCor = "#f1f5f9";
+    }
+
+    return {
+      ...item,
+      percentual,
+      percentualAcumulado: acumulado,
+      classificacao,
+      icon,
+      cor,
+      bgCor,
+    };
+  });
+
+  return (
+    <div className="produtos-ranking">
+      {/* Gráfico de barras horizontais */}
+      <div className="ranking-barras">
+        {produtosClassificados.slice(0, 10).map((item, index) => {
+          const largura = total > 0 ? (item.value / total) * 100 : 0;
+
+          return (
+            <div key={item.product} className="ranking-item">
+              <div className="ranking-posicao">
+                <span className="ranking-numero">{index + 1}</span>
+                <span
+                  className="ranking-classificacao"
+                  style={{
+                    background: item.bgCor,
+                    color: item.cor,
+                  }}
+                >
+                  {item.classificacao}
+                </span>
+              </div>
+
+              <div className="ranking-info">
+                <div className="ranking-nome">{item.product}</div>
+                <div className="ranking-barra-container">
+                  <div
+                    className="ranking-barra"
+                    style={{
+                      width: `${Math.max(largura, 2)}%`,
+                      background: item.cor,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="ranking-valores">
+                <span className="ranking-quantidade">{item.quantity} un</span>
+                <span className="ranking-valor">
+                  {formatarMoeda(item.value)}
+                </span>
+                <span className="ranking-percentual">
+                  {item.percentual.toFixed(1)}%
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Legenda da Curva ABC */}
+      <div className="ranking-legenda">
+        <div className="legenda-item">
+          <span className="legenda-cor" style={{ background: "#059669" }} />
+          <span className="legenda-texto">Classe A (80% do faturamento)</span>
+        </div>
+        <div className="legenda-item">
+          <span className="legenda-cor" style={{ background: "#2563eb" }} />
+          <span className="legenda-texto">Classe B (15% do faturamento)</span>
+        </div>
+        <div className="legenda-item">
+          <span className="legenda-cor" style={{ background: "#94a3b8" }} />
+          <span className="legenda-texto">Classe C (5% do faturamento)</span>
+        </div>
+      </div>
+
+      <style>{`
+        .produtos-ranking {
+          width: 100%;
+        }
+
+        .ranking-barras {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          max-height: 320px;
+          overflow-y: auto;
+          padding-right: 4px;
+        }
+
+        .ranking-barras::-webkit-scrollbar {
+          width: 4px;
+        }
+
+        .ranking-barras::-webkit-scrollbar-track {
+          background: #f1f5f9;
+          border-radius: 4px;
+        }
+
+        .ranking-barras::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 4px;
+        }
+
+        .ranking-item {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 6px 8px;
+          border-radius: 6px;
+          transition: background 0.2s;
+        }
+
+        .ranking-item:hover {
+          background: #f8fafc;
+        }
+
+        .ranking-posicao {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          min-width: 50px;
+        }
+
+        .ranking-numero {
+          font-size: 11px;
+          font-weight: 600;
+          color: #94a3b8;
+          min-width: 20px;
+          text-align: center;
+        }
+
+        .ranking-classificacao {
+          font-size: 10px;
+          font-weight: 700;
+          padding: 1px 6px;
+          border-radius: 4px;
+          min-width: 18px;
+          text-align: center;
+        }
+
+        .ranking-info {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .ranking-nome {
+          font-size: 12px;
+          color: #374151;
+          font-weight: 500;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          margin-bottom: 3px;
+        }
+
+        .ranking-barra-container {
+          width: 100%;
+          height: 6px;
+          background: #f1f5f9;
+          border-radius: 4px;
+          overflow: hidden;
+        }
+
+        .ranking-barra {
+          height: 100%;
+          border-radius: 4px;
+          transition: width 0.6s ease;
+          min-width: 2px;
+        }
+
+        .ranking-valores {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          min-width: 140px;
+          justify-content: flex-end;
+        }
+
+        .ranking-quantidade {
+          font-size: 11px;
+          color: #94a3b8;
+          min-width: 40px;
+          text-align: right;
+        }
+
+        .ranking-valor {
+          font-size: 12px;
+          font-weight: 600;
+          color: #111827;
+          min-width: 80px;
+          text-align: right;
+        }
+
+        .ranking-percentual {
+          font-size: 11px;
+          color: #94a3b8;
+          min-width: 45px;
+          text-align: right;
+        }
+
+        .ranking-legenda {
+          display: flex;
+          justify-content: center;
+          gap: 20px;
+          margin-top: 16px;
+          padding-top: 12px;
+          border-top: 1px solid #e5e7eb;
+          flex-wrap: wrap;
+        }
+
+        .legenda-item {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .legenda-cor {
+          width: 12px;
+          height: 12px;
+          border-radius: 3px;
+        }
+
+        .legenda-texto {
+          font-size: 11px;
+          color: #6b7280;
+        }
+
+        @media (max-width: 700px) {
+          .ranking-item {
+            flex-wrap: wrap;
+            gap: 6px;
+          }
+
+          .ranking-valores {
+            min-width: 100%;
+            justify-content: flex-start;
+            padding-left: 50px;
+            gap: 16px;
+          }
+
+          .ranking-posicao {
+            min-width: 40px;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// =====================================================
+// GRÁFICO DE PIZZA
+// =====================================================
+
+function PieChart({
+  data,
+  total,
+  formatarMoeda,
+  cores,
+}: {
+  data: { categoria: string; valor: number }[];
+  total: number;
+  formatarMoeda: (valor: number) => string;
+  cores: string[];
+}) {
+  let acumulado = 0;
+
+  const segmentos = data.map((item, index) => {
+    const percentual = total > 0 ? (item.valor / total) * 100 : 0;
+    const inicio = acumulado;
+    acumulado += percentual;
+
+    return {
+      ...item,
+      percentual,
+      inicio,
+      fim: acumulado,
+      cor: cores[index % cores.length],
+    };
+  });
+
+  const gradient =
+    segmentos.length > 0 && total > 0
+      ? `conic-gradient(${segmentos
+          .map((item) => `${item.cor} ${item.inicio}% ${item.fim}%`)
+          .join(", ")})`
+      : "#e5e7eb";
+
+  return (
+    <div className="pizza-chart">
+      <div
+        className="pizza"
+        style={{ background: gradient }}
+        aria-label="Gráfico de pizza"
+      >
+        <div className="pizza-center">
+          <span>Total</span>
+          <strong>{formatarMoeda(total)}</strong>
+        </div>
+      </div>
+
+      <div className="pizza-legenda">
+        {segmentos.map((item) => (
+          <div className="pizza-legenda-item" key={item.categoria}>
+            <div className="pizza-legenda-top">
+              <div className="pizza-legenda-nome">
+                <span className="pizza-dot" style={{ background: item.cor }} />
+                <span>{item.categoria}</span>
+              </div>
+              <strong>{item.percentual.toFixed(0)}%</strong>
+            </div>
+            <span className="pizza-legenda-valor">
+              {formatarMoeda(item.valor)}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// =====================================================
+// GRÁFICO DE RESULTADO FINANCEIRO - BARRAS VERTICAIS
+// =====================================================
+
+function ResultadoFinanceiro({
+  faturamento,
+  despesas,
+  lucro,
+  formatarMoeda,
+}: {
+  faturamento: number;
+  despesas: number;
+  lucro: number;
+  formatarMoeda: (valor: number) => string;
+}) {
+  const dados = [
+    {
+      titulo: "Faturamento",
+      valor: faturamento,
+      cor: "#059669",
+    },
+    {
+      titulo: "Despesas",
+      valor: despesas,
+      cor: "#dc2626",
+    },
+    {
+      titulo: "Lucro",
+      valor: lucro,
+      cor: lucro >= 0 ? "#2563eb" : "#dc2626",
+    },
+  ];
+
+  const maiorValor = Math.max(...dados.map((item) => Math.abs(item.valor)), 1);
+
+  return (
+    <div className="resultado-financeiro-chart">
+      {dados.map((item) => {
+        const altura = (Math.abs(item.valor) / maiorValor) * 100;
+        const percentual =
+          faturamento > 0 ? (item.valor / faturamento) * 100 : 0;
+
+        return (
+          <div key={item.titulo} className="resultado-barra-coluna">
+            <span className="resultado-valor">{formatarMoeda(item.valor)}</span>
+            <div className="resultado-barra-area">
+              <div
+                className="resultado-barra"
+                style={{
+                  height: `${Math.max(altura, 4)}%`,
+                  background: item.cor,
+                }}
+                title={`${item.titulo}: ${formatarMoeda(item.valor)}`}
+              />
+            </div>
+            <span className="resultado-titulo">{item.titulo}</span>
+            <span className="resultado-percentual">
+              {percentual.toFixed(1).replace(".", ",")}%
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// =====================================================
+// ESTILOS RESPONSIVOS
+// =====================================================
+
+function RelatoriosResponsiveStyles() {
+  return (
+    <style>{`
+      .relatorios-page {
+        min-width: 0;
+      }
+
+      .relatorios-content {
+        min-width: 0;
+      }
+
+      .relatorios-container {
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      .pizza-section {
+        width: 100%;
+      }
+
+      /* =============================================
+         GRÁFICO DE PIZZA
+         ============================================= */
+
+      .pizza-chart {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 28px;
+        min-height: 250px;
+      }
+
+      .pizza {
+        width: 190px;
+        height: 190px;
+        min-width: 190px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow:
+          inset 0 0 0 1px rgba(17, 24, 39, 0.04);
+      }
+
+      .pizza-center {
+        width: 94px;
+        height: 94px;
+        border-radius: 50%;
+        background: #ffffff;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        box-shadow:
+          0 1px 3px rgba(0, 0, 0, 0.06);
+      }
+
+      .pizza-center span {
+        color: #9ca3af;
+        font-size: 10px;
+        margin-bottom: 4px;
+      }
+
+      .pizza-center strong {
+        color: #111827;
+        font-size: 12px;
+        font-weight: 600;
+        max-width: 82px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .pizza-legenda {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 13px;
+      }
+
+      .pizza-legenda-item {
+        min-width: 0;
+      }
+
+      .pizza-legenda-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        font-size: 12px;
+        color: #374151;
+      }
+
+      .pizza-legenda-nome {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .pizza-legenda-nome > span:last-child {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .pizza-legenda-top strong {
+        flex-shrink: 0;
+        color: #111827;
+        font-size: 12px;
+      }
+
+      .pizza-dot {
+        width: 9px;
+        height: 9px;
+        min-width: 9px;
+        border-radius: 50%;
+      }
+
+      .pizza-legenda-valor {
+        display: block;
+        margin: 4px 0 0 17px;
+        color: #9ca3af;
+        font-size: 10px;
+      }
+
+      /* =============================================
+         RESULTADO FINANCEIRO
+         BARRAS VERTICAIS
+         ============================================= */
+
+      .resultado-financeiro-chart {
+        width: 100%;
+        height: 285px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-around;
+        gap: 16px;
+        padding: 10px 12px 0;
+        box-sizing: border-box;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      .resultado-barra-coluna {
+        flex: 1;
+        min-width: 0;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+      }
+
+      .resultado-valor {
+        display: block;
+        min-height: 18px;
+        margin-bottom: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #111827;
+        text-align: center;
+        white-space: nowrap;
+      }
+
+      .resultado-barra-area {
+        width: 100%;
+        max-width: 72px;
+        height: 190px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+      }
+
+      .resultado-barra {
+        width: 58px;
+        max-width: 100%;
+        min-height: 7px;
+        border-radius: 6px 6px 0 0;
+        transition:
+          height 0.3s ease,
+          opacity 0.2s ease;
+      }
+
+      .resultado-barra:hover {
+        opacity: 0.85;
+      }
+
+      .resultado-titulo {
+        margin-top: 9px;
+        font-size: 12px;
+        font-weight: 500;
+        color: #374151;
+        text-align: center;
+        white-space: nowrap;
+      }
+
+      .resultado-percentual {
+        margin-top: 3px;
+        font-size: 10px;
+        color: #9ca3af;
+        text-align: center;
+        white-space: nowrap;
+      }
+
+      /* =============================================
+         RESPONSIVIDADE
+         ============================================= */
+
+      @media (max-width: 1100px) {
+        .relatorios-grid-principal {
+          grid-template-columns:
+            minmax(0, 1fr) !important;
+        }
+
+        .relatorios-grid-inferior {
+          grid-template-columns:
+            minmax(0, 1fr) !important;
+        }
+      }
+
+      @media (max-width: 700px) {
+        .relatorios-content {
+          padding: 16px !important;
+        }
+
+        .relatorios-container {
+          max-width: 100% !important;
+        }
+
+        .indicadores-grid {
+          grid-template-columns:
+            repeat(2, minmax(0, 1fr)) !important;
+          gap: 10px !important;
+        }
+
+        .pizza-chart {
+          flex-direction: column;
+          gap: 22px;
+          padding: 4px 0;
+        }
+
+        .pizza {
+          width: 180px;
+          height: 180px;
+          min-width: 180px;
+        }
+
+        .resultado-financeiro-chart {
+          height: 270px;
+          gap: 10px;
+          padding-left: 4px;
+          padding-right: 4px;
+        }
+
+        .resultado-barra-area {
+          height: 175px;
+        }
+
+        .resultado-barra {
+          width: 48px;
+        }
+
+        .resultado-valor {
+          font-size: 10px;
+        }
+
+        .resultado-titulo {
+          font-size: 11px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .relatorios-content {
+          padding: 12px !important;
+        }
+
+        .indicadores-grid {
+          grid-template-columns:
+            minmax(0, 1fr) !important;
+        }
+
+        .pizza {
+          width: 165px;
+          height: 165px;
+          min-width: 165px;
+        }
+
+        .resultado-financeiro-chart {
+          height: 255px;
+        }
+
+        .resultado-barra-area {
+          height: 160px;
+        }
+
+        .resultado-barra {
+          width: 42px;
+        }
+
+        .resultado-valor {
+          font-size: 9px;
+        }
+
+        .resultado-titulo {
+          font-size: 10px;
+        }
+
+        .resultado-percentual {
+          font-size: 9px;
+        }
+      }
+    `}</style>
+  );
+}
+
+// =====================================================
+// INDICADOR
+// =====================================================
 
 function Indicador({
   titulo,
@@ -957,81 +1888,9 @@ function Indicador({
   );
 }
 
-function Resultado({
-  titulo,
-  valor,
-  percentual,
-  cor,
-}: {
-  titulo: string;
-  valor: number;
-  percentual: number;
-  cor: string;
-}) {
-  return (
-    <div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 8,
-        }}
-      >
-        <span
-          style={{
-            fontSize: 13,
-            color: "#374151",
-          }}
-        >
-          {titulo}
-        </span>
-
-        <span
-          style={{
-            fontSize: 13,
-            fontWeight: 600,
-            color: "#111827",
-          }}
-        >
-          {valor.toLocaleString("pt-BR", {
-            style: "currency",
-            currency: "BRL",
-          })}
-        </span>
-      </div>
-
-      <div
-        style={{
-          width: "100%",
-          height: 9,
-          background: "#f1f5f9",
-          borderRadius: 999,
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            width: `${Math.min(Math.max(percentual, 0), 100)}%`,
-            height: "100%",
-            background: cor,
-            borderRadius: 999,
-          }}
-        />
-      </div>
-
-      <p
-        style={{
-          margin: "5px 0 0",
-          fontSize: 10,
-          color: "#9ca3af",
-        }}
-      >
-        {percentual.toFixed(1).replace(".", ",")}%{" do faturamento"}
-      </p>
-    </div>
-  );
-}
+// =====================================================
+// ESTILOS DOS CARDS
+// =====================================================
 
 const cardStyle = {
   background: "#ffffff",

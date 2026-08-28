@@ -371,14 +371,25 @@ export default function GestaoComandas({
   };
 
   if (mostrarNovaVenda && comandaSelecionada) {
+    const somenteLeitura = comandaSelecionada.status === "fechado";
+
     return (
       <NovaVenda
         comanda={comandaSelecionada}
+        somenteLeitura={somenteLeitura}
         onVoltar={voltarParaComandas}
         onAtualizarComanda={(dados) => {
+          if (somenteLeitura) {
+            return;
+          }
+
           atualizarComanda(comandaSelecionada.id, dados);
         }}
         onFinalizar={() => {
+          if (somenteLeitura) {
+            return;
+          }
+
           atualizarComanda(comandaSelecionada.id, {
             status: "fechado",
           });

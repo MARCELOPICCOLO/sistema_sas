@@ -48,7 +48,13 @@ export interface Comanda {
   numero: number;
   cliente: string;
   mesa: number | null;
-  status: "aberta" | "fechada" | "cancelada";
+  status:
+    | "aberta"
+    | "fechado"
+    | "cancelada"
+    | "cancelado"
+    | "finalizado"
+    | "pendente";
   itens: ItemCarrinho[];
   total: number;
 }
@@ -91,19 +97,20 @@ interface ProductApi {
   } | null;
 }
 
-const pontosVenda = [
-  { id: 0, number: 0, name: "Balcão" },
-  { id: 1, number: 1, name: "Ponto 01" },
-  { id: 2, number: 2, name: "Ponto 02" },
-  { id: 3, number: 3, name: "Ponto 03" },
-  { id: 4, number: 4, name: "Ponto 04" },
-];
-
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
   }).format(value);
+};
+
+// ============================================================
+// 🔧 FUNÇÃO PARA EXIBIR NOME DO PONTO DE VENDA
+// ============================================================
+
+const getNomePontoVenda = (numero: number | null): string => {
+  if (numero === null) return "Sem ponto";
+  return `Ponto ${numero}`;
 };
 
 export default function NovaVenda({
@@ -160,6 +167,58 @@ export default function NovaVenda({
   const isProcessingRef = useRef<{ [key: number]: boolean }>({});
 
   // ============================================================
+  // 🔒 VERIFICA SE A COMANDA É SOMENTE LEITURA
+  // ============================================================
+
+  const isComandaFinalizada = useMemo(() => {
+    return ["fechado", "cancelada", "cancelado", "finalizado"].includes(
+      comanda.status,
+    );
+  }, [comanda.status]);
+
+  // ============================================================
+  // 🏷️ TEXTO DO STATUS
+  // ============================================================
+
+  const textoStatusComanda = useMemo(() => {
+    switch (comanda.status) {
+      case "fechado":
+        return "Fechada";
+
+      case "cancelada":
+      case "cancelado":
+        return "Cancelada";
+
+      case "finalizado":
+        return "Finalizada";
+
+      case "pendente":
+        return "Pendente";
+
+      case "aberta":
+      default:
+        return "Aberta";
+    }
+  }, [comanda.status]);
+
+  // ============================================================
+  // 🔄 SINCRONIZA O CARRINHO QUANDO A COMANDA MUDAR
+  // ============================================================
+
+  useEffect(() => {
+    const novosItens = (comanda.itens || []).map((item) => ({
+      ...item,
+      quantidade_original: item.quantidade,
+      modificado: false,
+    }));
+
+    setCarrinho(novosItens);
+    setCliente(comanda.cliente || "Consumidor");
+    setPontoVenda(comanda.mesa);
+    setModoEdicao(false);
+  }, [comanda.id, comanda.itens, comanda.cliente, comanda.mesa]);
+
+  // ============================================================
   // 🔄 CARREGAR PRODUTOS DA API
   // ============================================================
 
@@ -190,6 +249,7 @@ export default function NovaVenda({
         }
 
         const categoryMap = new Map<number, string>();
+
         data.forEach((product) => {
           if (product.category) {
             categoryMap.set(product.category.id, product.category.name);
@@ -198,9 +258,13 @@ export default function NovaVenda({
 
         const categoriasApi: Categoria[] = Array.from(
           categoryMap.entries(),
-        ).map(([id, name]) => ({ id, name }));
+        ).map(([id, name]) => ({
+          id,
+          name,
+        }));
 
         categoriasApi.sort((a, b) => a.name.localeCompare(b.name));
+
         setCategorias([{ id: 0, name: "Todos" }, ...categoriasApi]);
 
         const produtosNormalizados: Produto[] = data.map((product) => ({
@@ -214,10 +278,12 @@ export default function NovaVenda({
         setProdutos(produtosNormalizados);
       } catch (error: any) {
         console.error("Erro ao carregar produtos:", error);
+
         setErroProdutos(
           error?.response?.data?.message ||
             "Não foi possível carregar os produtos.",
         );
+
         setProdutos([]);
         setCategorias([{ id: 0, name: "Todos" }]);
       } finally {
@@ -272,6 +338,10 @@ export default function NovaVenda({
     return carrinho.filter((item) => item.modificado === true);
   }, [carrinho]);
 
+  // ============================================================
+  // 💰 DADOS PARA O MODAL
+  // ============================================================
+
   const vendaParaModal = useMemo<VendaModal>(() => {
     return {
       id: comanda.id,
@@ -293,47 +363,35 @@ export default function NovaVenda({
   }, [comanda.id, comanda.status, cliente, pontoVenda, carrinho, totalVenda]);
 
   // ============================================================
-  // ❌ REMOVER PRODUTO (CORRIGIDO - PREVINE CHAMADAS DUPLAS)
+  // ❌ REMOVER PRODUTO
   // ============================================================
 
   const removerProduto = async (produtoId: number) => {
-    // 🔥 Previne chamadas simultâneas
-    if (isRemovingRef.current[produtoId]) {
-      console.log(`⏳ Item ${produtoId} já está sendo removido, ignorando...`);
+    if (isComandaFinalizada) {
+      console.warn("Comanda somente leitura.");
       return;
     }
 
-    // 🔥 Verifica se o item ainda existe no carrinho (usando o estado atual)
+    if (isRemovingRef.current[produtoId]) {
+      return;
+    }
+
     const itemIndex = carrinho.findIndex((i) => i.produto.id === produtoId);
+
     if (itemIndex === -1) {
-      console.warn("⚠️ Item não encontrado no carrinho:", produtoId);
       return;
     }
 
     const item = carrinho[itemIndex];
 
-    // 🔥 Marca como removendo
     isRemovingRef.current[produtoId] = true;
 
     try {
       const itemId = item.id;
 
-      console.log("🗑️ Removendo item:", {
-        produtoId,
-        itemId,
-        nome: item.produto.name,
-        quantidade: item.quantidade,
-      });
-
-      // ============================================================
-      // CASO 1: Item tem ID no banco → Remove via API
-      // ============================================================
-
       if (itemId) {
         try {
           const token = localStorage.getItem("auth_token");
-
-          console.log(`🗑️ Removendo item ${itemId} do banco...`);
 
           await axios.delete(`${API_URL}/order-items/${itemId}`, {
             headers: {
@@ -343,10 +401,8 @@ export default function NovaVenda({
             },
           });
 
-          console.log(`✅ Item ${itemId} removido do banco com sucesso`);
-
-          // 🔥 Remove do carrinho usando o índice encontrado
           const novosItens = [...carrinho];
+
           novosItens.splice(itemIndex, 1);
 
           const novoTotal = novosItens.reduce(
@@ -354,10 +410,11 @@ export default function NovaVenda({
             0,
           );
 
-          // Atualiza o total no backend
           await axios.put(
             `${API_URL}/orders/${comanda.id}`,
-            { total: novoTotal },
+            {
+              total: novoTotal,
+            },
             {
               headers: {
                 Authorization: token ? `Bearer ${token}` : "",
@@ -368,6 +425,7 @@ export default function NovaVenda({
           );
 
           setCarrinho(novosItens);
+
           onAtualizarComanda?.({
             itens: novosItens,
             total: novoTotal,
@@ -375,12 +433,9 @@ export default function NovaVenda({
 
           return;
         } catch (error: any) {
-          // 🔥 Se for 404, o item já foi removido
           if (error?.response?.status === 404) {
-            console.warn(`⚠️ Item ${itemId} já não existe no banco`);
-
-            // Remove localmente sem alertar
             const novosItens = [...carrinho];
+
             novosItens.splice(itemIndex, 1);
 
             const novoTotal = novosItens.reduce(
@@ -389,44 +444,29 @@ export default function NovaVenda({
             );
 
             setCarrinho(novosItens);
+
             onAtualizarComanda?.({
               itens: novosItens,
               total: novoTotal,
             });
+
             return;
           }
 
-          console.error("❌ Erro ao remover item do banco:", error);
+          console.error("Erro ao remover item:", error);
+
           alert(
-            `Erro ao remover item do banco, mas ele foi removido da lista local.\n` +
-              `Erro: ${error?.response?.data?.message || error.message}`,
+            `Erro ao remover item do banco.\n${
+              error?.response?.data?.message || error.message
+            }`,
           );
 
-          // Remove localmente mesmo assim
-          const novosItens = [...carrinho];
-          novosItens.splice(itemIndex, 1);
-
-          const novoTotal = novosItens.reduce(
-            (sum, i) => sum + i.produto.price * i.quantidade,
-            0,
-          );
-
-          setCarrinho(novosItens);
-          onAtualizarComanda?.({
-            itens: novosItens,
-            total: novoTotal,
-          });
           return;
         }
       }
 
-      // ============================================================
-      // CASO 2: Item NÃO tem ID → Remove apenas localmente
-      // ============================================================
-
-      console.log("🗑️ Removendo item local (sem ID no banco)");
-
       const novosItens = [...carrinho];
+
       novosItens.splice(itemIndex, 1);
 
       const novoTotal = novosItens.reduce(
@@ -435,14 +475,12 @@ export default function NovaVenda({
       );
 
       setCarrinho(novosItens);
+
       onAtualizarComanda?.({
         itens: novosItens,
         total: novoTotal,
       });
-
-      console.log("✅ Item removido localmente");
     } finally {
-      // 🔥 Libera o lock
       isRemovingRef.current[produtoId] = false;
     }
   };
@@ -452,6 +490,10 @@ export default function NovaVenda({
   // ============================================================
 
   const limparCarrinho = async () => {
+    if (isComandaFinalizada) {
+      return;
+    }
+
     if (
       !window.confirm(
         "Tem certeza que deseja remover todos os itens da comanda?",
@@ -460,18 +502,15 @@ export default function NovaVenda({
       return;
     }
 
-    console.log("🗑️ Limpando carrinho completo...");
-    console.log(`📦 ${carrinho.length} itens para remover`);
-
     const itensComId = carrinho.filter((item) => item.id);
-    console.log(`💾 ${itensComId.length} itens com ID no banco`);
 
     if (itensComId.length > 0) {
       try {
         const token = localStorage.getItem("auth_token");
 
         for (const item of itensComId) {
-          console.log(`🗑️ Removendo item ${item.id} (${item.produto.name})...`);
+          if (!item.id) continue;
+
           await axios.delete(`${API_URL}/order-items/${item.id}`, {
             headers: {
               Authorization: token ? `Bearer ${token}` : "",
@@ -479,12 +518,13 @@ export default function NovaVenda({
               Accept: "application/json",
             },
           });
-          console.log(`✅ Item ${item.id} removido`);
         }
 
         await axios.put(
           `${API_URL}/orders/${comanda.id}`,
-          { total: 0 },
+          {
+            total: 0,
+          },
           {
             headers: {
               Authorization: token ? `Bearer ${token}` : "",
@@ -493,40 +533,37 @@ export default function NovaVenda({
             },
           },
         );
-
-        console.log("✅ Total atualizado para 0");
       } catch (error: any) {
-        console.error("❌ Erro ao limpar carrinho no banco:", error);
+        console.error("Erro ao limpar carrinho:", error);
+
         alert(
-          `Erro ao remover alguns itens do banco.\n` +
-            `Erro: ${error?.response?.data?.message || error.message}`,
+          `Erro ao remover alguns itens do banco.\n${
+            error?.response?.data?.message || error.message
+          }`,
         );
       }
     }
 
     setCarrinho([]);
+
     onAtualizarComanda?.({
       itens: [],
       total: 0,
     });
-
-    console.log("✅ Carrinho limpo localmente");
   };
 
   // ============================================================
-  // 🔧 FUNÇÕES DE QUANTIDADE (CORRIGIDAS - PREVINE DUPLA CHAMADA)
+  // ➕ AUMENTAR QUANTIDADE
   // ============================================================
 
   const aumentarQuantidade = (produtoId: number) => {
-    // 🔥 Previne processamento duplo
-    if (isProcessingRef.current[produtoId]) {
-      console.log(
-        `⏳ Item ${produtoId} já está sendo processado, ignorando...`,
-      );
+    if (isComandaFinalizada) {
       return;
     }
 
-    console.log("➕ Aumentando quantidade do produto:", produtoId);
+    if (isProcessingRef.current[produtoId]) {
+      return;
+    }
 
     isProcessingRef.current[produtoId] = true;
 
@@ -534,83 +571,82 @@ export default function NovaVenda({
       prev.map((item) => {
         if (item.produto.id === produtoId) {
           const novaQuantidade = item.quantidade + 1;
-          console.log(
-            `➕ ${item.produto.name}: ${item.quantidade} → ${novaQuantidade}`,
-          );
+
           return {
             ...item,
             quantidade: novaQuantidade,
             modificado: novaQuantidade !== item.quantidade_original,
           };
         }
+
         return item;
       }),
     );
 
-    // Libera o lock após o setState
     setTimeout(() => {
       isProcessingRef.current[produtoId] = false;
     }, 100);
   };
 
+  // ============================================================
+  // ➖ DIMINUIR QUANTIDADE
+  // ============================================================
+
   const diminuirQuantidade = (produtoId: number) => {
-    // 🔥 Previne processamento duplo
+    if (isComandaFinalizada) {
+      return;
+    }
+
     if (isProcessingRef.current[produtoId]) {
-      console.log(
-        `⏳ Item ${produtoId} já está sendo processado, ignorando...`,
-      );
       return;
     }
 
-    console.log("➖ Diminuindo quantidade do produto:", produtoId);
-
-    // 🔥 Verifica se o item existe antes de qualquer coisa
     const itemExistente = carrinho.find((i) => i.produto.id === produtoId);
+
     if (!itemExistente) {
-      console.warn("Item não encontrado:", produtoId);
       return;
     }
 
-    // 🔥 Marca como processando
     isProcessingRef.current[produtoId] = true;
 
-    // 🔥 Se for o último item, chama removerProduto diretamente
     if (itemExistente.quantidade <= 1) {
-      console.log(`🗑️ Último item, removendo ${itemExistente.produto.name}`);
-
-      // ✅ Chama removerProduto e libera o lock
       removerProduto(produtoId).finally(() => {
         isProcessingRef.current[produtoId] = false;
       });
+
       return;
     }
 
-    // Se tem mais de 1, diminui a quantidade
     setCarrinho((prev) =>
       prev.map((item) => {
         if (item.produto.id === produtoId) {
           const novaQuantidade = item.quantidade - 1;
+
           return {
             ...item,
             quantidade: novaQuantidade,
             modificado: novaQuantidade !== item.quantidade_original,
           };
         }
+
         return item;
       }),
     );
 
-    // Libera o lock após o setState
     setTimeout(() => {
       isProcessingRef.current[produtoId] = false;
     }, 100);
   };
 
   // ============================================================
-  // 💾 SALVAR ALTERAÇÕES DE ITENS NO BACKEND
+  // 💾 SALVAR ALTERAÇÕES DOS ITENS
   // ============================================================
 
   const salvarAlteracoesItens = async () => {
+    if (isComandaFinalizada) {
+      return;
+    }
+
     const itensParaSalvar = carrinho.filter(
       (item) => item.modificado === true && item.id,
     );
@@ -623,6 +659,7 @@ export default function NovaVenda({
           modificado: false,
         })),
       );
+
       return;
     }
 
@@ -632,24 +669,21 @@ export default function NovaVenda({
       const token = localStorage.getItem("auth_token");
 
       for (const item of itensParaSalvar) {
-        if (item.id) {
-          console.log(
-            `💾 Salvando item ${item.id}: quantidade ${item.quantidade}`,
-          );
-          await axios.put(
-            `${API_URL}/order-items/${item.id}`,
-            {
-              quantity: item.quantidade,
+        if (!item.id) continue;
+
+        await axios.put(
+          `${API_URL}/order-items/${item.id}`,
+          {
+            quantity: item.quantidade,
+          },
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : "",
+              "Content-Type": "application/json",
+              Accept: "application/json",
             },
-            {
-              headers: {
-                Authorization: token ? `Bearer ${token}` : "",
-                "Content-Type": "application/json",
-                Accept: "application/json",
-              },
-            },
-          );
-        }
+          },
+        );
       }
 
       const novoTotal = carrinho.reduce(
@@ -671,22 +705,21 @@ export default function NovaVenda({
         },
       );
 
-      setCarrinho((prev) =>
-        prev.map((item) => ({
-          ...item,
-          quantidade_original: item.quantidade,
-          modificado: false,
-        })),
-      );
+      const itensAtualizados = carrinho.map((item) => ({
+        ...item,
+        quantidade_original: item.quantidade,
+        modificado: false,
+      }));
+
+      setCarrinho(itensAtualizados);
 
       onAtualizarComanda?.({
-        itens: carrinho,
+        itens: itensAtualizados,
         total: novoTotal,
       });
-
-      console.log("✅ Alterações salvas com sucesso");
     } catch (error: any) {
-      console.error("❌ Erro ao salvar alterações:", error);
+      console.error("Erro ao salvar alterações:", error);
+
       alert(
         error?.response?.data?.message ||
           "Não foi possível salvar as alterações.",
@@ -697,46 +730,65 @@ export default function NovaVenda({
   };
 
   // ============================================================
-  // ➕ FUNÇÃO DE ADICIONAR PRODUTO
+  // ➕ ADICIONAR PRODUTO
   // ============================================================
 
   const adicionarProduto = (produto: Produto) => {
+    if (isComandaFinalizada) {
+      return;
+    }
+
     const existente = carrinho.find((item) => item.produto.id === produto.id);
 
     if (existente) {
       alert(
         "Este produto já está na comanda. Altere a quantidade pelos controles do carrinho.",
       );
+
       return;
     }
 
     setProdutoSelecionado(produto);
+
     setQuantidadeItem(1);
     setPrecoItem(Number(produto.price));
+
     setModalAdicionarItemAberto(true);
   };
 
   const fecharModalAdicionarItem = () => {
     if (salvandoItem) return;
+
     setModalAdicionarItemAberto(false);
+
     setProdutoSelecionado(null);
+
     setQuantidadeItem(1);
     setPrecoItem(0);
   };
 
+  // ============================================================
+  // 💾 SALVAR NOVO ITEM
+  // ============================================================
+
   const salvarItem = async () => {
-    if (!produtoSelecionado) return;
+    if (!produtoSelecionado || isComandaFinalizada) {
+      return;
+    }
 
     const quantidade = Number(quantidadeItem);
+
     const preco = Number(precoItem);
 
     if (!Number.isInteger(quantidade) || quantidade < 1) {
       alert("Informe uma quantidade válida.");
+
       return;
     }
 
     if (!Number.isFinite(preco) || preco < 0) {
       alert("Informe um valor válido para o item.");
+
       return;
     }
 
@@ -744,10 +796,6 @@ export default function NovaVenda({
       setSalvandoItem(true);
 
       const token = localStorage.getItem("auth_token");
-
-      console.log(
-        `➕ Adicionando item: ${produtoSelecionado.name} x${quantidade} = R$ ${preco}`,
-      );
 
       const response = await axios.post(
         `${API_URL}/order-items/order/${comanda.id}/item`,
@@ -766,9 +814,8 @@ export default function NovaVenda({
       );
 
       const itemCriado = response.data?.item || response.data;
-      const itemId = itemCriado?.id;
 
-      console.log(`✅ Item criado com ID: ${itemId}`);
+      const itemId = itemCriado?.id;
 
       const novoItem: ItemCarrinho = {
         produto: {
@@ -782,6 +829,7 @@ export default function NovaVenda({
       };
 
       const novosItens = [...carrinho, novoItem];
+
       const novoTotal = novosItens.reduce(
         (total, item) => total + item.produto.price * item.quantidade,
         0,
@@ -796,7 +844,9 @@ export default function NovaVenda({
 
       await axios.put(
         `${API_URL}/orders/${comanda.id}`,
-        { total: novoTotal },
+        {
+          total: novoTotal,
+        },
         {
           headers: {
             Authorization: token ? `Bearer ${token}` : "",
@@ -807,11 +857,14 @@ export default function NovaVenda({
       );
 
       setModalAdicionarItemAberto(false);
+
       setProdutoSelecionado(null);
+
       setQuantidadeItem(1);
       setPrecoItem(0);
     } catch (error: any) {
-      console.error("❌ Erro ao adicionar item à comanda:", error);
+      console.error("Erro ao adicionar item:", error);
+
       alert(
         error?.response?.data?.message || "Não foi possível adicionar o item.",
       );
@@ -821,37 +874,78 @@ export default function NovaVenda({
   };
 
   // ============================================================
-  // ✏️ FUNÇÕES DE EDIÇÃO DA COMANDA
+  // ✏️ ALTERAR CLIENTE
   // ============================================================
 
   const alterarCliente = (valor: string) => {
+    if (isComandaFinalizada) {
+      return;
+    }
+
     setCliente(valor);
+
     onAtualizarComanda?.({
       cliente: valor.trim() || "Consumidor",
     });
   };
 
+  // ============================================================
+  // ✏️ ALTERAR PONTO DE VENDA
+  // ============================================================
+
   const alterarPontoVenda = (valor: string) => {
+    if (isComandaFinalizada) {
+      return;
+    }
+
     const mesa = valor === "" ? null : Number(valor);
+
     setPontoVenda(mesa);
-    onAtualizarComanda?.({ mesa });
+
+    onAtualizarComanda?.({
+      mesa,
+    });
   };
 
-  const ativarEdicao = () => setModoEdicao(true);
+  // ============================================================
+  // ✏️ ATIVAR EDIÇÃO
+  // ============================================================
+
+  const ativarEdicao = () => {
+    if (isComandaFinalizada) {
+      return;
+    }
+
+    setModoEdicao(true);
+  };
+
+  // ============================================================
+  // ❌ CANCELAR EDIÇÃO
+  // ============================================================
 
   const cancelarEdicao = () => {
     setCliente(comanda.cliente || "Consumidor");
+
     setPontoVenda(comanda.mesa);
+
     setModoEdicao(false);
   };
 
+  // ============================================================
+  // 💾 SALVAR ALTERAÇÕES DA COMANDA
+  // ============================================================
+
   const salvarAlteracoesComanda = async () => {
+    if (isComandaFinalizada) {
+      return;
+    }
+
     try {
       setSalvando(true);
-      const token = localStorage.getItem("auth_token");
-      const clienteAtualizado = cliente.trim() || "Consumidor";
 
-      console.log(`✏️ Salvando alterações da comanda: ${clienteAtualizado}`);
+      const token = localStorage.getItem("auth_token");
+
+      const clienteAtualizado = cliente.trim() || "Consumidor";
 
       const response = await axios.put(
         `${API_URL}/orders/${comanda.id}`,
@@ -870,6 +964,7 @@ export default function NovaVenda({
       );
 
       const orderAtualizada = response.data?.order;
+
       setCliente(orderAtualizada?.customer_name || clienteAtualizado);
 
       onAtualizarComanda?.({
@@ -879,9 +974,9 @@ export default function NovaVenda({
       });
 
       setModoEdicao(false);
-      console.log("✅ Alterações da comanda salvas");
     } catch (error: any) {
-      console.error("❌ Erro ao atualizar comanda:", error);
+      console.error("Erro ao atualizar comanda:", error);
+
       alert(error?.response?.data?.message || "Não foi possível atualizar.");
     } finally {
       setSalvando(false);
@@ -889,12 +984,17 @@ export default function NovaVenda({
   };
 
   // ============================================================
-  // 💰 FINALIZAR VENDA
+  // 💰 ABRIR MODAL FINALIZAR
   // ============================================================
 
   const abrirModalFinalizar = () => {
+    if (isComandaFinalizada) {
+      return;
+    }
+
     if (carrinho.length === 0) {
       alert("Adicione pelo menos um produto à comanda.");
+
       return;
     }
 
@@ -906,6 +1006,7 @@ export default function NovaVenda({
       ) {
         return;
       }
+
       salvarAlteracoesItens();
     }
 
@@ -914,15 +1015,22 @@ export default function NovaVenda({
 
   const fecharModalFinalizar = () => {
     if (salvando) return;
+
     setModalFinalizarAberto(false);
   };
+
+  // ============================================================
+  // 💰 CONFIRMAR FINALIZAÇÃO
+  // ============================================================
 
   const confirmarFinalizacao = async (
     formaPagamento: string,
     valorRecebido?: number,
     comandaNaoPaga?: boolean,
   ) => {
-    if (carrinho.length === 0) return;
+    if (carrinho.length === 0 || isComandaFinalizada) {
+      return;
+    }
 
     try {
       setSalvando(true);
@@ -932,13 +1040,13 @@ export default function NovaVenda({
       }
 
       const token = localStorage.getItem("auth_token");
+
       const clienteAtualizado = cliente.trim() || "Consumidor";
+
       const statusFinal = comandaNaoPaga ? "pendente" : "fechado";
 
-      console.log(`💰 Finalizando venda: ${statusFinal} - ${formaPagamento}`);
-
-      await axios.put(
-        `${API_URL}/orders/${comanda.id}`,
+      await axios.post(
+        `${API_URL}/orders/${comanda.id}/close`,
         {
           customer_name: clienteAtualizado,
           total: totalVenda,
@@ -962,21 +1070,25 @@ export default function NovaVenda({
         total: totalVenda,
         cliente: clienteAtualizado,
         mesa: pontoVenda,
-        status: comandaNaoPaga ? "aberta" : "fechada",
+        status: comandaNaoPaga ? "pendente" : "fechado",
       });
 
       onFinalizar?.();
-      console.log("✅ Venda finalizada com sucesso");
     } catch (error: any) {
-      console.error("❌ Erro ao finalizar venda:", error);
+      console.error("Erro ao finalizar venda:", error);
+
       alert(error?.response?.data?.message || "Não foi possível finalizar.");
     } finally {
       setSalvando(false);
     }
   };
 
+  // ============================================================
+  // ↩️ VOLTAR
+  // ============================================================
+
   const voltar = () => {
-    if (temItensModificados) {
+    if (temItensModificados && !isComandaFinalizada) {
       if (
         !window.confirm(
           "Existem alterações não salvas. Deseja voltar sem salvar?",
@@ -1001,7 +1113,7 @@ export default function NovaVenda({
   };
 
   // ============================================================
-  // 🎨 RENDERIZAÇÃO
+  // 🎨 RENDER
   // ============================================================
 
   return (
@@ -1078,11 +1190,20 @@ export default function NovaVenda({
                 }}
                 title="Voltar"
               >
-                <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: 11 }} />
+                <FontAwesomeIcon
+                  icon={faArrowLeft}
+                  style={{
+                    fontSize: 11,
+                  }}
+                />
                 Voltar
               </button>
 
-              <div style={{ minWidth: 0 }}>
+              <div
+                style={{
+                  minWidth: 0,
+                }}
+              >
                 <div
                   style={{
                     display: "flex",
@@ -1108,31 +1229,33 @@ export default function NovaVenda({
                     style={{
                       padding: "5px 9px",
                       borderRadius: 20,
-                      background: "#ecfdf5",
-                      color: "#047857",
+                      background: isComandaFinalizada ? "#f3f4f6" : "#ecfdf5",
+                      color: isComandaFinalizada ? "#6b7280" : "#047857",
                       fontSize: 10,
                       fontWeight: 600,
                       whiteSpace: "nowrap",
                     }}
                   >
-                    Aberta
+                    {textoStatusComanda}
                   </span>
 
-                  {temItensModificados && carrinho.length > 0 && (
-                    <span
-                      style={{
-                        padding: "5px 9px",
-                        borderRadius: 20,
-                        background: "#fef3c7",
-                        color: "#d97706",
-                        fontSize: 10,
-                        fontWeight: 600,
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {itensModificados.length} alterado(s)
-                    </span>
-                  )}
+                  {temItensModificados &&
+                    carrinho.length > 0 &&
+                    !isComandaFinalizada && (
+                      <span
+                        style={{
+                          padding: "5px 9px",
+                          borderRadius: 20,
+                          background: "#fef3c7",
+                          color: "#d97706",
+                          fontSize: 10,
+                          fontWeight: 600,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {itensModificados.length} alterado(s)
+                      </span>
+                    )}
                 </div>
 
                 <p
@@ -1142,7 +1265,9 @@ export default function NovaVenda({
                     color: "#6b7280",
                   }}
                 >
-                  Adicione produtos à comanda
+                  {isComandaFinalizada
+                    ? "Comanda finalizada - Visualização apenas"
+                    : "Adicione produtos à comanda"}
                 </p>
               </div>
             </div>
@@ -1154,36 +1279,44 @@ export default function NovaVenda({
                 gap: 7,
               }}
             >
-              {temItensModificados && carrinho.length > 0 && (
-                <button
-                  type="button"
-                  onClick={salvarAlteracoesItens}
-                  disabled={salvandoItens}
-                  style={{
-                    height: 36,
-                    padding: "0 14px",
-                    borderRadius: 7,
-                    border: "1px solid #f59e0b",
-                    background: "#fef3c7",
-                    color: "#d97706",
-                    cursor: salvandoItens ? "not-allowed" : "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 6,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    opacity: salvandoItens ? 0.7 : 1,
-                  }}
-                >
-                  <FontAwesomeIcon icon={faSave} style={{ fontSize: 11 }} />
-                  {salvandoItens
-                    ? "Salvando..."
-                    : `Salvar (${itensModificados.length})`}
-                </button>
-              )}
+              {temItensModificados &&
+                carrinho.length > 0 &&
+                !isComandaFinalizada && (
+                  <button
+                    type="button"
+                    onClick={salvarAlteracoesItens}
+                    disabled={salvandoItens}
+                    style={{
+                      height: 36,
+                      padding: "0 14px",
+                      borderRadius: 7,
+                      border: "1px solid #f59e0b",
+                      background: "#fef3c7",
+                      color: "#d97706",
+                      cursor: salvandoItens ? "not-allowed" : "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      opacity: salvandoItens ? 0.7 : 1,
+                    }}
+                  >
+                    <FontAwesomeIcon
+                      icon={faSave}
+                      style={{
+                        fontSize: 11,
+                      }}
+                    />
 
-              {!modoEdicao ? (
+                    {salvandoItens
+                      ? "Salvando..."
+                      : `Salvar (${itensModificados.length})`}
+                  </button>
+                )}
+
+              {!isComandaFinalizada && !modoEdicao ? (
                 <button
                   type="button"
                   onClick={ativarEdicao}
@@ -1205,11 +1338,13 @@ export default function NovaVenda({
                 >
                   <FontAwesomeIcon
                     icon={faPenToSquare}
-                    style={{ fontSize: 11 }}
+                    style={{
+                      fontSize: 11,
+                    }}
                   />
                   Editar
                 </button>
-              ) : (
+              ) : !isComandaFinalizada && modoEdicao ? (
                 <>
                   <button
                     type="button"
@@ -1253,12 +1388,15 @@ export default function NovaVenda({
                   >
                     <FontAwesomeIcon
                       icon={faFloppyDisk}
-                      style={{ fontSize: 11 }}
+                      style={{
+                        fontSize: 11,
+                      }}
                     />
+
                     {salvando ? "Salvando..." : "Salvar alterações"}
                   </button>
                 </>
-              )}
+              ) : null}
 
               <div
                 style={{
@@ -1277,7 +1415,10 @@ export default function NovaVenda({
               >
                 <FontAwesomeIcon
                   icon={faCartShopping}
-                  style={{ color: "#059669", fontSize: 14 }}
+                  style={{
+                    color: "#059669",
+                    fontSize: 14,
+                  }}
                 />
                 {totalItens} {totalItens === 1 ? "item" : "itens"}
               </div>
@@ -1285,8 +1426,8 @@ export default function NovaVenda({
           </div>
 
           {/* ============================================================
-              CAMPOS DO HEADER
-          ============================================================ */}
+    CAMPOS DO HEADER
+============================================================ */}
 
           <div
             className="nova-venda-header-fields"
@@ -1310,7 +1451,11 @@ export default function NovaVenda({
                 Cliente
               </label>
 
-              <div style={{ position: "relative" }}>
+              <div
+                style={{
+                  position: "relative",
+                }}
+              >
                 <FontAwesomeIcon
                   icon={faUser}
                   style={{
@@ -1327,7 +1472,7 @@ export default function NovaVenda({
                 <input
                   type="text"
                   value={cliente}
-                  disabled={!modoEdicao}
+                  disabled={!modoEdicao || isComandaFinalizada}
                   onChange={(e) => alterarCliente(e.target.value)}
                   placeholder="Nome do cliente"
                   style={{
@@ -1339,9 +1484,16 @@ export default function NovaVenda({
                     border: "1px solid #e5e7eb",
                     outline: "none",
                     fontSize: 12,
-                    color: modoEdicao ? "#111827" : "#6b7280",
-                    background: modoEdicao ? "#fff" : "#f8fafc",
-                    cursor: modoEdicao ? "text" : "not-allowed",
+                    color:
+                      modoEdicao && !isComandaFinalizada
+                        ? "#111827"
+                        : "#6b7280",
+                    background:
+                      modoEdicao && !isComandaFinalizada ? "#fff" : "#f8fafc",
+                    cursor:
+                      modoEdicao && !isComandaFinalizada
+                        ? "text"
+                        : "not-allowed",
                   }}
                 />
               </div>
@@ -1360,7 +1512,11 @@ export default function NovaVenda({
                 Ponto de atendimento
               </label>
 
-              <div style={{ position: "relative" }}>
+              <div
+                style={{
+                  position: "relative",
+                }}
+              >
                 <FontAwesomeIcon
                   icon={faStore}
                   style={{
@@ -1375,10 +1531,26 @@ export default function NovaVenda({
                   }}
                 />
 
-                <select
-                  value={pontoVenda ?? ""}
-                  disabled={!modoEdicao}
-                  onChange={(e) => alterarPontoVenda(e.target.value)}
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={pontoVenda !== null ? pontoVenda : ""}
+                  disabled={!modoEdicao || isComandaFinalizada}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Permite valores vazios (para limpar o campo)
+                    if (value === "") {
+                      alterarPontoVenda("");
+                      return;
+                    }
+                    const numero = Number(value);
+                    // Aceita apenas números inteiros maiores ou iguais a 0
+                    if (Number.isInteger(numero) && numero >= 0) {
+                      alterarPontoVenda(value);
+                    }
+                  }}
+                  placeholder="Número do ponto"
                   style={{
                     width: "100%",
                     height: 40,
@@ -1388,19 +1560,19 @@ export default function NovaVenda({
                     border: "1px solid #e5e7eb",
                     outline: "none",
                     fontSize: 12,
-                    color: modoEdicao ? "#111827" : "#6b7280",
-                    background: modoEdicao ? "#fff" : "#f8fafc",
-                    cursor: modoEdicao ? "pointer" : "not-allowed",
+                    color:
+                      modoEdicao && !isComandaFinalizada
+                        ? "#111827"
+                        : "#6b7280",
+                    background:
+                      modoEdicao && !isComandaFinalizada ? "#fff" : "#f8fafc",
+                    cursor:
+                      modoEdicao && !isComandaFinalizada
+                        ? "text"
+                        : "not-allowed",
+                    MozAppearance: "textfield",
                   }}
-                >
-                  <option value="">Sem ponto</option>
-
-                  {pontosVenda.map((ponto) => (
-                    <option key={ponto.id} value={ponto.id}>
-                      {ponto.name}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
             </div>
 
@@ -1417,7 +1589,11 @@ export default function NovaVenda({
                 Buscar produto
               </label>
 
-              <div style={{ position: "relative" }}>
+              <div
+                style={{
+                  position: "relative",
+                }}
+              >
                 <FontAwesomeIcon
                   icon={faMagnifyingGlass}
                   style={{
@@ -1466,7 +1642,12 @@ export default function NovaVenda({
                       cursor: "pointer",
                     }}
                   >
-                    <FontAwesomeIcon icon={faXmark} style={{ fontSize: 14 }} />
+                    <FontAwesomeIcon
+                      icon={faXmark}
+                      style={{
+                        fontSize: 14,
+                      }}
+                    />
                   </button>
                 )}
               </div>
@@ -1576,7 +1757,11 @@ export default function NovaVenda({
               </div>
             </div>
 
-            <div style={{ padding: 14 }}>
+            <div
+              style={{
+                padding: 14,
+              }}
+            >
               {loadingProdutos && (
                 <div
                   style={{
@@ -1600,11 +1785,21 @@ export default function NovaVenda({
                       marginBottom: 12,
                     }}
                   />
-                  <span style={{ fontSize: 13 }}>Carregando produtos...</span>
+
+                  <span
+                    style={{
+                      fontSize: 13,
+                    }}
+                  >
+                    Carregando produtos...
+                  </span>
+
                   <style>
                     {`
                       @keyframes spin {
-                        to { transform: rotate(360deg); }
+                        to {
+                          transform: rotate(360deg);
+                        }
                       }
                     `}
                   </style>
@@ -1623,7 +1818,13 @@ export default function NovaVenda({
                     color: "#dc2626",
                   }}
                 >
-                  <span style={{ fontSize: 13 }}>{erroProdutos}</span>
+                  <span
+                    style={{
+                      fontSize: 13,
+                    }}
+                  >
+                    {erroProdutos}
+                  </span>
 
                   <button
                     type="button"
@@ -1667,7 +1868,11 @@ export default function NovaVenda({
                         }}
                       />
 
-                      <span style={{ fontSize: 13 }}>
+                      <span
+                        style={{
+                          fontSize: 13,
+                        }}
+                      >
                         {busca || categoriaSelecionada !== 0
                           ? "Nenhum produto encontrado para esta busca."
                           : "Nenhum produto cadastrado."}
@@ -1700,15 +1905,37 @@ export default function NovaVenda({
                         }}
                       >
                         <div>Produto</div>
-                        <div style={{ textAlign: "center" }}>Código</div>
-                        <div style={{ textAlign: "right" }}>Preço</div>
-                        <div style={{ textAlign: "right" }}>Ação</div>
+
+                        <div
+                          style={{
+                            textAlign: "center",
+                          }}
+                        >
+                          Código
+                        </div>
+
+                        <div
+                          style={{
+                            textAlign: "right",
+                          }}
+                        >
+                          Preço
+                        </div>
+
+                        <div
+                          style={{
+                            textAlign: "right",
+                          }}
+                        >
+                          Ação
+                        </div>
                       </div>
 
                       {produtosFiltrados.map((produto, index) => {
                         const itemNoCarrinho = carrinho.find(
                           (item) => item.produto.id === produto.id,
                         );
+
                         const quantidade = itemNoCarrinho?.quantidade || 0;
 
                         return (
@@ -1729,7 +1956,11 @@ export default function NovaVenda({
                               background: quantidade > 0 ? "#fcfffd" : "#fff",
                             }}
                           >
-                            <div style={{ minWidth: 0 }}>
+                            <div
+                              style={{
+                                minWidth: 0,
+                              }}
+                            >
                               <div
                                 style={{
                                   fontSize: 13,
@@ -1778,14 +2009,23 @@ export default function NovaVenda({
                               <button
                                 type="button"
                                 onClick={() => adicionarProduto(produto)}
+                                disabled={isComandaFinalizada}
                                 style={{
                                   height: 31,
                                   padding: "0 12px",
                                   borderRadius: 6,
-                                  border: "1px solid #a7f3d0",
-                                  background: "#ecfdf5",
-                                  color: "#047857",
-                                  cursor: "pointer",
+                                  border: isComandaFinalizada
+                                    ? "1px solid #e5e7eb"
+                                    : "1px solid #a7f3d0",
+                                  background: isComandaFinalizada
+                                    ? "#f3f4f6"
+                                    : "#ecfdf5",
+                                  color: isComandaFinalizada
+                                    ? "#9ca3af"
+                                    : "#047857",
+                                  cursor: isComandaFinalizada
+                                    ? "not-allowed"
+                                    : "pointer",
                                   display: "inline-flex",
                                   alignItems: "center",
                                   justifyContent: "center",
@@ -1793,11 +2033,14 @@ export default function NovaVenda({
                                   fontSize: 11,
                                   fontWeight: 600,
                                   whiteSpace: "nowrap",
+                                  opacity: isComandaFinalizada ? 0.6 : 1,
                                 }}
                               >
                                 <FontAwesomeIcon
                                   icon={faPlus}
-                                  style={{ fontSize: 9 }}
+                                  style={{
+                                    fontSize: 9,
+                                  }}
                                 />
                                 Adicionar
                               </button>
@@ -1813,7 +2056,7 @@ export default function NovaVenda({
           </div>
 
           {/* ============================================================
-              CARRINHO
+              CARRINHO / COMANDA
           ============================================================ */}
 
           <div
@@ -1843,7 +2086,11 @@ export default function NovaVenda({
                 flexShrink: 0,
               }}
             >
-              <div style={{ minWidth: 0 }}>
+              <div
+                style={{
+                  minWidth: 0,
+                }}
+              >
                 <div
                   style={{
                     display: "flex",
@@ -1854,7 +2101,10 @@ export default function NovaVenda({
                 >
                   <FontAwesomeIcon
                     icon={faCartShopping}
-                    style={{ color: "#059669", fontSize: 14 }}
+                    style={{
+                      color: "#059669",
+                      fontSize: 14,
+                    }}
                   />
 
                   <strong
@@ -1871,29 +2121,31 @@ export default function NovaVenda({
                     style={{
                       padding: "4px 8px",
                       borderRadius: 20,
-                      background: "#ecfdf5",
-                      color: "#047857",
+                      background: isComandaFinalizada ? "#f3f4f6" : "#ecfdf5",
+                      color: isComandaFinalizada ? "#6b7280" : "#047857",
                       fontSize: 14,
                       fontWeight: 600,
                     }}
                   >
-                    Aberta
+                    {textoStatusComanda}
                   </span>
 
-                  {temItensModificados && carrinho.length > 0 && (
-                    <span
-                      style={{
-                        padding: "3px 7px",
-                        borderRadius: 20,
-                        background: "#fef3c7",
-                        color: "#d97706",
-                        fontSize: 10,
-                        fontWeight: 600,
-                      }}
-                    >
-                      {itensModificados.length} pendente(s)
-                    </span>
-                  )}
+                  {temItensModificados &&
+                    carrinho.length > 0 &&
+                    !isComandaFinalizada && (
+                      <span
+                        style={{
+                          padding: "3px 7px",
+                          borderRadius: 20,
+                          background: "#fef3c7",
+                          color: "#d97706",
+                          fontSize: 10,
+                          fontWeight: 600,
+                        }}
+                      >
+                        {itensModificados.length} pendente(s)
+                      </span>
+                    )}
                 </div>
 
                 <div
@@ -1914,7 +2166,13 @@ export default function NovaVenda({
                       color: "#6b7280",
                     }}
                   >
-                    <FontAwesomeIcon icon={faUser} style={{ fontSize: 10 }} />
+                    <FontAwesomeIcon
+                      icon={faUser}
+                      style={{
+                        fontSize: 10,
+                      }}
+                    />
+
                     {cliente || "Consumidor"}
                   </span>
 
@@ -1927,16 +2185,20 @@ export default function NovaVenda({
                       color: "#6b7280",
                     }}
                   >
-                    <FontAwesomeIcon icon={faStore} style={{ fontSize: 10 }} />
-                    {pontoVenda !== null
-                      ? pontosVenda.find((ponto) => ponto.id === pontoVenda)
-                          ?.name || "Sem ponto"
-                      : "Sem ponto"}
+                    <FontAwesomeIcon
+                      icon={faStore}
+                      style={{
+                        fontSize: 10,
+                      }}
+                    />
+
+                    {/* ✅ CORRIGIDO: usa a função getNomePontoVenda */}
+                    {getNomePontoVenda(pontoVenda)}
                   </span>
                 </div>
               </div>
 
-              {carrinho.length > 0 && (
+              {carrinho.length > 0 && !isComandaFinalizada && (
                 <button
                   type="button"
                   onClick={limparCarrinho}
@@ -1985,7 +2247,9 @@ export default function NovaVenda({
                 >
                   <FontAwesomeIcon
                     icon={faCartShopping}
-                    style={{ fontSize: 21 }}
+                    style={{
+                      fontSize: 21,
+                    }}
                   />
                 </div>
 
@@ -2007,7 +2271,9 @@ export default function NovaVenda({
                     lineHeight: 1.5,
                   }}
                 >
-                  Clique em um produto para adicioná-lo à comanda.
+                  {isComandaFinalizada
+                    ? "Esta comanda foi finalizada sem itens."
+                    : "Clique em um produto para adicioná-lo à comanda."}
                 </span>
               </div>
             ) : (
@@ -2020,6 +2286,7 @@ export default function NovaVenda({
               >
                 {carrinho.map((item) => {
                   const subtotal = item.produto.price * item.quantidade;
+
                   const estaModificado = item.modificado === true;
 
                   return (
@@ -2028,10 +2295,16 @@ export default function NovaVenda({
                       style={{
                         padding: "13px 14px",
                         borderBottom: "1px solid #f1f5f9",
-                        background: estaModificado ? "#fffbeb" : "#fff",
-                        borderLeft: estaModificado
-                          ? "3px solid #f59e0b"
-                          : "3px solid transparent",
+                        background:
+                          estaModificado && !isComandaFinalizada
+                            ? "#fffbeb"
+                            : isComandaFinalizada
+                              ? "#f8fafc"
+                              : "#fff",
+                        borderLeft:
+                          estaModificado && !isComandaFinalizada
+                            ? "3px solid #f59e0b"
+                            : "3px solid transparent",
                       }}
                     >
                       <div
@@ -2042,7 +2315,12 @@ export default function NovaVenda({
                           gap: 10,
                         }}
                       >
-                        <div style={{ flex: 1, minWidth: 0 }}>
+                        <div
+                          style={{
+                            flex: 1,
+                            minWidth: 0,
+                          }}
+                        >
                           <div
                             style={{
                               fontSize: 14,
@@ -2054,7 +2332,8 @@ export default function NovaVenda({
                             }}
                           >
                             {item.produto.name}
-                            {estaModificado && (
+
+                            {estaModificado && !isComandaFinalizada && (
                               <span
                                 style={{
                                   marginLeft: 6,
@@ -2091,131 +2370,169 @@ export default function NovaVenda({
                         </strong>
                       </div>
 
-                      <div
-                        style={{
-                          marginTop: 9,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          gap: 8,
-                        }}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => removerProduto(item.produto.id)}
-                          style={{
-                            width: 28,
-                            height: 28,
-                            borderRadius: 6,
-                            border: "1px solid #fecaca",
-                            background: "#fef2f2",
-                            color: "#dc2626",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                          title="Remover produto"
-                        >
-                          <FontAwesomeIcon
-                            icon={faTrash}
-                            style={{ fontSize: 10 }}
-                          />
-                        </button>
+                      {/* ====================================================
+                            CONTROLES DO ITEM
+                            
+                            IMPORTANTE:
+                            Para comanda fechada, cancelada ou finalizada,
+                            estes controles NÃO SÃO RENDERIZADOS.
+                        ==================================================== */}
 
+                      {!isComandaFinalizada && (
                         <div
                           style={{
+                            marginTop: 9,
                             display: "flex",
                             alignItems: "center",
-                            border: estaModificado
-                              ? "1px solid #f59e0b"
-                              : "1px solid #e5e7eb",
-                            borderRadius: 7,
-                            overflow: "hidden",
+                            justifyContent: "space-between",
+                            gap: 8,
                           }}
                         >
-                          <button
-                            type="button"
-                            onClick={() => diminuirQuantidade(item.produto.id)}
-                            style={{
-                              width: 30,
-                              height: 28,
-                              border: "none",
-                              background: "#fff",
-                              color: "#6b7280",
-                              cursor: "pointer",
-                            }}
-                          >
-                            <FontAwesomeIcon
-                              icon={faMinus}
-                              style={{ fontSize: 9 }}
-                            />
-                          </button>
-
-                          <span
-                            style={{
-                              minWidth: 30,
-                              textAlign: "center",
-                              fontSize: 11,
-                              fontWeight: 600,
-                              color: estaModificado ? "#d97706" : "#374151",
-                            }}
-                          >
-                            {item.quantidade}
-                          </span>
+                          {/* LIXEIRA */}
 
                           <button
                             type="button"
-                            onClick={() => aumentarQuantidade(item.produto.id)}
+                            onClick={() => removerProduto(item.produto.id)}
                             style={{
-                              width: 30,
+                              width: 28,
                               height: 28,
-                              border: "none",
-                              background: "#fff",
-                              color: "#059669",
-                              cursor: "pointer",
-                            }}
-                          >
-                            <FontAwesomeIcon
-                              icon={faPlus}
-                              style={{ fontSize: 9 }}
-                            />
-                          </button>
-                        </div>
-
-                        {estaModificado && (
-                          <button
-                            type="button"
-                            onClick={salvarAlteracoesItens}
-                            disabled={salvandoItens}
-                            style={{
-                              height: 28,
-                              padding: "0 10px",
                               borderRadius: 6,
-                              border: "1px solid #f59e0b",
-                              background: "#fef3c7",
-                              color: "#d97706",
-                              cursor: salvandoItens ? "not-allowed" : "pointer",
-                              fontSize: 10,
-                              fontWeight: 600,
+                              border: "1px solid #fecaca",
+                              background: "#fef2f2",
+                              color: "#dc2626",
+                              cursor: "pointer",
                               display: "flex",
                               alignItems: "center",
-                              gap: 4,
+                              justifyContent: "center",
                             }}
+                            title="Remover produto"
                           >
                             <FontAwesomeIcon
-                              icon={faSave}
-                              style={{ fontSize: 9 }}
+                              icon={faTrash}
+                              style={{
+                                fontSize: 10,
+                              }}
                             />
-                            Salvar
                           </button>
-                        )}
-                      </div>
+
+                          {/* CONTROLE DE QUANTIDADE */}
+
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              border: estaModificado
+                                ? "1px solid #f59e0b"
+                                : "1px solid #e5e7eb",
+                              borderRadius: 7,
+                              overflow: "hidden",
+                            }}
+                          >
+                            <button
+                              type="button"
+                              onClick={() =>
+                                diminuirQuantidade(item.produto.id)
+                              }
+                              style={{
+                                width: 30,
+                                height: 28,
+                                border: "none",
+                                background: "#fff",
+                                color: "#6b7280",
+                                cursor: "pointer",
+                              }}
+                              title="Diminuir quantidade"
+                            >
+                              <FontAwesomeIcon
+                                icon={faMinus}
+                                style={{
+                                  fontSize: 9,
+                                }}
+                              />
+                            </button>
+
+                            <span
+                              style={{
+                                minWidth: 30,
+                                textAlign: "center",
+                                fontSize: 11,
+                                fontWeight: 600,
+                                color: estaModificado ? "#d97706" : "#374151",
+                              }}
+                            >
+                              {item.quantidade}
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                aumentarQuantidade(item.produto.id)
+                              }
+                              style={{
+                                width: 30,
+                                height: 28,
+                                border: "none",
+                                background: "#fff",
+                                color: "#059669",
+                                cursor: "pointer",
+                              }}
+                              title="Aumentar quantidade"
+                            >
+                              <FontAwesomeIcon
+                                icon={faPlus}
+                                style={{
+                                  fontSize: 9,
+                                }}
+                              />
+                            </button>
+                          </div>
+
+                          {/* SALVAR ALTERAÇÃO */}
+
+                          {estaModificado && (
+                            <button
+                              type="button"
+                              onClick={salvarAlteracoesItens}
+                              disabled={salvandoItens}
+                              style={{
+                                height: 28,
+                                padding: "0 10px",
+                                borderRadius: 6,
+                                border: "1px solid #f59e0b",
+                                background: "#fef3c7",
+                                color: "#d97706",
+                                cursor: salvandoItens
+                                  ? "not-allowed"
+                                  : "pointer",
+                                fontSize: 10,
+                                fontWeight: 600,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 4,
+                                opacity: salvandoItens ? 0.7 : 1,
+                              }}
+                            >
+                              <FontAwesomeIcon
+                                icon={faSave}
+                                style={{
+                                  fontSize: 9,
+                                }}
+                              />
+
+                              {salvandoItens ? "Salvando..." : "Salvar"}
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
               </div>
             )}
+
+            {/* ============================================================
+                TOTAL
+            ============================================================ */}
 
             <div
               style={{
@@ -2257,7 +2574,9 @@ export default function NovaVenda({
               <button
                 type="button"
                 onClick={abrirModalFinalizar}
-                disabled={carrinho.length === 0 || salvando}
+                disabled={
+                  carrinho.length === 0 || salvando || isComandaFinalizada
+                }
                 style={{
                   width: "100%",
                   marginTop: 11,
@@ -2265,10 +2584,15 @@ export default function NovaVenda({
                   borderRadius: 7,
                   border: "none",
                   background:
-                    carrinho.length > 0 && !salvando ? "#059669" : "#e5e7eb",
-                  color: carrinho.length > 0 && !salvando ? "#fff" : "#9ca3af",
+                    carrinho.length > 0 && !salvando && !isComandaFinalizada
+                      ? "#059669"
+                      : "#e5e7eb",
+                  color:
+                    carrinho.length > 0 && !salvando && !isComandaFinalizada
+                      ? "#fff"
+                      : "#9ca3af",
                   cursor:
-                    carrinho.length > 0 && !salvando
+                    carrinho.length > 0 && !salvando && !isComandaFinalizada
                       ? "pointer"
                       : "not-allowed",
                   fontSize: 12,
@@ -2277,12 +2601,47 @@ export default function NovaVenda({
                   alignItems: "center",
                   justifyContent: "center",
                   gap: 7,
+                  opacity:
+                    carrinho.length > 0 && !salvando && !isComandaFinalizada
+                      ? 1
+                      : 0.6,
                 }}
               >
-                <FontAwesomeIcon icon={faCheck} style={{ fontSize: 11 }} />
+                <FontAwesomeIcon
+                  icon={faCheck}
+                  style={{
+                    fontSize: 11,
+                  }}
+                />
 
-                {salvando ? "Finalizando..." : "Finalizar venda"}
+                {isComandaFinalizada
+                  ? "Comanda finalizada"
+                  : salvando
+                    ? "Finalizando..."
+                    : "Finalizar venda"}
               </button>
+
+              {isComandaFinalizada && (
+                <div
+                  style={{
+                    marginTop: 8,
+                    textAlign: "center",
+                    fontSize: 11,
+                    color: "#9ca3af",
+                  }}
+                >
+                  Esta comanda já foi{" "}
+                  {comanda.status === "fechado"
+                    ? "finalizada"
+                    : comanda.status === "finalizado"
+                      ? "finalizada"
+                      : "cancelada"}
+                  .
+                  {comanda.status !== "cancelada" &&
+                    comanda.status !== "cancelado" &&
+                    " Não é possível alterar itens."}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -2292,251 +2651,287 @@ export default function NovaVenda({
           MODAL ADICIONAR ITEM
       ============================================================ */}
 
-      {modalAdicionarItemAberto && produtoSelecionado && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 1000,
-            background: "rgba(17, 24, 39, 0.45)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 20,
-          }}
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) {
-              fecharModalAdicionarItem();
-            }
-          }}
-        >
+      {modalAdicionarItemAberto &&
+        produtoSelecionado &&
+        !isComandaFinalizada && (
           <div
             style={{
-              width: "100%",
-              maxWidth: 420,
-              background: "#fff",
-              border: "1px solid #e5e7eb",
-              borderRadius: 12,
-              boxShadow: "0 20px 50px rgba(0, 0, 0, 0.15)",
-              overflow: "hidden",
+              position: "fixed",
+              inset: 0,
+              zIndex: 1000,
+              background: "rgba(17, 24, 39, 0.45)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 20,
+            }}
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget) {
+                fecharModalAdicionarItem();
+              }
             }}
           >
             <div
               style={{
-                padding: "16px 18px",
-                borderBottom: "1px solid #f1f5f9",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 12,
+                width: "100%",
+                maxWidth: 420,
+                background: "#fff",
+                border: "1px solid #e5e7eb",
+                borderRadius: 12,
+                boxShadow: "0 20px 50px rgba(0, 0, 0, 0.15)",
+                overflow: "hidden",
               }}
             >
-              <div style={{ minWidth: 0 }}>
-                <strong
-                  style={{
-                    display: "block",
-                    fontSize: 14,
-                    color: "#111827",
-                    fontWeight: 600,
-                  }}
-                >
-                  Adicionar item
-                </strong>
-                <span
-                  style={{
-                    display: "block",
-                    marginTop: 4,
-                    fontSize: 11,
-                    color: "#6b7280",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {produtoSelecionado.name}
-                </span>
-              </div>
-
-              <button
-                type="button"
-                onClick={fecharModalAdicionarItem}
-                disabled={salvandoItem}
-                style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 7,
-                  border: "1px solid #e5e7eb",
-                  background: "#fff",
-                  color: "#6b7280",
-                  cursor: salvandoItem ? "not-allowed" : "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <FontAwesomeIcon icon={faXmark} style={{ fontSize: 11 }} />
-              </button>
-            </div>
-
-            <div style={{ padding: 18 }}>
               <div
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: 12,
-                }}
-              >
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      marginBottom: 6,
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: "#374151",
-                    }}
-                  >
-                    Quantidade
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    step={1}
-                    value={quantidadeItem}
-                    onChange={(e) => setQuantidadeItem(Number(e.target.value))}
-                    disabled={salvandoItem}
-                    style={{
-                      width: "100%",
-                      height: 38,
-                      padding: "0 10px",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: 7,
-                      outline: "none",
-                      fontSize: 12,
-                      color: "#111827",
-                      background: "#fff",
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      marginBottom: 6,
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: "#374151",
-                    }}
-                  >
-                    Valor unitário
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    value={precoItem}
-                    onChange={(e) => setPrecoItem(Number(e.target.value))}
-                    disabled={salvandoItem}
-                    style={{
-                      width: "100%",
-                      height: 38,
-                      padding: "0 10px",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: 7,
-                      outline: "none",
-                      fontSize: 12,
-                      color: "#111827",
-                      background: "#fff",
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div
-                style={{
-                  marginTop: 14,
-                  padding: "11px 12px",
-                  borderRadius: 8,
-                  background: "#f8fafc",
-                  border: "1px solid #f1f5f9",
+                  padding: "16px 18px",
+                  borderBottom: "1px solid #f1f5f9",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  gap: 10,
+                  gap: 12,
                 }}
               >
-                <span style={{ fontSize: 11, color: "#6b7280" }}>
-                  Total do item
-                </span>
-                <strong
+                <div
                   style={{
-                    fontSize: 15,
-                    color: "#059669",
+                    minWidth: 0,
                   }}
                 >
-                  {formatCurrency(
-                    (Number(precoItem) || 0) * (Number(quantidadeItem) || 0),
-                  )}
-                </strong>
+                  <strong
+                    style={{
+                      display: "block",
+                      fontSize: 14,
+                      color: "#111827",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Adicionar item
+                  </strong>
+
+                  <span
+                    style={{
+                      display: "block",
+                      marginTop: 4,
+                      fontSize: 11,
+                      color: "#6b7280",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {produtoSelecionado.name}
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={fecharModalAdicionarItem}
+                  disabled={salvandoItem}
+                  style={{
+                    width: 30,
+                    height: 30,
+                    borderRadius: 7,
+                    border: "1px solid #e5e7eb",
+                    background: "#fff",
+                    color: "#6b7280",
+                    cursor: salvandoItem ? "not-allowed" : "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <FontAwesomeIcon
+                    icon={faXmark}
+                    style={{
+                      fontSize: 11,
+                    }}
+                  />
+                </button>
+              </div>
+
+              <div
+                style={{
+                  padding: 18,
+                }}
+              >
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 12,
+                  }}
+                >
+                  <div>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: 6,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: "#374151",
+                      }}
+                    >
+                      Quantidade
+                    </label>
+
+                    <input
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={quantidadeItem}
+                      onChange={(e) =>
+                        setQuantidadeItem(Number(e.target.value))
+                      }
+                      disabled={salvandoItem}
+                      style={{
+                        width: "100%",
+                        height: 38,
+                        padding: "0 10px",
+                        border: "1px solid #e5e7eb",
+                        borderRadius: 7,
+                        outline: "none",
+                        fontSize: 12,
+                        color: "#111827",
+                        background: "#fff",
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: 6,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: "#374151",
+                      }}
+                    >
+                      Valor unitário
+                    </label>
+
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={precoItem}
+                      onChange={(e) => setPrecoItem(Number(e.target.value))}
+                      disabled={salvandoItem}
+                      style={{
+                        width: "100%",
+                        height: 38,
+                        padding: "0 10px",
+                        border: "1px solid #e5e7eb",
+                        borderRadius: 7,
+                        outline: "none",
+                        fontSize: 12,
+                        color: "#111827",
+                        background: "#fff",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 14,
+                    padding: "11px 12px",
+                    borderRadius: 8,
+                    background: "#f8fafc",
+                    border: "1px solid #f1f5f9",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 10,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 11,
+                      color: "#6b7280",
+                    }}
+                  >
+                    Total do item
+                  </span>
+
+                  <strong
+                    style={{
+                      fontSize: 15,
+                      color: "#059669",
+                    }}
+                  >
+                    {formatCurrency(
+                      (Number(precoItem) || 0) * (Number(quantidadeItem) || 0),
+                    )}
+                  </strong>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  padding: "0 18px 18px",
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: 8,
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={fecharModalAdicionarItem}
+                  disabled={salvandoItem}
+                  style={{
+                    height: 36,
+                    padding: "0 13px",
+                    borderRadius: 7,
+                    border: "1px solid #e5e7eb",
+                    background: "#fff",
+                    color: "#6b7280",
+                    cursor: salvandoItem ? "not-allowed" : "pointer",
+                    fontSize: 11,
+                    fontWeight: 500,
+                  }}
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  type="button"
+                  onClick={salvarItem}
+                  disabled={salvandoItem}
+                  style={{
+                    height: 36,
+                    padding: "0 14px",
+                    borderRadius: 7,
+                    border: "1px solid #059669",
+                    background: salvandoItem ? "#a7f3d0" : "#059669",
+                    color: "#fff",
+                    cursor: salvandoItem ? "not-allowed" : "pointer",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 6,
+                  }}
+                >
+                  <FontAwesomeIcon
+                    icon={faFloppyDisk}
+                    style={{
+                      fontSize: 10,
+                    }}
+                  />
+
+                  {salvandoItem ? "Salvando..." : "Salvar item"}
+                </button>
               </div>
             </div>
-
-            <div
-              style={{
-                padding: "0 18px 18px",
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 8,
-              }}
-            >
-              <button
-                type="button"
-                onClick={fecharModalAdicionarItem}
-                disabled={salvandoItem}
-                style={{
-                  height: 36,
-                  padding: "0 13px",
-                  borderRadius: 7,
-                  border: "1px solid #e5e7eb",
-                  background: "#fff",
-                  color: "#6b7280",
-                  cursor: salvandoItem ? "not-allowed" : "pointer",
-                  fontSize: 11,
-                  fontWeight: 500,
-                }}
-              >
-                Cancelar
-              </button>
-
-              <button
-                type="button"
-                onClick={salvarItem}
-                disabled={salvandoItem}
-                style={{
-                  height: 36,
-                  padding: "0 14px",
-                  borderRadius: 7,
-                  border: "1px solid #059669",
-                  background: salvandoItem ? "#a7f3d0" : "#059669",
-                  color: "#fff",
-                  cursor: salvandoItem ? "not-allowed" : "pointer",
-                  fontSize: 11,
-                  fontWeight: 600,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 6,
-                }}
-              >
-                <FontAwesomeIcon icon={faFloppyDisk} style={{ fontSize: 10 }} />
-                {salvandoItem ? "Salvando..." : "Salvar item"}
-              </button>
-            </div>
           </div>
-        </div>
-      )}
+        )}
+
+      {/* ============================================================
+          MODAL FINALIZAR VENDA
+      ============================================================ */}
 
       <ModalFinalizarVenda
         isOpen={modalFinalizarAberto}
@@ -2545,6 +2940,10 @@ export default function NovaVenda({
         onConfirm={confirmarFinalizacao}
         formatCurrency={formatCurrency}
       />
+
+      {/* ============================================================
+          ESTILOS
+      ============================================================ */}
 
       <style>
         {`
