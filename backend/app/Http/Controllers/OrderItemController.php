@@ -7,186 +7,275 @@ use App\Models\OrderItem;
 use App\Services\CurrentCompany;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class OrderItemController extends Controller
 {
 
     public function store(Request $request, $orderId)
     {
-        try {
-            $request->validate([
-                'product_id' => 'required|exists:products,id',
-                'quantity' => 'sometimes|integer|min:1',
-                'price' => 'sometimes|numeric|min:0'
-            ]);
-
-            $partnerCompanyId = CurrentCompany::id();
-
-            $order = Order::where('id', $orderId)
-                ->where('partner_company_id', $partnerCompanyId)
-                ->firstOrFail();
-
-            if ($order->status !== 'aberto') {
-                return response()->json([
-                    'message' => 'Esta venda já foi finalizada'
-                ], 400);
-            }
-
-            $product = DB::select("
-            SELECT prod.*
-            FROM products prod
-            INNER JOIN categories cat
-                ON prod.category_id = cat.id
-                AND cat.partner_company_id = ?
-            WHERE prod.id = ?
-        ", [
-                $partnerCompanyId,
-                $request->product_id
-            ]);
-
-            if (!$product) {
-                return response()->json([
-                    'message' => 'Produto não pertence à empresa atual'
-                ], 403);
-            }
-
-            $product = $product[0];
-
-            $quantity = (int) ($request->quantity ?? 1);
-            $price = $request->has('price')
-                ? (float) $request->price
-                : (float) $product->price;
-
-            $orderItem = new OrderItem();
-            $orderItem->order_id = $order->id;
-            $orderItem->product_id = $request->product_id;
-            $orderItem->quantity = $quantity;
-            $orderItem->price = $price;
-
-            $orderItem->save();
-
-            return response()->json([
-                'message' => 'Item adicionado com sucesso',
-                'item' => $orderItem
-            ], 201);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-
-            return response()->json([
-                'message' => 'Erro de validação',
-                'errors' => $e->errors()
-            ], 422);
-        } catch (\Exception $e) {
-
-            \Log::error('Erro ao adicionar item: ' . $e->getMessage());
-
-            return response()->json([
-                'message' => 'Erro ao adicionar item',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        // ... (seu código existente)
     }
 
     // 📋 LISTAR ITENS DA COMANDA
     public function getItems($orderId)
     {
-        try {
-            $items = OrderItem::where('order_id', $orderId)
-                ->with('product')
-                ->get();
-
-            return response()->json($items);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Erro ao buscar itens',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        // ... (seu código existente)
     }
-
 
     // ✏️ ATUALIZAR QUANTIDADE DO ITEM
     public function updateItem(Request $request, $itemId)
     {
+        // ... (seu código existente)
+    }
+
+    // ❌ REMOVER ITEM
+    public function destroy($itemId)
+    {
+        // ... (seu código existente)
+    }
+
+    // =============================================
+    // 📊 RESUMO DE PRODUTOS VENDIDOS POR ANO - OTIMIZADO
+    // =============================================
+
+    /**
+     * Retorna o resumo de produtos vendidos agrupados por produto
+     * Retorna apenas: produto, quantidade total e valor total
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function productsSummary(Request $request)
+    {
         try {
-            $data = $request->validate([
-                'quantity' => 'required|integer|min:1',
+            // Validação do ano
+            $request->validate([
+                'year' => 'required|integer|min:2000|max:2099',
             ]);
 
+            $year = $request->input('year');
             $partnerCompanyId = CurrentCompany::id();
+
+            Log::info('Products Summary Request', [
+                'year' => $year,
+                'partner_company_id' => $partnerCompanyId
+            ]);
 
             if (!$partnerCompanyId) {
                 return response()->json([
+                    'success' => false,
                     'message' => 'Empresa não identificada.'
                 ], 403);
             }
 
-            $item = OrderItem::with('order')->findOrFail($itemId);
+            // Data de início e fim do ano
+            $startDate = $year . '-01-01';
+            $endDate = $year . '-12-31';
 
-            $order = $item->order;
-
-            if (!$order) {
-                return response()->json([
-                    'message' => 'Venda não encontrada.'
-                ], 404);
-            }
-
-            // 🔐 Garante que a venda pertence à empresa do usuário
-            if ((int) $order->partner_company_id !== (int) $partnerCompanyId) {
-                return response()->json([
-                    'message' => 'Você não tem permissão para alterar esta venda.'
-                ], 403);
-            }
-
-            if ($order->status !== 'aberto') {
-                return response()->json([
-                    'message' => 'Esta venda já foi finalizada.'
-                ], 400);
-            }
-
-            $item->update([
-                'quantity' => $data['quantity'],
+            Log::info('Date range', [
+                'start_date' => $startDate,
+                'end_date' => $endDate
             ]);
 
-            // Recalcula o total usando:
-            // preço unitário salvo no OrderItem × quantidade
-            OrderController::updateTotal($order);
-            $item->refresh();
-            $order->refresh();
+            // Primeiro, vamos verificar se existem comandas fechadas no período
+            $ordersCount = Order::where('partner_company_id', $partnerCompanyId)
+                ->where('status', 'fechado')
+                ->whereBetween('closed_at', [$startDate, $endDate])
+                ->count();
+
+            Log::info('Orders found', ['count' => $ordersCount]);
+
+            if ($ordersCount === 0) {
+                return response()->json([
+                    'success' => true,
+                    'year' => $year,
+                    'data' => [],
+                    'message' => 'Nenhuma comanda fechada encontrada no período.'
+                ]);
+            }
+
+            // Buscar os produtos vendidos no período - OTIMIZADO
+            $productsSummary = OrderItem::query()
+                ->join('orders', 'order_items.order_id', '=', 'orders.id')
+                ->join('products', 'order_items.product_id', '=', 'products.id')
+                ->where('orders.partner_company_id', $partnerCompanyId)
+                ->where('orders.status', 'fechado')
+                ->whereBetween('orders.closed_at', [$startDate, $endDate])
+                ->select(
+                    'products.id',
+                    'products.name as product_name',
+                    DB::raw('SUM(order_items.quantity) as total_quantity'),
+                    DB::raw('SUM(order_items.quantity * order_items.price) as total_value')
+                )
+                ->groupBy('products.id', 'products.name')
+                ->having('total_quantity', '>', 0)
+                ->orderBy('total_value', 'DESC')
+                ->get();
+
+            Log::info('Products summary found', ['count' => $productsSummary->count()]);
+
+            // Formatar os dados - APENAS O ESSENCIAL
+            $formattedData = $productsSummary->map(function ($item) {
+                return [
+                    'product' => $item->product_name,
+                    'quantity' => (int) $item->total_quantity,
+                    'value' => (float) number_format($item->total_value, 2, '.', ''),
+                ];
+            });
 
             return response()->json([
-                'message' => 'Item atualizado.',
-                'item' => $item,
-                'total' => $order->total,
+                'success' => true,
+                'year' => $year,
+                'data' => $formattedData,
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            throw $e;
-        } catch (\Exception $e) {
+            Log::error('Validation error in productsSummary', [
+                'errors' => $e->errors()
+            ]);
+
             return response()->json([
-                'message' => 'Erro ao atualizar item.',
+                'success' => false,
+                'message' => 'Erro de validação',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error in productsSummary: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao buscar resumo de produtos',
                 'error' => $e->getMessage()
             ], 500);
         }
     }
-    // ❌ REMOVER ITEM
-    public function destroy($itemId)
+
+    /**
+     * Retorna o resumo de produtos vendidos com filtros adicionais
+     * Versão otimizada com apenas os dados essenciais
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function productsSummaryWithFilters(Request $request)
     {
         try {
-            $item = OrderItem::findOrFail($itemId);
-            $order = $item->order;
+            // Validação dos filtros
+            $request->validate([
+                'year' => 'required|integer|min:2000|max:2099',
+                'product_id' => 'nullable|integer|exists:products,id',
+                'category_id' => 'nullable|integer|exists:categories,id',
+                'min_quantity' => 'nullable|integer|min:0',
+                'max_quantity' => 'nullable|integer|min:0',
+                'min_value' => 'nullable|numeric|min:0',
+                'max_value' => 'nullable|numeric|min:0',
+                'sort_by' => 'nullable|in:quantity,value,product',
+                'sort_direction' => 'nullable|in:asc,desc',
+                'limit' => 'nullable|integer|min:1|max:1000',
+            ]);
 
-            if ($order->status !== 'aberto') {
-                return response()->json(['message' => 'Esta venda já foi finalizada'], 400);
+            $year = $request->input('year');
+            $partnerCompanyId = CurrentCompany::id();
+
+            if (!$partnerCompanyId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Empresa não identificada.'
+                ], 403);
             }
 
-            $item->delete();
-            OrderController::updateTotal($order);
+            $startDate = $year . '-01-01';
+            $endDate = $year . '-12-31';
+
+            // Query base - OTIMIZADA
+            $query = OrderItem::query()
+                ->join('orders', 'order_items.order_id', '=', 'orders.id')
+                ->join('products', 'order_items.product_id', '=', 'products.id')
+                ->where('orders.partner_company_id', $partnerCompanyId)
+                ->where('orders.status', 'fechada')
+                ->whereBetween('orders.closed_at', [$startDate, $endDate])
+                ->select(
+                    'products.id',
+                    'products.name as product_name',
+                    DB::raw('SUM(order_items.quantity) as total_quantity'),
+                    DB::raw('SUM(order_items.quantity * order_items.price) as total_value')
+                )
+                ->groupBy('products.id', 'products.name');
+
+            // Aplicar filtros
+            if ($request->has('product_id') && $request->product_id) {
+                $query->where('products.id', $request->product_id);
+            }
+
+            if ($request->has('category_id') && $request->category_id) {
+                $query->where('products.category_id', $request->category_id);
+            }
+
+            if ($request->has('min_quantity') && $request->min_quantity) {
+                $query->having('total_quantity', '>=', $request->min_quantity);
+            }
+
+            if ($request->has('max_quantity') && $request->max_quantity) {
+                $query->having('total_quantity', '<=', $request->max_quantity);
+            }
+
+            if ($request->has('min_value') && $request->min_value) {
+                $query->having('total_value', '>=', $request->min_value);
+            }
+
+            if ($request->has('max_value') && $request->max_value) {
+                $query->having('total_value', '<=', $request->max_value);
+            }
+
+            // Ordenação
+            $sortBy = $request->input('sort_by', 'total_value');
+            $sortDirection = $request->input('sort_direction', 'DESC');
+
+            $sortMapping = [
+                'quantity' => 'total_quantity',
+                'value' => 'total_value',
+                'product' => 'product_name',
+            ];
+
+            $sortField = $sortMapping[$sortBy] ?? 'total_value';
+            $query->orderBy($sortField, $sortDirection);
+
+            // Limite
+            if ($request->has('limit') && $request->limit) {
+                $query->limit($request->limit);
+            }
+
+            $productsSummary = $query->get();
+
+            // Formatar os dados - APENAS O ESSENCIAL
+            $formattedData = $productsSummary->map(function ($item) {
+                return [
+                    'product' => $item->product_name,
+                    'quantity' => (int) $item->total_quantity,
+                    'value' => (float) number_format($item->total_value, 2, '.', ''),
+                ];
+            });
 
             return response()->json([
-                'message' => 'Item removido com sucesso'
+                'success' => true,
+                'year' => $year,
+                'filters' => $request->all(),
+                'data' => $formattedData,
             ]);
-        } catch (\Exception $e) {
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
-                'message' => 'Erro ao remover item',
+                'success' => false,
+                'message' => 'Erro de validação',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Erro ao buscar resumo de produtos com filtros: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao buscar resumo de produtos',
                 'error' => $e->getMessage()
             ], 500);
         }

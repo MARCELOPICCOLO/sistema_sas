@@ -86,6 +86,8 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('/{id}', [OrderItemController::class, 'destroy']);
         Route::post('order/{id}/item', [OrderItemController::class, 'store']);
         Route::get('/{id}/items', [OrderItemController::class, 'getItems']);
+        Route::get('/products-summary', [OrderItemController::class, 'productsSummary']);
+        Route::get('/products-summary/filtered', [OrderItemController::class, 'productsSummaryWithFilters']);
     });
 
     // ========== GASTOS (EXPENSES) ==========

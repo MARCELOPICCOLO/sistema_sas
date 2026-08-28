@@ -455,4 +455,69 @@ class OrderController extends Controller
             ], 500);
         }
     }
+
+    // 📊 RELATÓRIO DE ENTRADAS POR ANO
+    public function reportEntries(Request $request)
+    {
+        try {
+            // =====================================================
+            // IDENTIFICAR A EMPRESA ATUAL
+            // =====================================================
+            $companyId = CurrentCompany::id();
+
+            if (!$companyId) {
+                return response()->json([
+                    'message' => 'Empresa não identificada.'
+                ], 403);
+            }
+
+            // =====================================================
+            // VALIDAR O ANO
+            // =====================================================
+            $request->validate([
+                'year' => 'required|integer|digits:4|min:2000|max:2100',
+            ]);
+
+            $year = (int) $request->query('year');
+
+            // =====================================================
+            // BUSCAR TODAS AS VENDAS DO ANO
+            // =====================================================
+            //
+            // Usamos closed_at porque ele representa a data em que
+            // a venda foi finalizada.
+            //
+            // No método close() da sua controller, closed_at recebe
+            // a data da comanda.
+            //
+            $orders = Order::where('partner_company_id', $companyId)
+                ->where('status', 'fechado')
+                ->whereNotNull('closed_at')
+                ->whereYear('closed_at', $year)
+                ->orderBy('closed_at', 'desc')
+                ->get();
+
+            // =====================================================
+            // RETORNAR AS VENDAS
+            // =====================================================
+            return response()->json($orders);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+
+            return response()->json([
+                'message' => 'Ano inválido.',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+
+            \Log::error(
+                'Erro ao buscar entradas do relatório anual: ' .
+                    $e->getMessage()
+            );
+
+            return response()->json([
+                'message' => 'Erro ao buscar vendas do ano.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

@@ -16,6 +16,14 @@ class ExpenseController extends Controller
         try {
             $companyId = CurrentCompany::id();
 
+
+            if (!$companyId) {
+                return response()->json([
+                    'message' => 'Empresa não identificada.'
+                ], 403);
+            }
+
+
             $data = $request->validate([
                 'start_date' => 'nullable|date',
                 'end_date' => 'nullable|date|after_or_equal:start_date',
@@ -173,16 +181,24 @@ class ExpenseController extends Controller
     public function summary(Request $request)
     {
         try {
+
+            $companyId = CurrentCompany::id();
+
+            if (!$companyId) {
+                return response()->json([
+                    'message' => 'Empresa não identificada.'
+                ], 403);
+            }
+
             $request->validate([
-                'restaurant_id' => 'required|exists:restaurants,id',
                 'date' => 'required|date',
             ]);
 
-            $totalExpenses = Expense::where('restaurant_id', $request->restaurant_id)
+            $totalExpenses = Expense::where('partner_company_id', $companyId)
                 ->whereDate('expense_date', $request->date)
                 ->sum('amount');
 
-            $expensesByCategory = Expense::where('restaurant_id', $request->restaurant_id)
+            $expensesByCategory = Expense::where('partner_company_id', $companyId)
                 ->whereDate('expense_date', $request->date)
                 ->with('category')
                 ->select('category_id', DB::raw('SUM(amount) as total'))
@@ -205,8 +221,16 @@ class ExpenseController extends Controller
     public function monthlySummary(Request $request)
     {
         try {
+
+            $companyId = CurrentCompany::id();
+
+            if (!$companyId) {
+                return response()->json([
+                    'message' => 'Empresa não identificada.'
+                ], 403);
+            }
+
             $request->validate([
-                'restaurant_id' => 'required|exists:restaurants,id',
                 'year' => 'required|integer|min:2020|max:2030',
                 'month' => 'required|integer|min:1|max:12',
             ]);
@@ -214,7 +238,7 @@ class ExpenseController extends Controller
             $startDate = date("{$request->year}-{$request->month}-01");
             $endDate = date("{$request->year}-{$request->month}-t");
 
-            $expenses = Expense::where('restaurant_id', $request->restaurant_id)
+            $expenses = Expense::where('partner_company_id', $companyId)
                 ->whereBetween('expense_date', [$startDate, $endDate])
                 ->with('category')
                 ->select('category_id', DB::raw('SUM(amount) as total'))
