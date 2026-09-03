@@ -13,6 +13,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\PartnerCompanyUserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\OrderItemController;
+use App\Http\Controllers\TelaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -135,5 +136,9 @@ Route::middleware('auth:api')->group(function () {
         Route::get('{id}', [PartnerCompanyUserController::class, 'show']);
         Route::put('{id}', [PartnerCompanyUserController::class, 'update']);
         Route::patch('{id}/deactivate', [PartnerCompanyUserController::class, 'deactivate']);
+    });
+
+    Route::prefix('telas')->group(function () {
+        Route::get('/', [TelaController::class, 'index']);
     });
 });

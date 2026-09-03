@@ -30,23 +30,44 @@ class AuthController extends Controller
     /**
      * Retorna o usuário autenticado.
      */
-    /**
-     * Retorna o usuário autenticado.
-     */
+
     public function me()
     {
         $user = Auth::guard('api')->user();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'Usuário não autenticado.'
+            ], 401);
+        }
 
         $company = DB::table('partner_company_users')
             ->where('user_id', $user->id)
             ->where('active', true)
             ->first();
 
+        // Carrega as telas liberadas para o usuário
+        $user->load([
+            'telas:id,nome,slug,descricao,ativo'
+        ]);
+
         return response()->json([
             'user' => $user,
-            'company_id' => $company?->partner_company_id
+
+            'company_id' => $company?->partner_company_id,
+
+            // IDs das telas liberadas
+            'tela_ids' => $user->telas
+                ->pluck('id')
+                ->values()
+                ->toArray(),
+
+            // Dados completos das telas
+            'telas' => $user->telas,
         ]);
     }
+
+
 
     /**
      * Renova o token.

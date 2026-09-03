@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class User extends Authenticatable implements JWTSubject
 {
@@ -61,5 +62,15 @@ class User extends Authenticatable implements JWTSubject
         )
             ->withPivot('role', 'active')
             ->withTimestamps();
+    }
+
+    public function telas(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Tela::class,
+            'usuario_telas',
+            'user_id',
+            'tela_id'
+        );
     }
 }
