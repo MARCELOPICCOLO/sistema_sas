@@ -10,6 +10,7 @@ import {
   faArrowLeft,
   faFilter,
   faRotate,
+  faCalendarDays,
 } from "@fortawesome/free-solid-svg-icons";
 import NovaVenda from "../../components/NovaVenda";
 import { ModalAbrirComanda } from "../../components/ModalAbrirComanda";
@@ -85,11 +86,41 @@ interface GestaoComandasProps {
   onAbrirComanda?: (comanda: Comanda) => void;
 }
 
+/**
+ * Retorna a data atual no formato YYYY-MM-DD.
+ *
+ * Não usamos toISOString() porque ele trabalha em UTC
+ * e pode causar mudança de dia dependendo do fuso horário.
+ */
+const getDataAtual = (): string => {
+  const hoje = new Date();
+
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+  const dia = String(hoje.getDate()).padStart(2, "0");
+
+  return `${ano}-${mes}-${dia}`;
+};
+
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
   }).format(value);
+};
+
+const formatarData = (date: string) => {
+  if (!date) {
+    return "";
+  }
+
+  const [ano, mes, dia] = date.split("-");
+
+  if (!ano || !mes || !dia) {
+    return date;
+  }
+
+  return `${dia}/${mes}/${ano}`;
 };
 
 const normalizarComanda = (order: OrderApi): Comanda => {
@@ -112,8 +143,10 @@ const normalizarComanda = (order: OrderApi): Comanda => {
     status = "fechado";
   } else if (order.status === "pendente") {
     status = "pendente";
-  } else if (order.status === "cancelado") {
+  } else if (order.status === "cancelado" || order.status === "cancelada") {
     status = "cancelada";
+  } else if (order.status === "aberto" || order.status === "aberta") {
+    status = "aberta";
   }
 
   return {
@@ -147,18 +180,31 @@ export default function GestaoComandas({
 
   const [filtro, setFiltro] = useState<FiltroStatus>("abertas");
 
+  /**
+   * Data selecionada no filtro.
+   *
+   * Por padrão:
+   * data atual do computador do usuário.
+   */
+  const [dataFiltro, setDataFiltro] = useState<string>(getDataAtual());
+
   const [loading, setLoading] = useState(true);
 
   const [erro, setErro] = useState("");
 
-  const carregarComandas = async () => {
+  /**
+   * Carrega as comandas somente da data selecionada.
+   *
+   * GET /orders/by-date/YYYY-MM-DD
+   */
+  const carregarComandas = async (data = dataFiltro) => {
     try {
       setLoading(true);
       setErro("");
 
       const token = localStorage.getItem("auth_token");
 
-      const response = await axios.get(`${API_URL}/orders`, {
+      const response = await axios.get(`${API_URL}/orders/by-date/${data}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -172,6 +218,12 @@ export default function GestaoComandas({
 
       setComandas(comandasApi);
 
+      /**
+       * Mantém a comanda selecionada atualizada.
+       *
+       * Se ela não existir mais no resultado da nova data,
+       * limpamos a seleção.
+       */
       setComandaSelecionada((atual) => {
         if (!atual) {
           return null;
@@ -181,19 +233,70 @@ export default function GestaoComandas({
           (comanda) => comanda.id === atual.id,
         );
 
-        return atualizada || atual;
+        return atualizada || null;
       });
     } catch (error) {
       console.error("Erro ao carregar comandas:", error);
-      setErro("Não foi possível carregar as comandas.");
+
+      setComandas([]);
+
+      setComandaSelecionada(null);
+
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 403) {
+          setErro("Empresa não identificada.");
+        } else if (error.response?.status === 422) {
+          setErro(
+            error.response?.data?.message || "Data inválida para consulta.",
+          );
+        } else {
+          setErro(
+            error.response?.data?.message ||
+              "Não foi possível carregar as comandas.",
+          );
+        }
+      } else {
+        setErro("Não foi possível carregar as comandas.");
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  /**
+   * Carrega automaticamente as vendas da data atual
+   * quando a tela é aberta.
+   */
   useEffect(() => {
-    carregarComandas();
+    carregarComandas(dataFiltro);
   }, []);
+
+  /**
+   * Quando o usuário altera a data, fazemos uma nova
+   * requisição diretamente ao backend.
+   */
+  const handleDataChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const novaData = event.target.value;
+
+    if (!novaData) {
+      return;
+    }
+
+    setDataFiltro(novaData);
+
+    carregarComandas(novaData);
+  };
+
+  /**
+   * Volta rapidamente para o dia atual.
+   */
+  const selecionarHoje = () => {
+    const hoje = getDataAtual();
+
+    setDataFiltro(hoje);
+
+    carregarComandas(hoje);
+  };
 
   const comandasFiltradas = useMemo(() => {
     return comandas.filter((comanda) => {
@@ -275,21 +378,30 @@ export default function GestaoComandas({
 
       const novaComanda = normalizarComanda(order);
 
-      setComandas((atual) => [...atual, novaComanda]);
+      /**
+       * Só adiciona localmente se pertence ao dia selecionado.
+       */
+      if (dataComanda === dataFiltro) {
+        setComandas((atual) => [...atual, novaComanda]);
+      }
 
       setComandaSelecionada(novaComanda);
+
       setMostrarNovaVenda(true);
+
       setMostrarModalAbrirComanda(false);
 
       onAbrirComanda?.(novaComanda);
     } catch (error) {
       console.error("Erro ao criar comanda:", error);
+
       setErro("Não foi possível criar a comanda.");
     }
   };
 
   const abrirComandaExistente = (comanda: Comanda) => {
     setComandaSelecionada(comanda);
+
     setMostrarNovaVenda(true);
 
     onAbrirComanda?.(comanda);
@@ -297,9 +409,10 @@ export default function GestaoComandas({
 
   const voltarParaComandas = async () => {
     setMostrarNovaVenda(false);
+
     setComandaSelecionada(null);
 
-    await carregarComandas();
+    await carregarComandas(dataFiltro);
   };
 
   const atualizarComanda = (comandaId: number, dados: Partial<Comanda>) => {
@@ -370,6 +483,9 @@ export default function GestaoComandas({
     return comanda.itens.reduce((total, item) => total + item.quantidade, 0);
   };
 
+  /**
+   * Quando uma venda está aberta, entramos na NovaVenda.
+   */
   if (mostrarNovaVenda && comandaSelecionada) {
     const somenteLeitura = comandaSelecionada.status === "fechado";
 
@@ -466,6 +582,9 @@ export default function GestaoComandas({
           </div>
         )}
 
+        {/* ============================================================
+            HEADER
+        ============================================================ */}
         <div
           className="gestao-comandas-header"
           style={{
@@ -476,7 +595,12 @@ export default function GestaoComandas({
             marginBottom: 18,
           }}
         >
-          <div>
+          <div
+            className="gestao-comandas-titulo"
+            style={{
+              minWidth: 0,
+            }}
+          >
             <h1
               style={{
                 margin: 0,
@@ -499,6 +623,9 @@ export default function GestaoComandas({
             </p>
           </div>
 
+          {/* ========================================================
+              BOTÃO ABRIR COMANDA
+          ======================================================== */}
           <button
             type="button"
             onClick={abrirModalNovaComanda}
@@ -508,9 +635,9 @@ export default function GestaoComandas({
               justifyContent: "center",
               gap: 6,
               height: 34,
-              padding: "0 11px",
+              padding: "0 12px",
               borderRadius: 7,
-              border: "1px solid #d1fae5",
+              border: "1px solid #a7f3d0",
               background: "#ecfdf5",
               color: "#047857",
               cursor: "pointer",
@@ -530,6 +657,9 @@ export default function GestaoComandas({
           </button>
         </div>
 
+        {/* ============================================================
+            FILTROS DE STATUS + DATA
+        ============================================================ */}
         <div
           className="gestao-comandas-filtros"
           style={{
@@ -544,6 +674,9 @@ export default function GestaoComandas({
             flexWrap: "wrap",
           }}
         >
+          {/* ========================================================
+              IDENTIFICAÇÃO DOS FILTROS
+          ======================================================== */}
           <div
             style={{
               display: "flex",
@@ -564,6 +697,112 @@ export default function GestaoComandas({
             Filtros
           </div>
 
+          {/* ========================================================
+              PRIMEIRO FILTRO: DATA
+          ======================================================== */}
+          <div
+            className="gestao-data-filtro"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 7,
+            }}
+          >
+            {/* FILTRO DE DATA */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 7,
+                height: 32,
+                padding: "0 9px",
+                background: "#fff",
+                border: "1px solid #e5e7eb",
+                borderRadius: 7,
+              }}
+            >
+              <FontAwesomeIcon
+                icon={faCalendarDays}
+                style={{
+                  color: "#059669",
+                  fontSize: 11,
+                }}
+              />
+
+              <input
+                type="date"
+                value={dataFiltro}
+                onChange={handleDataChange}
+                disabled={loading}
+                aria-label="Filtrar vendas por data"
+                style={{
+                  border: "none",
+                  outline: "none",
+                  background: "transparent",
+                  color: "#374151",
+                  fontSize: 11,
+                  fontWeight: 500,
+                  cursor: loading ? "not-allowed" : "pointer",
+                }}
+              />
+            </div>
+
+            {/* BOTÃO HOJE */}
+            {dataFiltro !== getDataAtual() && (
+              <button
+                type="button"
+                onClick={selecionarHoje}
+                disabled={loading}
+                style={{
+                  height: 32,
+                  padding: "0 9px",
+                  borderRadius: 7,
+                  border: "1px solid #d1fae5",
+                  background: "#ecfdf5",
+                  color: "#047857",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  fontSize: 10,
+                  fontWeight: 600,
+                  opacity: loading ? 0.6 : 1,
+                }}
+              >
+                Hoje
+              </button>
+            )}
+
+            {/* ATUALIZAR */}
+            <button
+              type="button"
+              onClick={() => carregarComandas(dataFiltro)}
+              disabled={loading}
+              title={`Atualizar vendas de ${formatarData(dataFiltro)}`}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 7,
+                border: "1px solid #e5e7eb",
+                background: "#fff",
+                color: "#6b7280",
+                cursor: loading ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                opacity: loading ? 0.6 : 1,
+              }}
+            >
+              <FontAwesomeIcon
+                icon={faRotate}
+                spin={loading}
+                style={{
+                  fontSize: 11,
+                }}
+              />
+            </button>
+          </div>
+
+          {/* ========================================================
+              FILTROS DE STATUS
+          ======================================================== */}
           <button
             type="button"
             onClick={() => setFiltro("todas")}
@@ -608,42 +847,11 @@ export default function GestaoComandas({
             Não pagas
             <span>{quantidadeNaoPagas}</span>
           </button>
-
-          <div
-            style={{
-              marginLeft: "auto",
-            }}
-          >
-            <button
-              type="button"
-              onClick={carregarComandas}
-              disabled={loading}
-              title="Atualizar comandas"
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 7,
-                border: "1px solid #e5e7eb",
-                background: "#fff",
-                color: "#6b7280",
-                cursor: loading ? "not-allowed" : "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                opacity: loading ? 0.6 : 1,
-              }}
-            >
-              <FontAwesomeIcon
-                icon={faRotate}
-                spin={loading}
-                style={{
-                  fontSize: 11,
-                }}
-              />
-            </button>
-          </div>
         </div>
 
+        {/* ============================================================
+            LAYOUT PRINCIPAL
+        ============================================================ */}
         <div
           className="gestao-comandas-layout"
           style={{
@@ -653,6 +861,9 @@ export default function GestaoComandas({
             alignItems: "start",
           }}
         >
+          {/* ==========================================================
+              LISTA DE COMANDAS
+          ========================================================== */}
           <div
             style={{
               background: "#fff",
@@ -697,6 +908,16 @@ export default function GestaoComandas({
               >
                 {comandasFiltradas.length} encontradas
               </span>
+
+              <span
+                style={{
+                  marginLeft: "auto",
+                  fontSize: 10,
+                  color: "#9ca3af",
+                }}
+              >
+                {formatarData(dataFiltro)}
+              </span>
             </div>
 
             <div
@@ -715,7 +936,14 @@ export default function GestaoComandas({
                     fontSize: 12,
                   }}
                 >
-                  Carregando comandas...
+                  <FontAwesomeIcon
+                    icon={faRotate}
+                    spin
+                    style={{
+                      marginRight: 8,
+                    }}
+                  />
+                  Carregando vendas...
                 </div>
               ) : erro ? (
                 <div
@@ -739,7 +967,7 @@ export default function GestaoComandas({
 
                   <button
                     type="button"
-                    onClick={carregarComandas}
+                    onClick={() => carregarComandas(dataFiltro)}
                     style={{
                       marginTop: 10,
                       padding: "7px 12px",
@@ -790,7 +1018,8 @@ export default function GestaoComandas({
                       fontSize: 11,
                     }}
                   >
-                    Não existem comandas para esse filtro.
+                    Não existem comandas para esse filtro em{" "}
+                    {formatarData(dataFiltro)}.
                   </span>
                 </div>
               ) : (
@@ -927,6 +1156,9 @@ export default function GestaoComandas({
             </div>
           </div>
 
+          {/* ==========================================================
+              COMANDAS ABERTAS
+          ========================================================== */}
           <div
             style={{
               background: "#fff",
@@ -1043,16 +1275,32 @@ export default function GestaoComandas({
         </div>
       </div>
 
+      {/* ==============================================================
+          MODAL ABRIR COMANDA
+      ============================================================== */}
       <ModalAbrirComanda
         showModal={mostrarModalAbrirComanda}
         onClose={fecharModalNovaComanda}
         onConfirm={criarComanda}
       />
 
+      {/* ==============================================================
+          RESPONSIVIDADE
+      ============================================================== */}
       <style>
         {`
           * {
             box-sizing: border-box;
+          }
+
+          @media (max-width: 1100px) {
+            .gestao-comandas-header {
+              flex-wrap: wrap;
+            }
+
+            .gestao-data-filtro {
+              margin-left: 0;
+            }
           }
 
           @media (max-width: 900px) {
@@ -1064,6 +1312,23 @@ export default function GestaoComandas({
           @media (max-width: 600px) {
             .gestao-comandas-header {
               align-items: flex-start !important;
+            }
+
+            .gestao-comandas-titulo {
+              width: 100%;
+            }
+
+            .gestao-data-filtro {
+              width: 100%;
+              margin-left: 0;
+            }
+
+            .gestao-data-filtro > div:first-child {
+              flex: 1;
+            }
+
+            .gestao-data-filtro input {
+              width: 100%;
             }
 
             .gestao-comandas-filtros {
@@ -1086,11 +1351,13 @@ const filtroButtonStyle = (
       background: "#ecfdf5",
       color: "#059669",
     },
+
     orange: {
       border: "#fde68a",
       background: "#fffbeb",
       color: "#d97706",
     },
+
     red: {
       border: "#fecaca",
       background: "#fef2f2",

@@ -1,4 +1,5 @@
 // pages/Login.tsx
+
 import React, { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -10,6 +11,34 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 import api from "../api/axios";
+
+interface Tela {
+  id: number;
+  nome: string;
+  slug: string;
+  descricao?: string;
+  ativo: boolean | number;
+}
+
+interface UsuarioApi {
+  id: number;
+  full_name?: string;
+  username?: string;
+  email?: string;
+  contact?: string | null;
+  active?: boolean;
+  is_master?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  telas?: Tela[];
+}
+
+interface MeResponse {
+  user: UsuarioApi;
+  company_id: number | null;
+  tela_ids?: number[];
+  telas?: Tela[];
+}
 
 interface LoginProps {
   onLoginSuccess: (userData: {
@@ -28,14 +57,24 @@ export default function Login({ onLoginSuccess }: LoginProps) {
 
   // Credenciais válidas (hardcoded para teste)
   const validCredentials = [
-    { login: "admin", password: "admin", id: 1, email: "admin@exemplo.com" },
+    {
+      login: "admin",
+      password: "admin",
+      id: 1,
+      email: "admin@exemplo.com",
+    },
     {
       login: "operador",
       password: "123456",
       id: 2,
       email: "operador@exemplo.com",
     },
-    { login: "teste", password: "123456", id: 3, email: "teste@exemplo.com" },
+    {
+      login: "teste",
+      password: "123456",
+      id: 3,
+      email: "teste@exemplo.com",
+    },
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,6 +90,11 @@ export default function Login({ onLoginSuccess }: LoginProps) {
     setLoading(true);
 
     try {
+      /**
+       * ============================================================
+       * 1. LOGIN
+       * ============================================================
+       */
       const response = await api.post("/auth/login", {
         username: login.trim(),
         password: password.trim(),
@@ -58,34 +102,158 @@ export default function Login({ onLoginSuccess }: LoginProps) {
 
       const token = response.data.access_token;
 
+      if (!token) {
+        throw new Error("Token de autenticação não foi retornado.");
+      }
+
+      /**
+       * Salva o token.
+       */
       localStorage.setItem("auth_token", token);
 
       console.log("Login realizado:", response.data);
 
-      // Buscar usuário autenticado pelo token
-      const userResponse = await api.get("/auth/me", {
+      /**
+       * ============================================================
+       * 2. BUSCAR USUÁRIO AUTENTICADO
+       * ============================================================
+       *
+       * A resposta do /auth/me possui:
+       *
+       * {
+       *   user: {...},
+       *   company_id: ...,
+       *   tela_ids: [...],
+       *   telas: [...]
+       * }
+       *
+       * Portanto, o usuário está em:
+       *
+       * userResponse.data.user
+       */
+      const userResponse = await api.get<MeResponse>("/auth/me", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      const user = userResponse.data;
+      const dados: MeResponse = userResponse.data;
 
-      console.log("Usuário autenticado:", user);
+      console.log("Resposta /auth/me:", dados);
 
-      const userData = {
-        id: user.id,
-        login: user.username,
-        email: user.email,
+      /**
+       * Validação da resposta.
+       */
+      if (!dados?.user?.id) {
+        throw new Error("A API /auth/me não retornou um usuário válido.");
+      }
+
+      const usuario = dados.user;
+
+      /**
+       * ============================================================
+       * 3. MONTAR AS TELAS DO USUÁRIO
+       * ============================================================
+       *
+       * Preferimos as telas que vêm dentro de user.telas.
+       *
+       * Caso não existam, usamos dados.telas.
+       */
+      const telasUsuario: Tela[] = Array.isArray(usuario.telas)
+        ? usuario.telas
+        : Array.isArray(dados.telas)
+          ? dados.telas
+          : [];
+
+      /**
+       * IDs das telas.
+       *
+       * Preferimos tela_ids retornado pela API.
+       * Caso não exista, montamos pelos objetos de telas.
+       */
+      const telaIds: number[] = Array.isArray(dados.tela_ids)
+        ? dados.tela_ids
+        : telasUsuario.map((tela) => tela.id);
+
+      /**
+       * ============================================================
+       * 4. USUÁRIO QUE SERÁ GRAVADO NO LOCALSTORAGE
+       * ============================================================
+       *
+       * Aqui salvamos o usuário completo retornado pelo /auth/me.
+       *
+       * Isso é importante porque o Dashboard poderá posteriormente
+       * utilizar:
+       *
+       * localStorage.getItem("user")
+       *
+       * sem precisar chamar /auth/me novamente.
+       */
+      const usuarioParaSalvar = {
+        ...usuario,
+
+        /**
+         * Garantimos que as telas estejam dentro do objeto user.
+         */
+        telas: telasUsuario,
+
+        /**
+         * Também guardamos os IDs para facilitar verificações.
+         */
+        tela_ids: telaIds,
+
+        /**
+         * Mantemos login para compatibilidade com o frontend atual.
+         */
+        login: usuario.username,
       };
 
-      localStorage.setItem("user", JSON.stringify(userData));
+      /**
+       * ============================================================
+       * 5. SALVAR USUÁRIO NO LOCALSTORAGE
+       * ============================================================
+       */
+      localStorage.setItem("user", JSON.stringify(usuarioParaSalvar));
+
+      /**
+       * Log para conferência no navegador.
+       */
+      console.log("Usuário salvo no localStorage:", usuarioParaSalvar);
+
+      /**
+       * ============================================================
+       * 6. DADOS ENVIADOS PARA O COMPONENTE PAI
+       * ============================================================
+       *
+       * Mantemos exatamente o formato que o LoginProps atual
+       * espera.
+       */
+      const userData = {
+        id: usuario.id,
+        login: usuario.username || "",
+        email: usuario.email || "",
+      };
 
       onLoginSuccess(userData);
     } catch (error: any) {
-      console.error(error);
+      console.error("Erro no login:", error);
 
-      setError(error.response?.data?.message ?? "Usuário ou senha inválidos");
+      /**
+       * Se o login falhar, não deixamos usuário antigo no storage.
+       */
+      localStorage.removeItem("user");
+
+      /**
+       * Se o token foi salvo antes de ocorrer um erro no /me,
+       * também removemos o token.
+       */
+      localStorage.removeItem("auth_token");
+
+      setError(
+        error.response?.data?.message ??
+          error.message ??
+          "Usuário ou senha inválidos",
+      );
     } finally {
       setLoading(false);
     }
@@ -284,6 +452,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                 aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
               >
                 <FontAwesomeIcon icon={faUser} style={{ opacity: 0 }} />
+
                 {showPassword ? "Ocultar" : "Mostrar"}
               </button>
             </div>

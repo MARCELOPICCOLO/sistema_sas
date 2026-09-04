@@ -193,7 +193,7 @@ export default function App() {
         <GerenciamentoEquipe setTela={setTela} {...commonProps} />
       )}
 
-      {tela === "gestao_relatorios" && (
+      {tela === "gestao_relatorio" && (
         <GestaoRelatorios setTela={setTela} {...commonProps} />
       )}
     </div>

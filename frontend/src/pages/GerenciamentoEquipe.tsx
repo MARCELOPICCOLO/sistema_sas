@@ -13,6 +13,7 @@ import {
   faBars,
   faCheck,
 } from "@fortawesome/free-solid-svg-icons";
+
 import { SidebarEquipe } from "../../components/SidebarEquipe";
 import TabelaGestaoEquipe from "../../components/TabelaGestaoEquipe";
 import { ModalUsuario } from "../../components/ModalUsuario";
@@ -35,6 +36,27 @@ export interface Usuario {
   active: boolean;
   role: "MASTER" | "ADMIN" | "USER";
   created_at?: string;
+  tela_ids?: number[];
+}
+
+export interface Tela {
+  id: number;
+  nome: string;
+  slug: string;
+  descricao?: string;
+  icone?: string;
+  rota?: string;
+  ordem?: number;
+  ativo: boolean;
+}
+
+export interface FormularioUsuario {
+  full_name: string;
+  username: string;
+  email: string;
+  contact: string;
+  password: string;
+  role: "ADMIN" | "USER";
 }
 
 interface GerenciamentoEquipeProps {
@@ -78,7 +100,9 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
+
     window.addEventListener("resize", handleResize);
+
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
@@ -100,14 +124,24 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
     message: string,
     type: "success" | "error" = "success",
   ) => {
-    setToast({ show: true, message, type });
+    setToast({
+      show: true,
+      message,
+      type,
+    });
+
     setTimeout(() => {
-      setToast({ show: false, message: "", type: "success" });
+      setToast({
+        show: false,
+        message: "",
+        type: "success",
+      });
     }, 900);
   };
 
   const ToastComponent = () => {
     if (!toast.show) return null;
+
     return (
       <div
         style={{
@@ -129,7 +163,9 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
         }}
       >
         <FontAwesomeIcon icon={faCheck} style={{ marginRight: 8 }} />
+
         {toast.message}
+
         <style>
           {`
             @keyframes slideDown {
@@ -137,6 +173,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
                 transform: translateX(-50%) translateY(-20px);
                 opacity: 0;
               }
+
               to {
                 transform: translateX(-50%) translateY(0);
                 opacity: 1;
@@ -153,20 +190,40 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
   // =========================================================
 
   const [busca, setBusca] = useState("");
+
   const [filtroRole, setFiltroRole] = useState<
     "TODOS" | "MASTER" | "ADMIN" | "USER"
   >("TODOS");
 
   const [usuariosLista, setUsuariosLista] = useState<Usuario[]>(usuarios);
+
   const [carregandoUsuarios, setCarregandoUsuarios] = useState(false);
+
+  // =========================================================
+  // TELAS DO SISTEMA
+  // =========================================================
+
+  const [telas, setTelas] = useState<Tela[]>([]);
+  const [carregandoTelas, setCarregandoTelas] = useState(false);
+
+  /**
+   * IDs das telas selecionadas para o usuário.
+   *
+   * Nesta etapa essas informações ficam somente no frontend.
+   * Ainda não são enviadas para a API.
+   */
+  const [telasSelecionadas, setTelasSelecionadas] = useState<number[]>([]);
 
   // =========================================================
   // MODAL USUÁRIO
   // =========================================================
 
   const [modalNovoUsuario, setModalNovoUsuario] = useState(false);
+
   const [usuarioEditando, setUsuarioEditando] = useState<Usuario | null>(null);
+
   const [salvandoUsuario, setSalvandoUsuario] = useState(false);
+
   const [formularioUsuario, setFormularioUsuario] =
     useState<FormularioUsuario>(formularioInicial);
 
@@ -177,6 +234,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
   const [modalToggleStatus, setModalToggleStatus] = useState<Usuario | null>(
     null,
   );
+
   const [togglingStatus, setTogglingStatus] = useState(false);
 
   // =========================================================
@@ -186,6 +244,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
   const carregarUsuarios = async () => {
     try {
       setCarregandoUsuarios(true);
+
       const token = localStorage.getItem("auth_token");
 
       if (!token) {
@@ -205,10 +264,12 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
 
       if (!response.ok) {
         console.error("Erro ao carregar usuários:", dados);
+
         showToast(
           dados?.message || "Não foi possível carregar os colaboradores.",
           "error",
         );
+
         return;
       }
 
@@ -216,20 +277,99 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
         ? dados
         : Array.isArray(dados?.users)
           ? dados.users
-          : [];
+          : Array.isArray(dados?.data)
+            ? dados.data
+            : [];
 
       setUsuariosLista(listaUsuarios);
     } catch (erro) {
-      console.error("Erro na requisição:", erro);
+      console.error("Erro na requisição de usuários:", erro);
+
       showToast("Não foi possível conectar ao servidor.", "error");
     } finally {
       setCarregandoUsuarios(false);
     }
   };
 
+  // =========================================================
+  // CARREGAR TELAS
+  // =========================================================
+
+  const carregarTelas = async () => {
+    try {
+      setCarregandoTelas(true);
+
+      const token = localStorage.getItem("auth_token");
+
+      if (!token) {
+        showToast("Sessão expirada. Faça login novamente.", "error");
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/telas`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const dados = await response.json();
+
+      if (!response.ok) {
+        console.error("Erro ao carregar telas:", dados);
+
+        showToast(
+          dados?.message || "Não foi possível carregar as telas do sistema.",
+          "error",
+        );
+
+        return;
+      }
+
+      /**
+       * A controller pode retornar:
+       *
+       * [
+       *   {...},
+       *   {...}
+       * ]
+       *
+       * ou:
+       *
+       * {
+       *   success: true,
+       *   data: [...]
+       * }
+       */
+      const listaTelas = Array.isArray(dados)
+        ? dados
+        : Array.isArray(dados?.data)
+          ? dados.data
+          : [];
+
+      setTelas(listaTelas);
+    } catch (erro) {
+      console.error("Erro na requisição de telas:", erro);
+
+      showToast("Não foi possível carregar as telas do sistema.", "error");
+    } finally {
+      setCarregandoTelas(false);
+    }
+  };
+
+  // =========================================================
+  // CARREGAMENTO INICIAL
+  // =========================================================
+
   useEffect(() => {
     carregarUsuarios();
+    carregarTelas();
   }, []);
+
+  // =========================================================
+  // SINCRONIZAR USUÁRIOS RECEBIDOS VIA PROPS
+  // =========================================================
 
   useEffect(() => {
     if (usuarios.length > 0) {
@@ -243,6 +383,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
 
   const usuariosFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
+
     return usuariosLista.filter((usuario) => {
       const correspondeBusca =
         !termo ||
@@ -272,13 +413,36 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
   };
 
   // =========================================================
+  // TOGGLE DE TELAS
+  // =========================================================
+
+  const toggleTelaSelecionada = (telaId: number) => {
+    setTelasSelecionadas((anterior) => {
+      if (anterior.includes(telaId)) {
+        return anterior.filter((id) => id !== telaId);
+      }
+
+      return [...anterior, telaId];
+    });
+  };
+
+  // =========================================================
   // LIMPAR FORMULÁRIO
   // =========================================================
 
   const limparFormularioUsuario = () => {
-    setFormularioUsuario({ ...formularioInicial });
+    setFormularioUsuario({
+      ...formularioInicial,
+    });
+
     setUsuarioEditando(null);
+
     setSalvandoUsuario(false);
+
+    /**
+     * Nesta etapa também limpamos as telas selecionadas.
+     */
+    setTelasSelecionadas([]);
   };
 
   // =========================================================
@@ -287,6 +451,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
 
   const abrirModalNovoUsuario = () => {
     limparFormularioUsuario();
+
     setModalNovoUsuario(true);
   };
 
@@ -296,6 +461,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
 
   const abrirModalEditarUsuario = (usuario: Usuario) => {
     setUsuarioEditando(usuario);
+
     setFormularioUsuario({
       full_name: usuario.full_name || "",
       username: usuario.username || "",
@@ -304,7 +470,12 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
       password: "",
       role: usuario.role === "ADMIN" ? "ADMIN" : "USER",
     });
+
+    // Carrega as permissões já vinculadas ao usuário.
+    setTelasSelecionadas(usuario.tela_ids ?? []);
+
     setModalNovoUsuario(true);
+
     onEditarUsuario?.(usuario);
   };
 
@@ -314,6 +485,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
 
   const fecharModalUsuario = () => {
     limparFormularioUsuario();
+
     setModalNovoUsuario(false);
   };
 
@@ -321,7 +493,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
   // CADASTRAR
   // =========================================================
 
-  const salvarNovoUsuario = async () => {
+  const salvarNovoUsuario = async (telasIds: number[]) => {
     const token = localStorage.getItem("auth_token");
 
     if (!token) {
@@ -339,11 +511,17 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
         },
         body: JSON.stringify({
           full_name: formularioUsuario.full_name,
+
           username: formularioUsuario.username,
+
           email: formularioUsuario.email,
+
           contact: formularioUsuario.contact,
+
           password: formularioUsuario.password,
+
           role: formularioUsuario.role,
+          telas: telasIds,
         }),
       });
 
@@ -351,18 +529,23 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
 
       if (!response.ok) {
         console.error("Erro ao cadastrar usuário:", dados);
+
         showToast(
           dados?.message || "Não foi possível cadastrar o colaborador.",
           "error",
         );
+
         return;
       }
 
       showToast("Colaborador cadastrado com sucesso!", "success");
+
       await carregarUsuarios();
+
       fecharModalUsuario();
     } catch (erro) {
       console.error("Erro na requisição:", erro);
+
       showToast("Não foi possível conectar ao servidor.", "error");
     }
   };
@@ -371,7 +554,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
   // ATUALIZAR
   // =========================================================
 
-  const atualizarUsuario = async () => {
+  const atualizarUsuario = async (telasIds: number[]) => {
     if (!usuarioEditando) return;
 
     const token = localStorage.getItem("auth_token");
@@ -381,12 +564,17 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
       return;
     }
 
-    const corpo: Record<string, string> = {
+    const corpo: Record<string, unknown> = {
       full_name: formularioUsuario.full_name,
+
       username: formularioUsuario.username,
+
       email: formularioUsuario.email,
+
       contact: formularioUsuario.contact,
+
       role: formularioUsuario.role,
+      telas: telasIds,
     };
 
     if (formularioUsuario.password.trim() !== "") {
@@ -398,7 +586,9 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+
           Accept: "application/json",
+
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(corpo),
@@ -408,18 +598,23 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
 
       if (!response.ok) {
         console.error("Erro ao atualizar usuário:", dados);
+
         showToast(
           dados?.message || "Não foi possível atualizar o colaborador.",
           "error",
         );
+
         return;
       }
 
       showToast("Colaborador atualizado com sucesso!", "success");
+
       await carregarUsuarios();
+
       fecharModalUsuario();
     } catch (erro) {
       console.error("Erro na requisição:", erro);
+
       showToast("Não foi possível conectar ao servidor.", "error");
     }
   };
@@ -428,17 +623,22 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
   // SALVAR FORMULÁRIO
   // =========================================================
 
-  const salvarUsuario = async (e: React.FormEvent) => {
+  const salvarUsuario = async (e: React.FormEvent, telasIds: number[]) => {
     e.preventDefault();
+
     try {
       setSalvandoUsuario(true);
+
+      console.log("TELAS RECEBIDAS:", telasIds);
+
       if (usuarioEditando) {
-        await atualizarUsuario();
+        await atualizarUsuario(telasIds);
       } else {
-        await salvarNovoUsuario();
+        await salvarNovoUsuario(telasIds);
       }
     } catch (erro) {
       console.error("Erro na requisição:", erro);
+
       showToast("Não foi possível conectar ao servidor.", "error");
     } finally {
       setSalvandoUsuario(false);
@@ -455,6 +655,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
 
   const fecharModalToggleStatus = () => {
     if (togglingStatus) return;
+
     setModalToggleStatus(null);
   };
 
@@ -470,7 +671,9 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
 
     try {
       setTogglingStatus(true);
+
       const acao = modalToggleStatus.active ? "desativar" : "ativar";
+
       const endpoint = `${API_URL}/partner-company-users/${modalToggleStatus.id}/deactivate`;
 
       const response = await fetch(endpoint, {
@@ -485,22 +688,28 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
 
       if (!response.ok) {
         console.error(`Erro ao ${acao} usuário:`, dados);
+
         showToast(
           dados?.message || `Não foi possível ${acao} o colaborador.`,
           "error",
         );
+
         return;
       }
 
       showToast(
-        `Colaborador ${modalToggleStatus.active ? "desativado" : "ativado"} com sucesso!`,
+        `Colaborador ${
+          modalToggleStatus.active ? "desativado" : "ativado"
+        } com sucesso!`,
         "success",
       );
 
       await carregarUsuarios();
+
       fecharModalToggleStatus();
     } catch (erro) {
       console.error("Erro na requisição:", erro);
+
       showToast("Não foi possível conectar ao servidor.", "error");
     } finally {
       setTogglingStatus(false);
@@ -538,6 +747,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
           }}
         >
           {/* CABEÇALHO */}
+
           <div
             style={{
               padding: "20px 22px",
@@ -570,6 +780,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
                   icon={modalToggleStatus.active ? faUserSlash : faUserCheck}
                 />
               </div>
+
               <div>
                 <h2
                   style={{
@@ -582,6 +793,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
                   {modalToggleStatus.active ? "Desativar" : "Ativar"}{" "}
                   colaborador
                 </h2>
+
                 <p
                   style={{
                     margin: "3px 0 0",
@@ -593,6 +805,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
                 </p>
               </div>
             </div>
+
             <button
               type="button"
               onClick={fecharModalToggleStatus}
@@ -616,7 +829,12 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
           </div>
 
           {/* CONTEÚDO */}
-          <div style={{ padding: 22 }}>
+
+          <div
+            style={{
+              padding: 22,
+            }}
+          >
             <div
               style={{
                 padding: "12px 14px",
@@ -635,7 +853,8 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
               <strong>
                 {modalToggleStatus.active ? "desativar" : "ativar"}
               </strong>{" "}
-              o colaborador <strong>{modalToggleStatus.full_name}</strong>.
+              o colaborador <strong>{modalToggleStatus.full_name}</strong>
+              .
               <br />
               {modalToggleStatus.active
                 ? "O usuário perderá o acesso à sua empresa, mas não será excluído do sistema."
@@ -651,6 +870,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
               >
                 Usuário
               </div>
+
               <div
                 style={{
                   marginTop: 4,
@@ -661,6 +881,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
               >
                 {modalToggleStatus.full_name}
               </div>
+
               <div
                 style={{
                   marginTop: 3,
@@ -674,6 +895,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
           </div>
 
           {/* RODAPÉ */}
+
           <div
             style={{
               padding: "16px 22px",
@@ -702,6 +924,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
             >
               Cancelar
             </button>
+
             <button
               type="button"
               onClick={toggleUsuarioStatus}
@@ -721,8 +944,11 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
             >
               <FontAwesomeIcon
                 icon={modalToggleStatus.active ? faUserSlash : faUserCheck}
-                style={{ marginRight: 7 }}
+                style={{
+                  marginRight: 7,
+                }}
               />
+
               {togglingStatus
                 ? "Processando..."
                 : modalToggleStatus.active
@@ -743,6 +969,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
     return (
       <>
         <ToastComponent />
+
         <div
           style={{
             display: "grid",
@@ -770,7 +997,9 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
               }}
             >
               <CabecalhoEquipe />
+
               <ResumoEquipe usuarios={usuariosLista} />
+
               <FiltrosEquipe
                 busca={busca}
                 onBuscaChange={setBusca}
@@ -778,6 +1007,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
                 onFiltroRoleChange={setFiltroRole}
                 isMobile={isMobile}
               />
+
               <TabelaGestaoEquipe
                 usuarios={usuariosFiltrados}
                 carregando={carregandoUsuarios}
@@ -786,6 +1016,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
                 onEditar={abrirModalEditarUsuario}
                 onAlterarStatus={abrirModalToggleStatus}
               />
+
               <div
                 style={{
                   marginTop: 10,
@@ -810,6 +1041,11 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
           onClose={fecharModalUsuario}
           onSubmit={salvarUsuario}
           onCampoChange={alterarCampoUsuario}
+          /* TELAS */
+          telas={telas}
+          telasSelecionadas={telasSelecionadas}
+          carregandoTelas={carregandoTelas}
+          onToggleTela={toggleTelaSelecionada}
         />
 
         {renderModalStatus()}
@@ -824,6 +1060,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
   return (
     <>
       <ToastComponent />
+
       <div
         style={{
           background: "#f8fafc",
@@ -843,7 +1080,13 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
             marginBottom: 16,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+            }}
+          >
             <div
               style={{
                 width: 36,
@@ -857,9 +1100,13 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
             >
               <FontAwesomeIcon
                 icon={faUsers}
-                style={{ fontSize: 18, color: "#10b981" }}
+                style={{
+                  fontSize: 18,
+                  color: "#10b981",
+                }}
               />
             </div>
+
             <h1
               style={{
                 margin: 0,
@@ -871,6 +1118,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
               Gerenciamento de equipe
             </h1>
           </div>
+
           <button
             onClick={() => setShowMobileMenu(true)}
             style={{
@@ -900,6 +1148,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
               }}
               onClick={() => setShowMobileMenu(false)}
             />
+
             <div
               style={{
                 position: "fixed",
@@ -934,9 +1183,11 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
                   <FontAwesomeIcon icon={faTimes} />
                 </button>
               </div>
+
               <button
                 onClick={() => {
                   abrirModalNovoUsuario();
+
                   setShowMobileMenu(false);
                 }}
                 style={{
@@ -953,13 +1204,16 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
                   marginBottom: 12,
                 }}
               >
-                <FontAwesomeIcon icon={faPlus} /> <span>Novo colaborador</span>
+                <FontAwesomeIcon icon={faPlus} />
+
+                <span>Novo colaborador</span>
               </button>
             </div>
           </>
         )}
 
         <ResumoEquipe usuarios={usuariosLista} />
+
         <FiltrosEquipe
           busca={busca}
           onBuscaChange={setBusca}
@@ -967,6 +1221,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
           onFiltroRoleChange={setFiltroRole}
           isMobile={isMobile}
         />
+
         <TabelaGestaoEquipe
           usuarios={usuariosFiltrados}
           carregando={carregandoUsuarios}
@@ -975,6 +1230,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
           onEditar={abrirModalEditarUsuario}
           onAlterarStatus={abrirModalToggleStatus}
         />
+
         <div
           style={{
             marginTop: 10,
@@ -997,6 +1253,11 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
           onClose={fecharModalUsuario}
           onSubmit={salvarUsuario}
           onCampoChange={alterarCampoUsuario}
+          /* TELAS */
+          telas={telas}
+          telasSelecionadas={telasSelecionadas}
+          carregandoTelas={carregandoTelas}
+          onToggleTela={toggleTelaSelecionada}
         />
 
         {renderModalStatus()}
