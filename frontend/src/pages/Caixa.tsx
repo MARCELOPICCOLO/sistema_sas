@@ -51,9 +51,9 @@ interface Order {
 interface DailySummary {
   date: string;
   total_vendas: number;
-  total_entradas: number | string;
-  total_saidas: number | string;
-  saldo: number | string;
+  total_entradas: number;
+  total_saidas: number;
+  saldo: number;
 }
 
 interface CaixaProps {
@@ -177,23 +177,6 @@ export default function Caixa({ setTela }: CaixaProps) {
     return token;
   };
 
-  const getAuthHeaders = (json = false): HeadersInit => {
-    const token = getToken();
-
-    const headers: HeadersInit = {
-      Accept: "application/json",
-    };
-
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-
-    if (json) {
-      headers["Content-Type"] = "application/json";
-    }
-
-    return headers;
-  };
 
   // =========================================================
   // RESPONSIVIDADE
@@ -311,9 +294,17 @@ export default function Caixa({ setTela }: CaixaProps) {
 
       const responseData = await response.json();
 
-      const resumo: DailySummary[] = Array.isArray(responseData)
+      const lista: DailySummary[] = Array.isArray(responseData)
         ? responseData
         : responseData.data || [];
+
+      const resumo: DailySummary[] = lista.map((dia) => ({
+        date: dia.date,
+        total_vendas: Number(dia.total_vendas) || 0,
+        total_entradas: Number(dia.total_entradas) || 0,
+        total_saidas: Number(dia.total_saidas) || 0,
+        saldo: Number(dia.saldo) || 0,
+      }));
 
       setResumoDiario(resumo);
 
@@ -396,9 +387,8 @@ export default function Caixa({ setTela }: CaixaProps) {
         : expensesResponseData.data || [];
 
       const entradas: Transaction[] = orders
-        .filter(
-          (order) => order.status === "fechado" || order.status === "pendente",
-        )
+        // Somente vendas pagas entram no caixa (igual ao resumo diário).
+        .filter((order) => order.status === "fechado")
         .map((order) => ({
           id: order.id,
 
@@ -826,8 +816,8 @@ export default function Caixa({ setTela }: CaixaProps) {
       const parts = cleanDate.split("/");
 
       if (parts.length === 3) {
-        let day = parts[0].padStart(2, "0");
-        let month = parts[1].padStart(2, "0");
+        const day = parts[0].padStart(2, "0");
+        const month = parts[1].padStart(2, "0");
         let year = parts[2];
 
         if (year.length === 2) {
@@ -1171,7 +1161,7 @@ export default function Caixa({ setTela }: CaixaProps) {
 
       let idxData = cabecalho.findIndex((h) => h === "data" || h === "date");
 
-      let idxCliente = cabecalho.findIndex(
+      const idxCliente = cabecalho.findIndex(
         (h) => h === "cliente" || h === "customer" || h === "customer_name",
       );
 
@@ -1179,7 +1169,7 @@ export default function Caixa({ setTela }: CaixaProps) {
         (h) => h === "valor" || h === "amount" || h === "total",
       );
 
-      let idxPagamento = cabecalho.findIndex(
+      const idxPagamento = cabecalho.findIndex(
         (h) => h === "pagamento" || h === "payment" || h === "payment_method",
       );
 
@@ -1254,7 +1244,7 @@ export default function Caixa({ setTela }: CaixaProps) {
 
       let idxData = cabecalho.findIndex((h) => h === "data" || h === "date");
 
-      let idxCliente = cabecalho.findIndex(
+      const idxCliente = cabecalho.findIndex(
         (h) => h === "cliente" || h === "customer" || h === "customer_name",
       );
 
@@ -1262,7 +1252,7 @@ export default function Caixa({ setTela }: CaixaProps) {
         (h) => h === "valor" || h === "amount" || h === "total",
       );
 
-      let idxPagamento = cabecalho.findIndex(
+      const idxPagamento = cabecalho.findIndex(
         (h) => h === "pagamento" || h === "payment" || h === "payment_method",
       );
 
@@ -1549,7 +1539,7 @@ export default function Caixa({ setTela }: CaixaProps) {
           display: "grid",
           gridTemplateColumns: "280px 1fr",
           height: "100%",
-          background: "#f8fafc",
+          background: "var(--surface-2)",
         }}
       >
         <SidebarCaixa
@@ -1565,7 +1555,7 @@ export default function Caixa({ setTela }: CaixaProps) {
             padding: "20px",
             overflowY: "auto",
             height: "100vh",
-            background: "#f8fafc",
+            background: "var(--bg)",
           }}
         >
           <HeaderCaixa
@@ -1616,7 +1606,7 @@ export default function Caixa({ setTela }: CaixaProps) {
   return (
     <div
       style={{
-        background: "#f8fafc",
+        background: "var(--bg)",
         minHeight: "100vh",
       }}
     >
@@ -1625,11 +1615,11 @@ export default function Caixa({ setTela }: CaixaProps) {
       <div
         style={{
           padding: "16px",
-          background: "#ffffff",
+          background: "var(--surface)",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          borderBottom: "1px solid #e5e7eb",
+          borderBottom: "1px solid var(--border)",
         }}
       >
         <div
@@ -1643,8 +1633,8 @@ export default function Caixa({ setTela }: CaixaProps) {
             style={{
               width: 36,
               height: 36,
-              background: "#f3f4f6",
-              borderRadius: 8,
+              background: "var(--surface-3)",
+              borderRadius: 10,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -1655,7 +1645,7 @@ export default function Caixa({ setTela }: CaixaProps) {
               icon={faWallet}
               style={{
                 fontSize: 18,
-                color: "#16a34a",
+                color: "var(--primary)",
               }}
             />
           </div>
@@ -1665,7 +1655,7 @@ export default function Caixa({ setTela }: CaixaProps) {
               margin: 0,
               fontSize: 18,
               fontWeight: 600,
-              color: "#111827",
+              color: "var(--text)",
             }}
           >
             Caixa
@@ -1675,12 +1665,13 @@ export default function Caixa({ setTela }: CaixaProps) {
         <button
           onClick={() => setShowMobileMenu(true)}
           style={{
-            background: "#ffffff",
-            border: "1px solid #e5e7eb",
-            borderRadius: 8,
+            background: "var(--surface)",
+            border: "1px solid var(--border)",
+            borderRadius: 10,
             padding: "8px 12px",
             cursor: "pointer",
-            color: "#374151",
+            color: "var(--text-secondary)",
+            boxShadow: "var(--shadow-card)",
           }}
         >
           <FontAwesomeIcon icon={faBars} />
@@ -1702,16 +1693,17 @@ export default function Caixa({ setTela }: CaixaProps) {
             gap: 8,
             width: "100%",
             padding: "10px 16px",
-            background: "#ffffff",
-            border: "1px solid #e5e7eb",
-            borderRadius: 8,
+            background: "var(--surface)",
+            border: "1px solid var(--border)",
+            borderRadius: 10,
             cursor: "pointer",
-            color: "#374151",
+            color: "var(--text-secondary)",
             fontSize: 14,
+            boxShadow: "var(--shadow-card)",
           }}
         >
           <FontAwesomeIcon icon={faArrowLeft} />
-          Voltar ao Dashboard
+          Voltar ao início
         </button>
       </div>
 
@@ -1726,20 +1718,21 @@ export default function Caixa({ setTela }: CaixaProps) {
               left: 0,
               right: 0,
               bottom: 0,
-              background: "rgba(0,0,0,0.35)",
+              background: "var(--overlay)",
               zIndex: 1000,
             }}
             onClick={() => setShowMobileMenu(false)}
           />
 
           <div
+            className="sidebar-dark"
             style={{
               position: "fixed",
               top: 0,
               left: 0,
               bottom: 0,
               width: "280px",
-              background: "#ffffff",
+              background: "var(--surface)",
               zIndex: 1001,
               padding: "20px",
               overflowY: "auto",
@@ -1760,7 +1753,7 @@ export default function Caixa({ setTela }: CaixaProps) {
                   border: "none",
                   fontSize: 20,
                   cursor: "pointer",
-                  color: "#333",
+                  color: "var(--text)",
                 }}
               >
                 <FontAwesomeIcon icon={faTimes} />
@@ -1782,9 +1775,9 @@ export default function Caixa({ setTela }: CaixaProps) {
                 padding: "12px 16px",
                 background: "transparent",
                 border: "none",
-                borderRadius: 8,
+                borderRadius: 10,
                 cursor: "pointer",
-                color: "#374151",
+                color: "var(--text-secondary)",
                 marginBottom: 12,
                 textAlign: "left",
               }}
@@ -1793,8 +1786,8 @@ export default function Caixa({ setTela }: CaixaProps) {
                 style={{
                   width: 32,
                   height: 32,
-                  background: "#f3f4f6",
-                  borderRadius: 8,
+                  background: "var(--surface-3)",
+                  borderRadius: 10,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -1821,9 +1814,9 @@ export default function Caixa({ setTela }: CaixaProps) {
                 padding: "12px 16px",
                 background: "transparent",
                 border: "none",
-                borderRadius: 8,
+                borderRadius: 10,
                 cursor: "pointer",
-                color: "#374151",
+                color: "var(--text-secondary)",
                 marginBottom: 12,
                 textAlign: "left",
               }}
@@ -1832,8 +1825,8 @@ export default function Caixa({ setTela }: CaixaProps) {
                 style={{
                   width: 32,
                   height: 32,
-                  background: "#f3f4f6",
-                  borderRadius: 8,
+                  background: "var(--surface-3)",
+                  borderRadius: 10,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -1860,9 +1853,9 @@ export default function Caixa({ setTela }: CaixaProps) {
                 padding: "12px 16px",
                 background: "transparent",
                 border: "none",
-                borderRadius: 8,
+                borderRadius: 10,
                 cursor: "pointer",
-                color: "#374151",
+                color: "var(--text-secondary)",
                 marginBottom: 12,
                 textAlign: "left",
               }}
@@ -1871,8 +1864,8 @@ export default function Caixa({ setTela }: CaixaProps) {
                 style={{
                   width: 32,
                   height: 32,
-                  background: "#f3f4f6",
-                  borderRadius: 8,
+                  background: "var(--surface-3)",
+                  borderRadius: 10,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -1899,9 +1892,9 @@ export default function Caixa({ setTela }: CaixaProps) {
                 padding: "12px 16px",
                 background: "transparent",
                 border: "none",
-                borderRadius: 8,
+                borderRadius: 10,
                 cursor: "pointer",
-                color: "#374151",
+                color: "var(--text-secondary)",
                 textAlign: "left",
               }}
             >
@@ -1909,8 +1902,8 @@ export default function Caixa({ setTela }: CaixaProps) {
                 style={{
                   width: 32,
                   height: 32,
-                  background: "#f3f4f6",
-                  borderRadius: 8,
+                  background: "var(--surface-3)",
+                  borderRadius: 10,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",

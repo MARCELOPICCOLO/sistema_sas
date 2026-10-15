@@ -1,5 +1,4 @@
 <?php
-// app/Models/OrderItem.php
 
 namespace App\Models;
 
@@ -12,11 +11,12 @@ class OrderItem extends Model
         'product_id',
         'quantity',
         'price',
+        'note',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
-        'quantity' => 'integer'
+        'quantity' => 'integer',
     ];
 
     public function product()

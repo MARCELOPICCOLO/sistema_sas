@@ -1,6 +1,6 @@
 // components/ResumoEquipe.tsx
 
-import { Usuario } from "../pages/GerenciamentoEquipe";
+import type { Usuario } from "../src/pages/GerenciamentoEquipe";
 
 interface ResumoEquipeProps {
   usuarios: Usuario[];
@@ -32,7 +32,7 @@ export function ResumoEquipe({ usuarios }: ResumoEquipeProps) {
         <div
           style={{
             ...valueStyle,
-            color: "#059669",
+            color: "var(--primary)",
           }}
         >
           {ativos}
@@ -52,20 +52,20 @@ export function ResumoEquipe({ usuarios }: ResumoEquipeProps) {
 // =========================================================
 
 const cardStyle: React.CSSProperties = {
-  background: "#ffffff",
-  border: "1px solid #e5e7eb",
-  borderRadius: 10,
+  background: "var(--surface)",
+  border: "1px solid var(--border)",
+  borderRadius: 12,
   padding: "16px 18px",
 };
 
 const labelStyle: React.CSSProperties = {
   fontSize: 12,
-  color: "#6b7280",
+  color: "var(--text-muted)",
   marginBottom: 6,
 };
 
 const valueStyle: React.CSSProperties = {
   fontSize: 22,
   fontWeight: 600,
-  color: "#111827",
+  color: "var(--text)",
 };

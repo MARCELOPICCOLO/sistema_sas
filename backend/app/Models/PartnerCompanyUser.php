@@ -2,13 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class PartnerCompanyUser extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'partner_company_id',
         'user_id',
@@ -20,15 +17,13 @@ class PartnerCompanyUser extends Model
         'active' => 'boolean',
     ];
 
-    public function users()
+    public function user()
     {
-        return $this->belongsToMany(
-            User::class,
-            'partner_company_users',
-            'partner_company_id',
-            'user_id'
-        )
-            ->withPivot('role', 'active')
-            ->withTimestamps();
+        return $this->belongsTo(User::class);
+    }
+
+    public function company()
+    {
+        return $this->belongsTo(PartnerCompany::class, 'partner_company_id');
     }
 }

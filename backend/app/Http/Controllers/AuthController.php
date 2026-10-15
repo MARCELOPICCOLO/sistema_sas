@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\CurrentCompany;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class AuthController extends Controller
 {
@@ -13,61 +13,59 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-
         $credentials = $request->validate([
-            'username' => 'required|string',
-            'password' => 'required|string',
+            'username' => 'required|string|max:255',
+            'password' => 'required|string|max:255',
         ]);
 
-        if (!$token = Auth::guard('api')->attempt($credentials)) {
+        $guard = Auth::guard('api');
+
+        if (!$token = $guard->attempt($credentials)) {
             return response()->json([
                 'message' => 'Usuário ou senha inválidos.'
             ], 401);
         }
 
+        $user = $guard->user();
+
+        // Usuário desativado ou sem vínculo ativo com nenhuma empresa não entra.
+        if (!$user->active || (!CurrentCompany::id() && !$user->is_master)) {
+            $guard->logout();
+
+            return response()->json([
+                'message' => 'Usuário inativo ou sem empresa ativa. Contate o administrador.'
+            ], 403);
+        }
+
         return $this->respondWithToken($token);
     }
-    /**
-     * Retorna o usuário autenticado.
-     */
 
+    /**
+     * Retorna o usuário autenticado, a empresa ativa e as telas liberadas.
+     */
     public function me()
     {
         $user = Auth::guard('api')->user();
 
-        if (!$user) {
-            return response()->json([
-                'message' => 'Usuário não autenticado.'
-            ], 401);
-        }
-
-        $company = DB::table('partner_company_users')
-            ->where('user_id', $user->id)
-            ->where('active', true)
-            ->first();
-
-        // Carrega as telas liberadas para o usuário
-        $user->load([
-            'telas:id,nome,slug,descricao,ativo'
-        ]);
+        $telas = $user->allowedTelas();
 
         return response()->json([
-            'user' => $user,
-
-            'company_id' => $company?->partner_company_id,
-
-            // IDs das telas liberadas
-            'tela_ids' => $user->telas
-                ->pluck('id')
-                ->values()
-                ->toArray(),
-
-            // Dados completos das telas
-            'telas' => $user->telas,
+            'user' => [
+                'id' => $user->id,
+                'full_name' => $user->full_name,
+                'username' => $user->username,
+                'email' => $user->email,
+                'contact' => $user->contact,
+                'active' => $user->active,
+                'is_master' => $user->is_master,
+                'role' => CurrentCompany::role(),
+            ],
+            'company_id' => CurrentCompany::id(),
+            'company' => CurrentCompany::company()?->only(['id', 'corporate_name', 'trade_name']),
+            'tela_ids' => $telas->pluck('id')->values(),
+            'telas' => $telas,
         ]);
     }
-
-
 
     /**
      * Renova o token.
@@ -80,7 +78,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Efetua logout.
+     * Efetua logout (invalida o token atual).
      */
     public function logout()
     {
@@ -91,9 +89,6 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Retorna o token em formato padrão.
-     */
     protected function respondWithToken(string $token)
     {
         return response()->json([

@@ -3,231 +3,81 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use App\Services\CurrentCompany;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class CategoryController extends Controller
 {
-    // 📋 LISTAR CATEGORIAS
-    public function index(Request $request)
+    private function findCategory($id): Category
     {
-        try {
-
-            $user = Auth::guard('api')->user();
-
-            if (!$user) {
-                return response()->json([
-                    'message' => 'Usuário não autenticado'
-                ], 401);
-            }
-
-            // Recupera a empresa ativa do usuário
-            $partnerCompanyId = CurrentCompany::id();
-
-
-            if (!$partnerCompanyId) {
-                return response()->json([
-                    'message' => 'Usuário não está vinculado a nenhuma empresa.'
-                ], 403);
-            }
-
-            $categories = Category::where('partner_company_id', $partnerCompanyId)
-                ->orderBy('name')
-                ->get();
-
-            return response()->json($categories);
-        } catch (\Exception $e) {
-
-            Log::error($e);
-
-            return response()->json([
-                'message' => 'Erro ao buscar categorias',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return Category::where('partner_company_id', CurrentCompany::id())->findOrFail($id);
     }
 
-    // ➕ CRIAR CATEGORIA
+    private function uniqueNameRule(?int $ignoreId = null)
+    {
+        return Rule::unique('categories', 'name')
+            ->where('partner_company_id', CurrentCompany::id())
+            ->ignore($ignoreId);
+    }
+
+    public function index()
+    {
+        $categories = Category::where('partner_company_id', CurrentCompany::id())
+            ->withCount('products')
+            ->orderBy('name')
+            ->get();
+
+        return response()->json($categories);
+    }
+
     public function store(Request $request)
     {
-        try {
+        $data = $request->validate([
+            'name'   => ['required', 'string', 'max:255', $this->uniqueNameRule()],
+            'active' => 'sometimes|boolean',
+        ]);
 
-            $user = Auth::guard('api')->user();
+        $category = Category::create([
+            'partner_company_id' => CurrentCompany::id(),
+            'name'               => trim($data['name']),
+            'active'             => $data['active'] ?? true,
+        ]);
 
-            if (!$user) {
-                return response()->json([
-                    'message' => 'Usuário não autenticado'
-                ], 401);
-            }
-
-            $partnerCompanyId = CurrentCompany::id();
-
-            if (!$partnerCompanyId) {
-                return response()->json([
-                    'message' => 'Usuário não está vinculado a nenhuma empresa.'
-                ], 403);
-            }
-
-            $data = $request->validate([
-                'name' => 'required|string|max:255',
-            ]);
-
-            $data['partner_company_id'] = $partnerCompanyId;
-
-
-            $category = Category::create($data);
-
-            return response()->json($category, 201);
-        } catch (\Exception $e) {
-
-            Log::error($e);
-
-            return response()->json([
-                'message' => 'Erro ao criar categoria',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json($category, 201);
     }
 
-    // 🔍 MOSTRAR CATEGORIA
     public function show($id)
     {
-        try {
-
-            $user = Auth::guard('api')->user();
-
-            if (!$user) {
-                return response()->json([
-                    'message' => 'Usuário não autenticado'
-                ], 401);
-            }
-
-            $category = Category::with('products')
-                ->where('restaurant_id', $user->restaurant_id)
-                ->where('id', $id)
-                ->first();
-
-            if (!$category) {
-                return response()->json([
-                    'message' => 'Categoria não encontrada'
-                ], 404);
-            }
-
-            return response()->json($category);
-        } catch (\Exception $e) {
-
-            Log::error($e);
-
-            return response()->json([
-                'message' => 'Erro ao buscar categoria',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json($this->findCategory($id)->load('products'));
     }
 
-    // ✏️ ATUALIZAR CATEGORIA
     public function update(Request $request, $id)
     {
-        try {
+        $category = $this->findCategory($id);
 
-            $user = Auth::guard('api')->user();
+        $data = $request->validate([
+            'name'   => ['sometimes', 'required', 'string', 'max:255', $this->uniqueNameRule($category->id)],
+            'active' => 'sometimes|boolean',
+        ]);
 
-            if (!$user) {
-                return response()->json([
-                    'message' => 'Usuário não autenticado'
-                ], 401);
-            }
+        $category->update($data);
 
-            $partnerCompanyId = CurrentCompany::id();
-
-            if (!$partnerCompanyId) {
-                return response()->json([
-                    'message' => 'Usuário não está vinculado a nenhuma empresa.'
-                ], 403);
-            }
-
-
-            $category = Category::where('partner_company_id', $partnerCompanyId)
-                ->where('id', $id)
-                ->first();
-
-            if (!$category) {
-                return response()->json([
-                    'message' => 'Categoria não encontrada'
-                ], 404);
-            }
-
-            $data = $request->validate([
-                'name' => 'required|string|max:255'
-            ]);
-
-            $category->update($data);
-
-            return response()->json($category);
-        } catch (\Exception $e) {
-
-            Log::error($e);
-
-            return response()->json([
-                'message' => 'Erro ao atualizar categoria',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json($category);
     }
 
-    // ❌ EXCLUIR CATEGORIA
     public function destroy($id)
     {
-        try {
+        $category = $this->findCategory($id);
 
-            $user = Auth::user();
-
-            if (!$user) {
-                return response()->json([
-                    'message' => 'Usuário não autenticado'
-                ], 401);
-            }
-
-            $partnerCompanyId = CurrentCompany::id();
-
-            if (!$partnerCompanyId) {
-                return response()->json([
-                    'message' => 'Usuário não está vinculado a nenhuma empresa.'
-                ], 403);
-            }
-
-            $category = Category::where('partner_company_id', $partnerCompanyId)
-                ->where('id', $id)
-                ->withCount('products')
-                ->first();
-
-            if (!$category) {
-                return response()->json([
-                    'message' => 'Categoria não encontrada'
-                ], 404);
-            }
-
-            if ($category->products_count > 0) {
-                return response()->json([
-                    'message' => 'Não é possível excluir uma categoria que possui produtos cadastrados.'
-                ], 409);
-            }
-
-            $category->delete();
-
+        if ($category->products()->exists()) {
             return response()->json([
-                'message' => 'Categoria deletada com sucesso'
-            ]);
-        } catch (\Exception $e) {
-
-            Log::error($e);
-
-            return response()->json([
-                'message' => 'Erro ao deletar categoria',
-                'error' => $e->getMessage()
-            ], 500);
+                'message' => 'Não é possível excluir uma categoria que possui produtos cadastrados.'
+            ], 409);
         }
+
+        $category->delete();
+
+        return response()->json(['message' => 'Categoria deletada com sucesso']);
     }
 }

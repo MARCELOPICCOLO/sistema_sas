@@ -2,406 +2,208 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Product;
 use App\Models\Category;
-use Illuminate\Http\Request;
+use App\Models\Product;
 use App\Services\CurrentCompany;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
-    // 📋 LISTAR PRODUTOS
+    private function findProduct($id): Product
+    {
+        return Product::ofCompany(CurrentCompany::id())->with('category:id,name')->findOrFail($id);
+    }
+
+    /**
+     * Garante que a categoria existe e pertence à empresa atual.
+     */
+    private function companyCategoryRule(): array
+    {
+        return [
+            'integer',
+            Rule::exists('categories', 'id')->where('partner_company_id', CurrentCompany::id()),
+        ];
+    }
+
+    /**
+     * Código do produto é único dentro da empresa.
+     */
+    private function assertUniqueCode(?string $code, ?int $ignoreId = null): ?\Illuminate\Http\JsonResponse
+    {
+        if (!$code) {
+            return null;
+        }
+
+        $exists = Product::ofCompany(CurrentCompany::id())
+            ->where('product_code', $code)
+            ->when($ignoreId, fn ($q) => $q->where('products.id', '!=', $ignoreId))
+            ->exists();
+
+        if (!$exists) {
+            return null;
+        }
+
+        return response()->json([
+            'message' => 'Já existe um produto com este código.',
+            'errors' => ['product_code' => ['Já existe um produto com este código.']],
+        ], 422);
+    }
+
+    /**
+     * Lista os produtos ativos de categorias ativas da empresa.
+     */
     public function index()
     {
-        $partnerCompanyId = CurrentCompany::id();
-
-        $products = DB::select("
-        SELECT
-            prod.id,
-            prod.name,
-            prod.product_code,
-            prod.description,
-            prod.price,
-            prod.quantity 
-        FROM products prod
-        INNER JOIN categories cat
-            ON prod.category_id = cat.id
-        WHERE cat.partner_company_id = ?
-        AND cat.active = 1
-        AND prod.active = 1
-        ORDER BY prod.name
-    ", [$partnerCompanyId]);
-
-        foreach ($products as $prod) {
-            $cat = DB::select(
-                "
-            SELECT cat.id, cat.name 
-            FROM categories cat 
-            INNER JOIN products prod 
-                ON prod.category_id = cat.id 
-            WHERE prod.id = " . $prod->id
-            );
-
-
-            $prod->category["id"] = $cat[0]->id;
-            $prod->category["name"] = $cat[0]->name;
-        }
+        $products = Product::ofCompany(CurrentCompany::id())
+            ->active()
+            ->whereHas('category', fn ($q) => $q->where('active', true))
+            ->with('category:id,name')
+            ->orderBy('name')
+            ->get(['id', 'category_id', 'name', 'product_code', 'description', 'price', 'quantity', 'active']);
 
         return response()->json($products);
     }
 
-    // 🔍 BUSCAR PRODUTO POR CÓDIGO
-    public function findByCode(Request $request, $code)
+    public function findByCode($code)
     {
-        try {
+        $product = Product::ofCompany(CurrentCompany::id())
+            ->with('category:id,name')
+            ->where('product_code', $code)
+            ->firstOrFail();
 
-            $partnerCompanyId = CurrentCompany::id();
-
-            if (!$partnerCompanyId) {
-                return response()->json([
-                    'message' => 'Usuário não está vinculado a nenhuma empresa.'
-                ], 403);
-            }
-
-            $product = Product::with('category')
-                ->where('product_code', $code)
-                ->whereHas('category', function ($query) use ($partnerCompanyId) {
-                    $query->where('partner_company_id', $partnerCompanyId);
-                })
-                ->first();
-
-            if (!$product) {
-                return response()->json([
-                    'message' => 'Produto não encontrado'
-                ], 404);
-            }
-
-            return response()->json($product);
-        } catch (\Exception $e) {
-
-            \Log::error($e);
-
-            return response()->json([
-                'message' => 'Erro ao buscar produto',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json($product);
     }
 
-    // 🔍 MOSTRAR UM PRODUTO
     public function show($id)
     {
-        try {
-
-            $partnerCompanyId = CurrentCompany::id();
-
-            if (!$partnerCompanyId) {
-                return response()->json([
-                    'message' => 'Usuário não está vinculado a nenhuma empresa.'
-                ], 403);
-            }
-
-            $product = Product::with('category')
-                ->where('id', $id)
-                ->whereHas('category', function ($query) use ($partnerCompanyId) {
-                    $query->where('partner_company_id', $partnerCompanyId);
-                })
-                ->first();
-
-            if (!$product) {
-                return response()->json([
-                    'message' => 'Produto não encontrado'
-                ], 404);
-            }
-
-            $product->quantity = $product->quantity ?? 0;
-
-            return response()->json($product);
-        } catch (\Exception $e) {
-
-            \Log::error($e);
-
-            return response()->json([
-                'message' => 'Erro ao buscar produto',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json($this->findProduct($id));
     }
 
-    // ➕ CRIAR PRODUTO
     public function store(Request $request)
     {
-        try {
-            $user = Auth::guard('api')->user();
+        $data = $request->validate([
+            'category_id'  => ['required', ...$this->companyCategoryRule()],
+            'name'         => 'required|string|max:255',
+            'product_code' => 'nullable|string|max:50',
+            'description'  => 'nullable|string|max:2000',
+            'price'        => 'required|numeric|min:0|max:99999999',
+            'quantity'     => 'required|integer|min:0',
+            'active'       => 'sometimes|boolean',
+        ]);
 
-            $partnerCompanyId = CurrentCompany::id();
+        if ($error = $this->assertUniqueCode($data['product_code'] ?? null)) {
+            return $error;
+        }
 
-            if (!$partnerCompanyId) {
-                return response()->json([
-                    'message' => 'Usuário não está vinculado a nenhuma empresa.'
-                ], 403);
-            }
-            // dd($request->all());
-
-            $data = $request->validate([
-                'category_id'  => 'required|exists:categories,id',
-                'name'         => 'required|string|max:255',
-                'product_code' => 'nullable|string|max:50',
-                'price'        => 'required|numeric|min:0',
-                'quantity'     => 'required|integer|min:0',
-                'active'       => 'boolean'
-            ]);
-
-            // Verifica se a categoria pertence à empresa do usuário
-            $category = Category::where('id', $data['category_id'])
-                ->where('partner_company_id', $partnerCompanyId)
-                ->first();
-
-            if (!$category) {
-                return response()->json([
-                    'message' => 'Categoria inválida.'
-                ], 400);
-            }
-
-            // Cria o produto
+        $product = DB::transaction(function () use ($data) {
             $product = Product::create($data);
 
-            // Gera código automaticamente após salvar
             if (empty($product->product_code)) {
-                $product->product_code = 'PROD-' . str_pad($product->id, 5, '0', STR_PAD_LEFT);
-                $product->save();
+                $product->update([
+                    'product_code' => 'PROD-' . str_pad($product->id, 5, '0', STR_PAD_LEFT),
+                ]);
             }
 
-            $product->load('category');
+            return $product;
+        });
 
-            return response()->json($product, 201);
-        } catch (\Exception $e) {
-
-            \Log::error($e);
-
-            return response()->json([
-                'message' => 'Erro ao criar produto',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json($product->load('category:id,name'), 201);
     }
 
-    // ✏️ ATUALIZAR PRODUTO
     public function update(Request $request, $id)
     {
-        try {
-            $user = Auth::guard('api')->user();
+        $product = $this->findProduct($id);
 
-            $partnerCompanyId = CurrentCompany::id();
+        $data = $request->validate([
+            'category_id'  => ['sometimes', ...$this->companyCategoryRule()],
+            'name'         => 'sometimes|string|max:255',
+            'product_code' => 'nullable|string|max:50',
+            'description'  => 'nullable|string|max:2000',
+            'price'        => 'sometimes|numeric|min:0|max:99999999',
+            'quantity'     => 'sometimes|integer|min:0',
+            'active'       => 'sometimes|boolean',
+        ]);
 
-            if (!$partnerCompanyId) {
-                return response()->json([
-                    'message' => 'Usuário não está vinculado a nenhuma empresa.'
-                ], 403);
-            }
-
-            $product = Product::where('id', $id)
-                ->whereHas('category', function ($query) use ($partnerCompanyId) {
-                    $query->where('partner_company_id', $partnerCompanyId);
-                })
-                ->first();
-
-            if (!$product) {
-                return response()->json([
-                    'message' => 'Produto não encontrado'
-                ], 404);
-            }
-
-            $data = $request->validate([
-                'category_id'  => 'sometimes|exists:categories,id',
-                'name'         => 'sometimes|string|max:255',
-                'product_code' => 'nullable|string|max:50|unique:products,product_code,' . $product->id,
-                'price'        => 'sometimes|numeric|min:0',
-                'quantity'     => 'sometimes|integer|min:0',
-                'active'       => 'sometimes|boolean'
-            ]);
-
-            // Se a categoria foi alterada, verifica se pertence à empresa
-            if (isset($data['category_id'])) {
-
-                $category = Category::where('id', $data['category_id'])
-                    ->where('partner_company_id', $partnerCompanyId)
-                    ->first();
-
-                if (!$category) {
-                    return response()->json([
-                        'message' => 'Categoria inválida.'
-                    ], 400);
-                }
-            }
-
-            $product->update($data);
-            $product->load('category');
-
-            return response()->json($product);
-        } catch (\Exception $e) {
-
-            \Log::error($e);
-
-            return response()->json([
-                'message' => 'Erro ao atualizar produto',
-                'error' => $e->getMessage()
-            ], 500);
+        if ($error = $this->assertUniqueCode($data['product_code'] ?? null, $product->id)) {
+            return $error;
         }
+
+        if (array_key_exists('product_code', $data) && empty($data['product_code'])) {
+            unset($data['product_code']);
+        }
+
+        $product->update($data);
+
+        return response()->json($product->fresh()->load('category:id,name'));
     }
-    // 📊 ATUALIZAR ESTOQUE
+
     public function updateStock(Request $request, $id)
     {
-        try {
+        $product = $this->findProduct($id);
 
-            $partnerCompanyId = CurrentCompany::id();
+        $data = $request->validate([
+            'quantity' => 'required|integer|min:0',
+        ]);
 
-            if (!$partnerCompanyId) {
-                return response()->json([
-                    'message' => 'Usuário não está vinculado a nenhuma empresa.'
-                ], 403);
-            }
+        $product->update(['quantity' => $data['quantity']]);
 
-            $product = Product::where('id', $id)
-                ->whereHas('category', function ($query) use ($partnerCompanyId) {
-                    $query->where('partner_company_id', $partnerCompanyId);
-                })
-                ->first();
-
-            if (!$product) {
-                return response()->json([
-                    'message' => 'Produto não encontrado'
-                ], 404);
-            }
-
-            $data = $request->validate([
-                'quantity' => 'required|integer|min:0',
-            ]);
-
-            $product->update([
-                'quantity' => $data['quantity']
-            ]);
-
-            return response()->json([
-                'message' => 'Estoque atualizado com sucesso',
-                'product' => $product
-            ]);
-        } catch (\Exception $e) {
-
-            \Log::error($e);
-
-            return response()->json([
-                'message' => 'Erro ao atualizar estoque',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json([
+            'message' => 'Estoque atualizado com sucesso',
+            'product' => $product,
+        ]);
     }
 
-    // ❌ DELETAR PRODUTO
+    /**
+     * Exclui o produto. Se ele já foi vendido, apenas desativa
+     * para preservar o histórico de vendas e relatórios.
+     */
     public function destroy($id)
     {
-        try {
+        $product = $this->findProduct($id);
 
-            $user = Auth::guard('api')->user();
-
-            $partnerCompanyId = CurrentCompany::id();
-
-            if (!$partnerCompanyId) {
-                return response()->json([
-                    'message' => 'Usuário não está vinculado a nenhuma empresa.'
-                ], 403);
-            }
-
-
-            $product = Product::where('id', $id)
-                ->whereHas('category', function ($query) use ($partnerCompanyId) {
-                    $query->where('partner_company_id', $partnerCompanyId);
-                })
-                ->first();
-
-            if (!$product) {
-                return response()->json([
-                    'message' => 'Produto não encontrado'
-                ], 404);
-            }
-
-            // // Verificar se o produto está sendo usado em alguma comanda
-            // if ($product->orderItems()->exists()) {
-            //     return response()->json([
-            //         'message' => 'Não é possível excluir o produto pois ele está vinculado a comandas'
-            //     ], 409);
-
-
-
-            $product->delete();
+        if ($product->orderItems()->exists()) {
+            $product->update(['active' => false]);
 
             return response()->json([
-                'message' => 'Produto deletado com sucesso'
+                'message' => 'Produto possui vendas registradas e foi desativado.',
+                'deactivated' => true,
             ]);
-        } catch (\Exception $e) {
-
-            \Log::error($e);
-
-            return response()->json([
-                'message' => 'Erro ao deletar produto',
-                'error' => $e->getMessage()
-            ], 500);
         }
+
+        $product->delete();
+
+        return response()->json(['message' => 'Produto deletado com sucesso']);
     }
 
-    // 📊 ATUALIZAR ESTOQUE EM LOTE
     public function bulkUpdateStock(Request $request)
     {
-        try {
+        $data = $request->validate([
+            'products'            => 'required|array|max:1000',
+            'products.*.id'       => 'required|integer',
+            'products.*.quantity' => 'required|integer|min:0',
+        ]);
 
-            $partnerCompanyId = CurrentCompany::id();
+        $ids = collect($data['products'])->pluck('id');
+        $products = Product::ofCompany(CurrentCompany::id())->whereIn('id', $ids)->get()->keyBy('id');
 
-            if (!$partnerCompanyId) {
-                return response()->json([
-                    'message' => 'Usuário não está vinculado a nenhuma empresa.'
-                ], 403);
-            }
-
-            $data = $request->validate([
-                'products' => 'required|array',
-                'products.*.id' => 'required|exists:products,id',
-                'products.*.quantity' => 'required|integer|min:0',
-            ]);
-
+        $updated = DB::transaction(function () use ($data, $products) {
             $updated = [];
 
             foreach ($data['products'] as $item) {
-
-                $product = Product::where('id', $item['id'])
-                    ->whereHas('category', function ($query) use ($partnerCompanyId) {
-                        $query->where('partner_company_id', $partnerCompanyId);
-                    })
-                    ->first();
-
-                if (!$product) {
-                    continue;
+                if ($product = $products->get($item['id'])) {
+                    $product->update(['quantity' => $item['quantity']]);
+                    $updated[] = $product;
                 }
-
-                $product->update([
-                    'quantity' => $item['quantity']
-                ]);
-
-                $updated[] = $product;
             }
 
-            return response()->json([
-                'message' => count($updated) . ' produtos atualizados com sucesso',
-                'products' => $updated
-            ]);
-        } catch (\Exception $e) {
+            return $updated;
+        });
 
-            \Log::error($e);
-
-            return response()->json([
-                'message' => 'Erro ao atualizar estoque',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json([
+            'message'  => count($updated) . ' produtos atualizados com sucesso',
+            'products' => $updated,
+        ]);
     }
 }

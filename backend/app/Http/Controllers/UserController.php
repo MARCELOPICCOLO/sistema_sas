@@ -8,549 +8,237 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
 {
     /**
-     * Lista os usuários da empresa atual,
-     * exceto o usuário autenticado.
+     * Lista os usuários da empresa atual, exceto o usuário autenticado.
      */
-
     public function index()
     {
-        $usuarioAutenticado = Auth::guard('api')->user();
+        $companyId = CurrentCompany::id();
 
-        if (!$usuarioAutenticado) {
-            return response()->json([
-                'message' => 'Usuário não autenticado.'
-            ], 401);
-        }
-
-        $partnerCompanyId = CurrentCompany::id();
-
-        if (!$partnerCompanyId) {
-            return response()->json([
-                'message' => 'Usuário não está vinculado a uma empresa ativa.'
-            ], 422);
-        }
-
-        $usuarios = User::where('users.id', '!=', $usuarioAutenticado->id)
-            ->whereHas('partnerCompanies', function ($query) use ($partnerCompanyId) {
-                $query->where('partner_companies.id', $partnerCompanyId);
-            })
-            ->with([
-                'partnerCompanies' => function ($query) use ($partnerCompanyId) {
-                    $query
-                        ->where('partner_companies.id', $partnerCompanyId)
-                        ->withPivot('role', 'active');
-                },
-
-                // Carrega as telas que o usuário possui
-                'telas:id,nome,slug,descricao,ativo',
-            ])
-            ->orderBy('full_name', 'asc')
+        $usuarios = $this->companyUsersQuery()
+            ->where('users.id', '!=', Auth::guard('api')->id())
+            ->with('telas:id,nome,slug,descricao,ativo')
+            ->orderBy('full_name')
             ->get()
-            ->map(function ($usuario) {
-
-                $empresa = $usuario->partnerCompanies->first();
-
-                return [
-                    'id' => $usuario->id,
-                    'full_name' => $usuario->full_name,
-                    'username' => $usuario->username,
-                    'email' => $usuario->email,
-                    'contact' => $usuario->contact,
-                    'active' => $empresa?->pivot?->active ?? false,
-                    'role' => $empresa?->pivot?->role,
-                    'created_at' => $usuario->created_at,
-
-                    // IDs das telas que o usuário possui
-                    'tela_ids' => $usuario->telas
-                        ->pluck('id')
-                        ->values()
-                        ->toArray(),
-
-                    // Dados completos das telas
-                    'telas' => $usuario->telas
-                        ->values()
-                        ->toArray(),
-                ];
-            });
+            ->map(fn (User $usuario) => $this->present($usuario, $companyId));
 
         return response()->json($usuarios);
     }
 
-
-
-    /**
-     * Cadastra um novo usuário.
-     */
     public function store(Request $request)
     {
-        $usuarioAutenticado = Auth::guard('api')->user();
-
-        if (!$usuarioAutenticado) {
-            return response()->json([
-                'message' => 'Usuário não autenticado.'
-            ], 401);
-        }
-
-        $partnerCompanyId = CurrentCompany::id();
-
-        if (!$partnerCompanyId) {
-            return response()->json([
-                'message' => 'Usuário não está vinculado a uma empresa ativa.'
-            ], 422);
-        }
+        $companyId = CurrentCompany::id();
 
         $validated = $request->validate([
             'full_name' => 'required|string|max:255',
-            'username'  => 'required|string|max:255|unique:users,username',
+            'username'  => ['required', 'string', 'max:255', 'regex:/^\S+$/', 'unique:users,username'],
             'email'     => 'required|email|max:255|unique:users,email',
             'contact'   => 'nullable|string|max:20',
-            'password'  => 'required|string|min:6',
+            'password'  => ['required', 'string', Password::min(6)],
             'role'      => 'required|in:ADMIN,USER',
-
-            // IDs das telas que o usuário terá acesso
             'telas'     => 'nullable|array',
-            'telas.*'   => 'integer|exists:telas,id',
+            'telas.*'   => ['integer', Rule::exists('telas', 'id')->where('ativo', true)],
         ]);
 
-        try {
-            $novoUsuario = DB::transaction(function () use (
-                $validated,
-                $partnerCompanyId
-            ) {
-                // Cria o usuário
-                $novoUsuario = User::create([
-                    'full_name' => $validated['full_name'],
-                    'username'  => $validated['username'],
-                    'email'     => $validated['email'],
-                    'contact'   => $validated['contact'] ?? null,
-                    'password'  => Hash::make($validated['password']),
-                    'active'    => true,
-                    'is_master' => false,
-                ]);
+        if (!CurrentCompany::isAdmin() && $validated['role'] !== 'USER') {
+            return $this->forbidden('Somente administradores podem criar usuários administradores.');
+        }
 
-                // Vincula o usuário à empresa
-                $novoUsuario->partnerCompanies()->attach(
-                    $partnerCompanyId,
-                    [
-                        'role'   => $validated['role'],
-                        'active' => true,
-                    ]
-                );
-
-                // Vincula as telas ao usuário
-                if (!empty($validated['telas'])) {
-                    $novoUsuario->telas()->sync($validated['telas']);
-                }
-
-                return $novoUsuario;
-            });
-
-            // Carrega as telas vinculadas para retornar ao frontend
-            $novoUsuario->load('telas');
-
-            return response()->json([
-                'message' => 'Usuário cadastrado com sucesso.',
-                'user' => $novoUsuario,
-                'tela_ids' => $novoUsuario->telas->pluck('id')->values(),
-            ], 201);
-        } catch (\Throwable $e) {
-
-            \Log::error('Erro ao cadastrar usuário.', [
-                'message' => $e->getMessage(),
-                'user_id' => $usuarioAutenticado->id ?? null,
-                'partner_company_id' => $partnerCompanyId,
+        $usuario = DB::transaction(function () use ($validated, $companyId) {
+            $usuario = User::create([
+                'full_name' => $validated['full_name'],
+                'username'  => $validated['username'],
+                'email'     => $validated['email'],
+                'contact'   => $validated['contact'] ?? null,
+                'password'  => Hash::make($validated['password']),
+                'active'    => true,
+                'is_master' => false,
             ]);
 
-            return response()->json([
-                'message' => 'Não foi possível cadastrar o usuário.'
-            ], 500);
-        }
-    }
-    /**
-     * Exibe um usuário da empresa atual.
-     */
-    public function show(int $id)
-    {
-        $usuarioAutenticado = Auth::guard('api')->user();
+            $usuario->partnerCompanies()->attach($companyId, [
+                'role'   => $validated['role'],
+                'active' => true,
+            ]);
 
-        if (!$usuarioAutenticado) {
-            return response()->json([
-                'message' => 'Usuário não autenticado.'
-            ], 401);
-        }
+            $usuario->telas()->sync($validated['telas'] ?? []);
 
-        $partnerCompanyId = CurrentCompany::id();
+            return $usuario;
+        });
 
-        if (!$partnerCompanyId) {
-            return response()->json([
-                'message' => 'Usuário não está vinculado a uma empresa ativa.'
-            ], 422);
-        }
-
-        $usuario = User::where('id', $id)
-            ->whereHas('partnerCompanies', function ($query) use ($partnerCompanyId) {
-                $query->where('partner_companies.id', $partnerCompanyId);
-            })
-            ->with([
-                'partnerCompanies' => function ($query) use ($partnerCompanyId) {
-                    $query
-                        ->where('partner_companies.id', $partnerCompanyId)
-                        ->withPivot('role', 'active');
-                }
-            ])
-            ->first();
-
-        if (!$usuario) {
-            return response()->json([
-                'message' => 'Usuário não encontrado na empresa atual.'
-            ], 404);
-        }
-
-        $empresa = $usuario->partnerCompanies->first();
+        $usuario->load('telas:id,nome,slug,descricao,ativo');
 
         return response()->json([
-            'id' => $usuario->id,
-            'full_name' => $usuario->full_name,
-            'username' => $usuario->username,
-            'email' => $usuario->email,
-            'contact' => $usuario->contact,
-            'active' => $empresa?->pivot?->active ?? false,
-            'role' => $empresa?->pivot?->role,
-            'created_at' => $usuario->created_at,
-        ]);
+            'message'  => 'Usuário cadastrado com sucesso.',
+            'user'     => $this->present($usuario, $companyId),
+            'tela_ids' => $usuario->telas->pluck('id')->values(),
+        ], 201);
     }
 
+    public function show(int $id)
+    {
+        $companyId = CurrentCompany::id();
 
-    /**
-     * Atualiza um usuário da empresa atual.
-     */
+        $usuario = $this->companyUsersQuery()
+            ->with('telas:id,nome,slug,descricao,ativo')
+            ->findOrFail($id);
+
+        return response()->json($this->present($usuario, $companyId));
+    }
+
     public function update(Request $request, int $id)
     {
-        $usuarioAutenticado = Auth::guard('api')->user();
+        $companyId = CurrentCompany::id();
+        $usuario = $this->companyUsersQuery()->findOrFail($id);
 
-        if (!$usuarioAutenticado) {
-            return response()->json([
-                'message' => 'Usuário não autenticado.'
-            ], 401);
-        }
-
-        $partnerCompanyId = CurrentCompany::id();
-
-        if (!$partnerCompanyId) {
-            return response()->json([
-                'message' => 'Usuário não está vinculado a uma empresa ativa.'
-            ], 422);
-        }
-
-        /*
-     * Primeiro verificamos se o usuário pertence
-     * à empresa atual.
-     */
-        $usuario = User::where('id', $id)
-            ->whereHas('partnerCompanies', function ($query) use ($partnerCompanyId) {
-                $query->where('partner_companies.id', $partnerCompanyId);
-            })
-            ->first();
-
-        if (!$usuario) {
-            return response()->json([
-                'message' => 'Usuário não encontrado na empresa atual.'
-            ], 404);
-        }
-
-        /*
-     * Validação dos dados recebidos.
-     *
-     * O campo "telas" é um array contendo os IDs
-     * das telas que o usuário deverá possuir.
-     */
         $validated = $request->validate([
             'full_name' => 'required|string|max:255',
-
-            'username' => [
-                'required',
-                'string',
-                'max:255',
-                'unique:users,username,' . $usuario->id,
-            ],
-
-            'email' => [
-                'required',
-                'email',
-                'max:255',
-                'unique:users,email,' . $usuario->id,
-            ],
-
-            'contact' => 'nullable|string|max:20',
-
-            'password' => 'nullable|string|min:6',
-
-            'role' => 'required|in:ADMIN,USER',
-
-            /*
-         * Permissões de telas.
-         *
-         * Exemplo:
-         *
-         * "telas": [1, 2, 5, 8]
-         */
-            'telas' => 'nullable|array',
-
-            'telas.*' => [
-                'integer',
-                'exists:telas,id',
-            ],
+            'username'  => ['required', 'string', 'max:255', 'regex:/^\S+$/', Rule::unique('users', 'username')->ignore($usuario->id)],
+            'email'     => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($usuario->id)],
+            'contact'   => 'nullable|string|max:20',
+            'password'  => ['nullable', 'string', Password::min(6)],
+            'role'      => 'required|in:ADMIN,USER',
+            'telas'     => 'nullable|array',
+            'telas.*'   => ['integer', Rule::exists('telas', 'id')->where('ativo', true)],
         ]);
 
-        try {
+        if ($error = $this->guardManagement($usuario, $companyId, $validated['role'])) {
+            return $error;
+        }
 
-            $usuarioAtualizado = DB::transaction(function () use (
-                $usuario,
-                $validated,
-                $partnerCompanyId
-            ) {
+        DB::transaction(function () use ($usuario, $validated, $companyId) {
+            $dados = [
+                'full_name' => $validated['full_name'],
+                'username'  => $validated['username'],
+                'email'     => $validated['email'],
+                'contact'   => $validated['contact'] ?? null,
+            ];
 
-                /*
-             * =====================================================
-             * 1. ATUALIZA DADOS DO USUÁRIO
-             * =====================================================
-             *
-             * Campos pertencentes à tabela users.
-             */
-                $dadosUsuario = [
-                    'full_name' => $validated['full_name'],
-                    'username'  => $validated['username'],
-                    'email'     => $validated['email'],
-                    'contact'   => $validated['contact'] ?? null,
-                ];
+            if (!empty($validated['password'])) {
+                $dados['password'] = Hash::make($validated['password']);
+            }
 
-                /*
-             * A senha somente é alterada se
-             * uma nova senha for informada.
-             */
-                if (!empty($validated['password'])) {
-                    $dadosUsuario['password'] = Hash::make(
-                        $validated['password']
-                    );
-                }
+            $usuario->update($dados);
 
-                $usuario->update($dadosUsuario);
-
-
-                /*
-             * =====================================================
-             * 2. ATUALIZA ROLE DA EMPRESA
-             * =====================================================
-             *
-             * A role pertence ao relacionamento
-             * partner_company_users.
-             *
-             * Atualizamos somente o vínculo
-             * com a empresa atual.
-             */
-                $usuario->partnerCompanies()->updateExistingPivot(
-                    $partnerCompanyId,
-                    [
-                        'role' => $validated['role'],
-                    ]
-                );
-
-
-                /*
-             * =====================================================
-             * 3. ATUALIZA PERMISSÕES DAS TELAS
-             * =====================================================
-             *
-             * O relacionamento User -> Tela utiliza a tabela:
-             *
-             * usuario_telas
-             *
-             * O sync() faz exatamente o que precisamos:
-             *
-             * - adiciona as novas telas;
-             * - mantém as que continuam selecionadas;
-             * - remove as que foram desligadas.
-             *
-             * Exemplo:
-             *
-             * Banco atualmente:
-             * [1, 2, 3, 4]
-             *
-             * Frontend envia:
-             * [1, 3, 5]
-             *
-             * Resultado:
-             * [1, 3, 5]
-             *
-             * A tela 2 e 4 são removidas,
-             * e a tela 5 é adicionada.
-             */
-                $telasIds = $validated['telas'] ?? [];
-
-                $usuario->telas()->sync($telasIds);
-
-
-                /*
-             * =====================================================
-             * 4. RECARREGA RELACIONAMENTOS
-             * =====================================================
-             *
-             * Recarregamos:
-             *
-             * - empresa atual;
-             * - telas do usuário.
-             */
-                $usuario->load([
-                    'partnerCompanies' => function ($query) use ($partnerCompanyId) {
-                        $query
-                            ->where('partner_companies.id', $partnerCompanyId)
-                            ->withPivot('role', 'active');
-                    },
-
-                    'telas:id,nome,slug,descricao,ativo',
-                ]);
-
-                return $usuario;
-            });
-
-
-            /*
-         * Empresa atual do usuário.
-         */
-            $empresa = $usuarioAtualizado->partnerCompanies->first();
-
-
-            /*
-         * IDs das telas vinculadas ao usuário.
-         */
-            $telaIds = $usuarioAtualizado->telas
-                ->pluck('id')
-                ->values()
-                ->toArray();
-
-
-            /*
-         * =====================================================
-         * RESPOSTA
-         * =====================================================
-         */
-            return response()->json([
-                'message' => 'Usuário atualizado com sucesso.',
-
-                'user' => [
-                    'id' => $usuarioAtualizado->id,
-                    'full_name' => $usuarioAtualizado->full_name,
-                    'username' => $usuarioAtualizado->username,
-                    'email' => $usuarioAtualizado->email,
-                    'contact' => $usuarioAtualizado->contact,
-
-                    'active' => $empresa?->pivot?->active ?? false,
-
-                    'role' => $empresa?->pivot?->role,
-
-                    'created_at' => $usuarioAtualizado->created_at,
-
-                    /*
-                 * Retornamos os IDs das telas para o frontend.
-                 */
-                    'tela_ids' => $telaIds,
-                ],
-
-                /*
-             * Também retornamos diretamente os IDs.
-             *
-             * Isso facilita o debug e o frontend,
-             * caso seja necessário.
-             */
-                'tela_ids' => $telaIds,
-            ], 200);
-        } catch (\Throwable $e) {
-
-            \Log::error('Erro ao atualizar usuário.', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-
-                'user_id' => $usuarioAutenticado->id ?? null,
-
-                'updated_user_id' => $id,
-
-                'partner_company_id' => $partnerCompanyId,
-
-                /*
-             * Ajuda a descobrir exatamente quais
-             * permissões estavam sendo enviadas.
-             */
-                'telas' => $validated['telas'] ?? [],
+            $usuario->partnerCompanies()->updateExistingPivot($companyId, [
+                'role' => $validated['role'],
             ]);
 
-            return response()->json([
-                'message' => 'Não foi possível atualizar o usuário.'
-            ], 500);
-        }
+            $usuario->telas()->sync($validated['telas'] ?? []);
+        });
+
+        $usuario->load('telas:id,nome,slug,descricao,ativo');
+        $presented = $this->present($usuario, $companyId);
+
+        return response()->json([
+            'message'  => 'Usuário atualizado com sucesso.',
+            'user'     => $presented,
+            'tela_ids' => $presented['tela_ids'],
+        ]);
     }
 
-
     /**
-     * Remove um usuário da empresa atual.
+     * Remove o vínculo do usuário com a empresa atual.
      */
     public function destroy(int $id)
     {
-        $usuarioAutenticado = Auth::guard('api')->user();
+        $companyId = CurrentCompany::id();
+        $usuario = $this->companyUsersQuery()->findOrFail($id);
 
-        if (!$usuarioAutenticado) {
-            return response()->json([
-                'message' => 'Usuário não autenticado.'
-            ], 401);
+        if ($error = $this->guardManagement($usuario, $companyId)) {
+            return $error;
         }
 
-        $partnerCompanyId = CurrentCompany::id();
+        $usuario->partnerCompanies()->detach($companyId);
 
-        if (!$partnerCompanyId) {
-            return response()->json([
-                'message' => 'Usuário não está vinculado a uma empresa ativa.'
-            ], 422);
+        return response()->json(['message' => 'Usuário removido da empresa com sucesso.']);
+    }
+
+    /**
+     * Alterna (ativa/desativa) o vínculo do usuário com a empresa atual.
+     */
+    public function toggleStatus(int $id)
+    {
+        $companyId = CurrentCompany::id();
+        $usuario = $this->companyUsersQuery()->findOrFail($id);
+
+        if ($error = $this->guardManagement($usuario, $companyId)) {
+            return $error;
         }
 
-        $usuario = User::where('id', $id)
-            ->whereHas('partnerCompanies', function ($query) use ($partnerCompanyId) {
-                $query->where('partner_companies.id', $partnerCompanyId);
-            })
-            ->first();
+        $ativo = !$this->membershipOf($usuario, $companyId)->active;
 
-        if (!$usuario) {
-            return response()->json([
-                'message' => 'Usuário não encontrado na empresa atual.'
-            ], 404);
+        $usuario->partnerCompanies()->updateExistingPivot($companyId, ['active' => $ativo]);
+
+        return response()->json([
+            'message' => $ativo ? 'Usuário ativado com sucesso.' : 'Usuário desativado com sucesso.',
+            'active'  => $ativo,
+        ]);
+    }
+
+    private function companyUsersQuery()
+    {
+        $companyId = CurrentCompany::id();
+
+        return User::whereHas('partnerCompanies', fn ($q) => $q->where('partner_companies.id', $companyId))
+            ->with(['partnerCompanies' => fn ($q) => $q->where('partner_companies.id', $companyId)]);
+    }
+
+    private function membershipOf(User $usuario, int $companyId)
+    {
+        $usuario->loadMissing(['partnerCompanies' => fn ($q) => $q->where('partner_companies.id', $companyId)]);
+
+        return $usuario->partnerCompanies->firstWhere('id', $companyId)?->pivot;
+    }
+
+    /**
+     * Regras de hierarquia: ninguém gerencia a si mesmo por esta tela,
+     * e usuários comuns não gerenciam administradores nem promovem ninguém.
+     */
+    private function guardManagement(User $alvo, int $companyId, ?string $novoPapel = null)
+    {
+        if ($alvo->id === Auth::guard('api')->id()) {
+            return $this->forbidden('Você não pode alterar o seu próprio usuário por esta tela.');
         }
 
-        try {
+        $papelAlvo = $this->membershipOf($alvo, $companyId)?->role;
 
-            DB::transaction(function () use (
-                $usuario,
-                $partnerCompanyId
-            ) {
-                $usuario->partnerCompanies()->detach($partnerCompanyId);
-            });
-
-            return response()->json([
-                'message' => 'Usuário removido da empresa com sucesso.'
-            ]);
-        } catch (\Throwable $e) {
-
-            \Log::error('Erro ao remover usuário.', [
-                'message' => $e->getMessage(),
-                'user_id' => $usuarioAutenticado->id ?? null,
-                'deleted_user_id' => $id,
-                'partner_company_id' => $partnerCompanyId,
-            ]);
-
-            return response()->json([
-                'message' => 'Não foi possível remover o usuário.'
-            ], 500);
+        if ($papelAlvo === 'MASTER' && CurrentCompany::role() !== 'MASTER') {
+            return $this->forbidden('Você não tem permissão para alterar este usuário.');
         }
+
+        if (!CurrentCompany::isAdmin() && ($papelAlvo !== 'USER' || ($novoPapel && $novoPapel !== 'USER'))) {
+            return $this->forbidden('Somente administradores podem gerenciar administradores.');
+        }
+
+        return null;
+    }
+
+    private function present(User $usuario, int $companyId): array
+    {
+        $vinculo = $this->membershipOf($usuario, $companyId);
+        $telas = $usuario->relationLoaded('telas') ? $usuario->telas : collect();
+
+        return [
+            'id'         => $usuario->id,
+            'full_name'  => $usuario->full_name,
+            'username'   => $usuario->username,
+            'email'      => $usuario->email,
+            'contact'    => $usuario->contact,
+            'active'     => (bool) ($vinculo?->active ?? false),
+            'role'       => $vinculo?->role,
+            'created_at' => $usuario->created_at,
+            'tela_ids'   => $telas->pluck('id')->values()->all(),
+            'telas'      => $telas->map(fn ($t) => $t->only(['id', 'nome', 'slug', 'descricao', 'ativo']))->values()->all(),
+        ];
+    }
+
+    private function forbidden(string $message)
+    {
+        return response()->json(['message' => $message], 403);
     }
 }

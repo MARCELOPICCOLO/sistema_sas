@@ -6,40 +6,43 @@ use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
 {
-    // ✅ GARANTA QUE TODOS OS CAMPOS ESTEJAM AQUI
     protected $fillable = [
         'category_id',
         'name',
         'product_code',
         'description',
         'price',
-        'quantity',      // ← CAMPO IMPORTANTE
-        'active'
+        'quantity',
+        'active',
     ];
 
-    // ✅ CASTS PARA TIPOS CORRETOS
     protected $casts = [
         'price' => 'decimal:2',
-        'quantity' => 'integer',  // ← CAST PARA INTEGER
-        'active' => 'boolean'
+        'quantity' => 'integer',
+        'active' => 'boolean',
     ];
 
-    // ✅ RELACIONAMENTOS
     public function category()
     {
         return $this->belongsTo(Category::class);
     }
 
-    // ✅ SCOPES ÚTEIS
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
     public function scopeActive($query)
     {
         return $query->where('active', true);
     }
 
-    public function scopeByCode($query, $restaurantId, $code)
+    /**
+     * Produtos cuja categoria pertence à empresa informada.
+     */
+    public function scopeOfCompany($query, ?int $companyId)
     {
-        return $query->where('restaurant_id', $restaurantId)
-            ->where('product_code', $code);
+        return $query->whereHas('category', fn ($q) => $q->where('partner_company_id', $companyId));
     }
 
     public function scopeSearch($query, $term)

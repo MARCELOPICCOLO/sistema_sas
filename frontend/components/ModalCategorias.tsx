@@ -50,10 +50,10 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
     boxSizing: "border-box",
     height: 42,
     padding: "0 12px",
-    borderRadius: 8,
-    border: "1px solid #e5e7eb",
+    borderRadius: 10,
+    border: "1px solid var(--border)",
     background: "#fff",
-    color: "#111827",
+    color: "var(--text)",
     fontSize: 13,
     outline: "none",
   };
@@ -63,7 +63,7 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(15, 23, 42, 0.5)",
+        background: "var(--overlay)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -84,7 +84,7 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
           background: "#fff",
           borderRadius: 14,
           overflow: "hidden",
-          boxShadow: "0 20px 50px rgba(0,0,0,0.15)",
+          boxShadow: "var(--shadow-modal)",
           display: "flex",
           flexDirection: "column",
         }}
@@ -94,7 +94,7 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
         <div
           style={{
             padding: "20px 22px",
-            borderBottom: "1px solid #f1f5f9",
+            borderBottom: "1px solid var(--surface-3)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -106,7 +106,7 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
                 margin: 0,
                 fontSize: 17,
                 fontWeight: 600,
-                color: "#111827",
+                color: "var(--text)",
               }}
             >
               Categorias
@@ -116,7 +116,7 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
               style={{
                 margin: "4px 0 0",
                 fontSize: 12,
-                color: "#9ca3af",
+                color: "var(--text-subtle)",
               }}
             >
               Adicione, edite ou remova categorias de produtos.
@@ -129,10 +129,10 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
             style={{
               width: 32,
               height: 32,
-              borderRadius: 8,
+              borderRadius: 10,
               border: "none",
-              background: "#f8fafc",
-              color: "#6b7280",
+              background: "var(--surface-2)",
+              color: "var(--text-muted)",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
@@ -159,7 +159,7 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
                 marginBottom: 7,
                 fontSize: 12,
                 fontWeight: 500,
-                color: "#374151",
+                color: "var(--text-secondary)",
               }}
             >
               Nova categoria
@@ -199,10 +199,10 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
                 style={{
                   height: 42,
                   padding: "0 16px",
-                  borderRadius: 8,
+                  borderRadius: 10,
                   border: "none",
-                  background: novaCategoria.name.trim() ? "#059669" : "#e5e7eb",
-                  color: novaCategoria.name.trim() ? "#fff" : "#9ca3af",
+                  background: novaCategoria.name.trim() ? "var(--primary)" : "var(--border)",
+                  color: novaCategoria.name.trim() ? "#fff" : "var(--text-subtle)",
                   cursor: novaCategoria.name.trim() ? "pointer" : "not-allowed",
                   fontSize: 13,
                   fontWeight: 600,
@@ -218,7 +218,7 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
           <div
             style={{
               height: 1,
-              background: "#f1f5f9",
+              background: "var(--surface-3)",
               marginBottom: 20,
             }}
           />
@@ -237,7 +237,7 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
                 style={{
                   fontSize: 12,
                   fontWeight: 600,
-                  color: "#374151",
+                  color: "var(--text-secondary)",
                 }}
               >
                 Categorias cadastradas
@@ -246,7 +246,7 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
               <span
                 style={{
                   fontSize: 11,
-                  color: "#9ca3af",
+                  color: "var(--text-subtle)",
                 }}
               >
                 {categorias.length}{" "}
@@ -258,10 +258,10 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
               <div
                 style={{
                   padding: "28px 20px",
-                  border: "1px dashed #e5e7eb",
-                  borderRadius: 10,
+                  border: "1px dashed var(--border)",
+                  borderRadius: 12,
                   textAlign: "center",
-                  color: "#9ca3af",
+                  color: "var(--text-subtle)",
                 }}
               >
                 <p
@@ -276,8 +276,8 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
             ) : (
               <div
                 style={{
-                  border: "1px solid #eef2f7",
-                  borderRadius: 10,
+                  border: "1px solid var(--surface-3)",
+                  borderRadius: 12,
                   overflow: "hidden",
                 }}
               >
@@ -291,9 +291,9 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
                         padding: "11px 12px",
                         borderBottom:
                           index !== categorias.length - 1
-                            ? "1px solid #f1f5f9"
+                            ? "1px solid var(--surface-3)"
                             : "none",
-                        background: editando ? "#fafafa" : "#fff",
+                        background: editando ? "var(--surface-2)" : "#fff",
                       }}
                     >
                       {editando ? (
@@ -328,10 +328,10 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
                             style={{
                               width: 36,
                               height: 36,
-                              borderRadius: 8,
+                              borderRadius: 10,
                               border: "none",
-                              background: "#ecfdf5",
-                              color: "#059669",
+                              background: "var(--primary-soft)",
+                              color: "var(--primary)",
                               cursor: "pointer",
                               display: "flex",
                               alignItems: "center",
@@ -351,14 +351,15 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
                             style={{
                               width: 36,
                               height: 36,
-                              borderRadius: 8,
-                              border: "1px solid #e5e7eb",
+                              borderRadius: 10,
+                              border: "1px solid var(--border)",
                               background: "#fff",
-                              color: "#6b7280",
+                              color: "var(--text-muted)",
                               cursor: "pointer",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
+                              boxShadow: "var(--shadow-card)",
                             }}
                             title="Cancelar edição"
                           >
@@ -382,7 +383,7 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
                             style={{
                               fontSize: 13,
                               fontWeight: 500,
-                              color: "#374151",
+                              color: "var(--text-secondary)",
                             }}
                           >
                             {cat.name}
@@ -402,10 +403,10 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
                               style={{
                                 width: 32,
                                 height: 32,
-                                borderRadius: 7,
+                                borderRadius: 8,
                                 border: "none",
                                 background: "transparent",
-                                color: "#6b7280",
+                                color: "var(--text-muted)",
                                 cursor: "pointer",
                                 display: "flex",
                                 alignItems: "center",
@@ -426,10 +427,10 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
                               style={{
                                 width: 32,
                                 height: 32,
-                                borderRadius: 7,
+                                borderRadius: 8,
                                 border: "none",
                                 background: "transparent",
-                                color: "#9ca3af",
+                                color: "var(--text-subtle)",
                                 cursor: "pointer",
                                 display: "flex",
                                 alignItems: "center",
@@ -457,7 +458,7 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
         <div
           style={{
             padding: "14px 22px",
-            borderTop: "1px solid #f1f5f9",
+            borderTop: "1px solid var(--surface-3)",
             display: "flex",
             justifyContent: "flex-end",
           }}
@@ -467,13 +468,14 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
             onClick={fecharModal}
             style={{
               padding: "10px 18px",
-              borderRadius: 8,
-              border: "1px solid #e5e7eb",
+              borderRadius: 10,
+              border: "1px solid var(--border)",
               background: "#fff",
-              color: "#374151",
+              color: "var(--text-secondary)",
               cursor: "pointer",
               fontSize: 13,
               fontWeight: 500,
+              boxShadow: "var(--shadow-card)",
             }}
           >
             Fechar

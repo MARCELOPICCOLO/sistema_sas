@@ -6,14 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class PartnerCompany extends Model
 {
-    /**
-     * Nome da tabela.
-     */
     protected $table = 'partner_companies';
 
-    /**
-     * Campos que podem ser preenchidos em massa.
-     */
     protected $fillable = [
         'corporate_name',
         'trade_name',
@@ -26,4 +20,15 @@ class PartnerCompany extends Model
         'state',
         'active',
     ];
+
+    protected $casts = [
+        'active' => 'boolean',
+    ];
+
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'partner_company_users', 'partner_company_id', 'user_id')
+            ->withPivot('role', 'active')
+            ->withTimestamps();
+    }
 }

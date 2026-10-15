@@ -56,21 +56,21 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
     switch (role) {
       case "MASTER":
         return {
-          background: "#ecfdf5",
-          color: "#047857",
-          border: "#a7f3d0",
+          background: "var(--primary-soft)",
+          color: "var(--primary-hover)",
+          border: "var(--primary-border)",
         };
       case "ADMIN":
         return {
-          background: "#f0fdf4",
+          background: "var(--primary-soft)",
           color: "#15803d",
-          border: "#bbf7d0",
+          border: "var(--primary-border)",
         };
       default:
         return {
-          background: "#f3f4f6",
-          color: "#4b5563",
-          border: "#e5e7eb",
+          background: "var(--surface-3)",
+          color: "var(--text-secondary)",
+          border: "var(--border)",
         };
     }
   };
@@ -84,7 +84,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
       style={{
         padding: "48px 20px",
         textAlign: "center",
-        color: "#9ca3af",
+        color: "var(--text-subtle)",
       }}
     >
       <div
@@ -92,12 +92,12 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
           width: 44,
           height: 44,
           margin: "0 auto 12px",
-          borderRadius: 10,
-          background: "#f3f4f6",
+          borderRadius: 12,
+          background: "var(--surface-3)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          color: "#9ca3af",
+          color: "var(--text-subtle)",
           fontSize: 18,
         }}
       >
@@ -106,7 +106,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
       <div
         style={{
           fontSize: 13,
-          color: "#6b7280",
+          color: "var(--text-muted)",
         }}
       >
         {busca
@@ -134,13 +134,13 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
             style={{
               padding: "48px 20px",
               textAlign: "center",
-              color: "#9ca3af",
+              color: "var(--text-subtle)",
             }}
           >
             Carregando colaboradores...
           </div>
         ) : usuarios.length === 0 ? (
-          <EmptyState />
+          EmptyState()
         ) : (
           usuarios.map((usuario) => {
             const roleStyle = getRoleStyle(usuario.role);
@@ -158,13 +158,14 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
               <div
                 key={usuario.id}
                 style={{
-                  background: "#ffffff",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: 10,
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 12,
                   padding: "16px",
                   display: "flex",
                   flexDirection: "column",
                   gap: 12,
+                  boxShadow: "var(--shadow-card)",
                 }}
               >
                 {/* CABEÇALHO DO CARD */}
@@ -187,9 +188,9 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                       style={{
                         width: 40,
                         height: 40,
-                        borderRadius: 8,
-                        background: "#ecfdf5",
-                        color: "#059669",
+                        borderRadius: 10,
+                        background: "var(--primary-soft)",
+                        color: "var(--primary)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -206,7 +207,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                         style={{
                           fontSize: 14,
                           fontWeight: 600,
-                          color: "#1f2937",
+                          color: "var(--text)",
                         }}
                       >
                         {usuario.full_name}
@@ -214,7 +215,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                       <div
                         style={{
                           fontSize: 12,
-                          color: "#6b7280",
+                          color: "var(--text-muted)",
                         }}
                       >
                         @{usuario.username}
@@ -230,14 +231,14 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                       gap: 6,
                       fontSize: 11,
                       fontWeight: 500,
-                      color: usuario.active ? "#059669" : "#9ca3af",
+                      color: usuario.active ? "var(--primary)" : "var(--text-subtle)",
                     }}
                   >
                     <FontAwesomeIcon
                       icon={faCircle}
                       style={{
                         fontSize: 8,
-                        color: usuario.active ? "#10b981" : "#d1d5db",
+                        color: usuario.active ? "var(--primary)" : "var(--border-strong)",
                       }}
                     />
                     {usuario.active ? "Ativo" : "Inativo"}
@@ -251,7 +252,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                     flexDirection: "column",
                     gap: 8,
                     paddingTop: 8,
-                    borderTop: "1px solid #f3f4f6",
+                    borderTop: "1px solid var(--surface-3)",
                   }}
                 >
                   <div
@@ -264,7 +265,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                     <span
                       style={{
                         fontSize: 12,
-                        color: "#6b7280",
+                        color: "var(--text-muted)",
                       }}
                     >
                       E-mail
@@ -272,7 +273,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                     <span
                       style={{
                         fontSize: 13,
-                        color: "#1f2937",
+                        color: "var(--text)",
                       }}
                     >
                       {usuario.email}
@@ -290,7 +291,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                       <span
                         style={{
                           fontSize: 12,
-                          color: "#6b7280",
+                          color: "var(--text-muted)",
                         }}
                       >
                         Telefone
@@ -298,7 +299,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                       <span
                         style={{
                           fontSize: 13,
-                          color: "#1f2937",
+                          color: "var(--text)",
                         }}
                       >
                         {usuario.contact}
@@ -316,7 +317,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                     <span
                       style={{
                         fontSize: 12,
-                        color: "#6b7280",
+                        color: "var(--text-muted)",
                       }}
                     >
                       Perfil
@@ -327,7 +328,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                         alignItems: "center",
                         gap: 6,
                         padding: "4px 8px",
-                        borderRadius: 6,
+                        borderRadius: 8,
                         background: roleStyle.background,
                         color: roleStyle.color,
                         border: `1px solid ${roleStyle.border}`,
@@ -349,7 +350,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                     display: "flex",
                     gap: 8,
                     paddingTop: 8,
-                    borderTop: "1px solid #f3f4f6",
+                    borderTop: "1px solid var(--surface-3)",
                   }}
                 >
                   <button
@@ -358,10 +359,10 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                     style={{
                       flex: 1,
                       padding: "8px 12px",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: 6,
-                      background: "#ffffff",
-                      color: "#374151",
+                      border: "1px solid var(--border)",
+                      borderRadius: 8,
+                      background: "var(--surface)",
+                      color: "var(--text-secondary)",
                       cursor: "pointer",
                       fontSize: 12,
                       fontWeight: 500,
@@ -372,10 +373,10 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                       transition: "all 0.15s ease",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "#f3f4f6";
+                      e.currentTarget.style.background = "var(--surface-3)";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "#ffffff";
+                      e.currentTarget.style.background = "var(--surface)";
                     }}
                   >
                     <FontAwesomeIcon icon={faPenToSquare} />
@@ -396,9 +397,9 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                       flex: 1,
                       padding: "8px 12px",
                       border: "none",
-                      borderRadius: 6,
-                      background: usuario.active ? "#059669" : "#6b7280",
-                      color: "#ffffff",
+                      borderRadius: 8,
+                      background: usuario.active ? "var(--primary)" : "var(--text-muted)",
+                      color: "var(--surface)",
                       cursor: "pointer",
                       fontSize: 12,
                       fontWeight: 500,
@@ -410,13 +411,13 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.background = usuario.active
-                        ? "#047857"
-                        : "#4b5563";
+                        ? "var(--primary-hover)"
+                        : "var(--text-secondary)";
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.background = usuario.active
-                        ? "#059669"
-                        : "#6b7280";
+                        ? "var(--primary)"
+                        : "var(--text-muted)";
                     }}
                   >
                     {usuario.active ? "Ativo" : "Inativo"}
@@ -450,8 +451,8 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
         <thead>
           <tr
             style={{
-              background: "#f9fafb",
-              borderBottom: "1px solid #e5e7eb",
+              background: "var(--surface-2)",
+              borderBottom: "1px solid var(--border)",
             }}
           >
             <th style={thStyle}>Colaborador</th>
@@ -471,7 +472,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                 style={{
                   padding: "48px 20px",
                   textAlign: "center",
-                  color: "#9ca3af",
+                  color: "var(--text-subtle)",
                 }}
               >
                 Carregando colaboradores...
@@ -480,7 +481,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
           ) : usuarios.length === 0 ? (
             <tr>
               <td colSpan={6}>
-                <EmptyState />
+                {EmptyState()}
               </td>
             </tr>
           ) : (
@@ -502,9 +503,9 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                   style={{
                     borderBottom:
                       index < usuarios.length - 1
-                        ? "1px solid #f0f1f3"
+                        ? "1px solid var(--surface-3)"
                         : "none",
-                    background: "#ffffff",
+                    background: "var(--surface)",
                   }}
                 >
                   {/* COLABORADOR */}
@@ -524,9 +525,9 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                         style={{
                           width: 34,
                           height: 34,
-                          borderRadius: 8,
-                          background: "#ecfdf5",
-                          color: "#059669",
+                          borderRadius: 10,
+                          background: "var(--primary-soft)",
+                          color: "var(--primary)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -543,7 +544,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                           style={{
                             fontSize: 13,
                             fontWeight: 600,
-                            color: "#1f2937",
+                            color: "var(--text)",
                           }}
                         >
                           {usuario.full_name}
@@ -552,7 +553,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                           <div
                             style={{
                               fontSize: 11,
-                              color: "#9ca3af",
+                              color: "var(--text-subtle)",
                               marginTop: 2,
                             }}
                           >
@@ -567,7 +568,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                   <td
                     style={{
                       padding: "13px 16px",
-                      color: "#4b5563",
+                      color: "var(--text-secondary)",
                     }}
                   >
                     {usuario.username}
@@ -577,7 +578,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                   <td
                     style={{
                       padding: "13px 16px",
-                      color: "#4b5563",
+                      color: "var(--text-secondary)",
                     }}
                   >
                     {usuario.email}
@@ -595,7 +596,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                         alignItems: "center",
                         gap: 6,
                         padding: "4px 8px",
-                        borderRadius: 6,
+                        borderRadius: 8,
                         background: roleStyle.background,
                         color: roleStyle.color,
                         border: `1px solid ${roleStyle.border}`,
@@ -624,7 +625,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                         gap: 6,
                         fontSize: 11,
                         fontWeight: 500,
-                        color: usuario.active ? "#059669" : "#9ca3af",
+                        color: usuario.active ? "var(--primary)" : "var(--text-subtle)",
                       }}
                     >
                       <span
@@ -632,7 +633,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                           width: 6,
                           height: 6,
                           borderRadius: "50%",
-                          background: usuario.active ? "#10b981" : "#d1d5db",
+                          background: usuario.active ? "var(--primary)" : "var(--border-strong)",
                         }}
                       />
                       {usuario.active ? "Ativo" : "Inativo"}
@@ -662,12 +663,12 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                         onClick={() => onEditar(usuario)}
                         style={actionButtonStyle}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.background = "#eff6ff";
-                          e.currentTarget.style.color = "#2563eb";
+                          e.currentTarget.style.background = "var(--info-soft)";
+                          e.currentTarget.style.color = "var(--info)";
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.background = "transparent";
-                          e.currentTarget.style.color = "#6b7280";
+                          e.currentTarget.style.color = "var(--text-muted)";
                         }}
                       >
                         <FontAwesomeIcon icon={faPenToSquare} />
@@ -689,8 +690,8 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                         onClick={() => onAlterarStatus(usuario)}
                         style={{
                           ...actionButtonStyle,
-                          background: usuario.active ? "#059669" : "#6b7280",
-                          color: "#ffffff",
+                          background: usuario.active ? "var(--primary)" : "var(--text-muted)",
+                          color: "var(--surface)",
                           width: 40,
                           borderRadius: 20,
                           padding: "0 4px",
@@ -700,13 +701,13 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.background = usuario.active
-                            ? "#047857"
-                            : "#4b5563";
+                            ? "var(--primary-hover)"
+                            : "var(--text-secondary)";
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.background = usuario.active
-                            ? "#059669"
-                            : "#6b7280";
+                            ? "var(--primary)"
+                            : "var(--text-muted)";
                         }}
                       >
                         <div
@@ -714,7 +715,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                             width: 20,
                             height: 20,
                             borderRadius: "50%",
-                            background: "#ffffff",
+                            background: "var(--surface)",
                             boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
                             transition: "all 0.2s ease",
                           }}
@@ -741,7 +742,7 @@ const thStyle: React.CSSProperties = {
   textAlign: "left",
   fontSize: 11,
   fontWeight: 600,
-  color: "#6b7280",
+  color: "var(--text-muted)",
   textTransform: "uppercase",
   letterSpacing: "0.02em",
 };
@@ -756,13 +757,13 @@ const actionButtonStyle: React.CSSProperties = {
   height: 32,
   border: "none",
   background: "transparent",
-  borderRadius: 6,
+  borderRadius: 8,
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
   padding: 0,
   fontSize: 14,
-  color: "#6b7280",
+  color: "var(--text-muted)",
   cursor: "pointer",
   transition: "all 0.15s ease",
 };

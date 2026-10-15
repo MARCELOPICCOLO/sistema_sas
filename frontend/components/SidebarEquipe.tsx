@@ -18,9 +18,10 @@ export function SidebarEquipe({
 }: SidebarEquipeProps) {
   return (
     <div
+      className="sidebar-dark"
       style={{
-        background: "#ffffff",
-        borderRight: "1px solid #e5e7eb",
+        background: "var(--surface)",
+        borderRight: "1px solid var(--border)",
         padding: "24px 16px",
         display: "flex",
         flexDirection: "column",
@@ -29,7 +30,7 @@ export function SidebarEquipe({
         top: 0,
       }}
     >
-      {/* Botão Voltar ao Dashboard */}
+      {/* Botão Voltar ao início */}
       <div
         style={{
           marginBottom: 20,
@@ -43,27 +44,27 @@ export function SidebarEquipe({
             gap: 8,
             width: "100%",
             padding: "9px 12px",
-            background: "#f8fafc",
-            border: "1px solid #e5e7eb",
-            borderRadius: 8,
+            background: "var(--surface-2)",
+            border: "1px solid var(--border)",
+            borderRadius: 10,
             cursor: "pointer",
             transition: "all 0.2s",
-            color: "#6b7280",
+            color: "var(--text-muted)",
             fontSize: 13,
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = "#ecfdf5";
-            e.currentTarget.style.borderColor = "#a7f3d0";
-            e.currentTarget.style.color = "#059669";
+            e.currentTarget.style.background = "var(--primary-soft)";
+            e.currentTarget.style.borderColor = "var(--primary-border)";
+            e.currentTarget.style.color = "var(--primary)";
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = "#f8fafc";
-            e.currentTarget.style.borderColor = "#e5e7eb";
-            e.currentTarget.style.color = "#6b7280";
+            e.currentTarget.style.background = "var(--surface-2)";
+            e.currentTarget.style.borderColor = "var(--border)";
+            e.currentTarget.style.color = "var(--text-muted)";
           }}
         >
           <FontAwesomeIcon icon={faArrowLeft} />
-          Voltar ao Dashboard
+          Voltar ao início
         </button>
       </div>
 
@@ -81,12 +82,12 @@ export function SidebarEquipe({
           style={{
             width: 40,
             height: 40,
-            borderRadius: 10,
-            background: "#ecfdf5",
+            borderRadius: 12,
+            background: "var(--primary-soft)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#059669",
+            color: "var(--primary)",
           }}
         >
           <FontAwesomeIcon icon={faUsers} style={{ fontSize: 18 }} />
@@ -96,7 +97,7 @@ export function SidebarEquipe({
             style={{
               fontSize: 16,
               fontWeight: 700,
-              color: "#111827",
+              color: "var(--text)",
             }}
           >
             Equipe
@@ -104,7 +105,7 @@ export function SidebarEquipe({
           <div
             style={{
               fontSize: 11,
-              color: "#6b7280",
+              color: "var(--text-muted)",
             }}
           >
             Gerenciamento
@@ -121,9 +122,9 @@ export function SidebarEquipe({
           gap: 12,
           width: "100%",
           padding: "12px 16px",
-          background: "#10b981",
+          background: "var(--primary)",
           border: "none",
-          borderRadius: 8,
+          borderRadius: 10,
           cursor: "pointer",
           color: "#fff",
           fontSize: 14,
@@ -131,10 +132,10 @@ export function SidebarEquipe({
           transition: "background 0.2s ease",
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = "#059669";
+          e.currentTarget.style.background = "var(--primary)";
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = "#10b981";
+          e.currentTarget.style.background = "var(--primary)";
         }}
       >
         <FontAwesomeIcon icon={faPlus} />

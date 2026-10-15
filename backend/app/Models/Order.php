@@ -1,5 +1,4 @@
 <?php
-// app/Models/Order.php
 
 namespace App\Models;
 
@@ -7,6 +6,19 @@ use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
 {
+    public const STATUS_ABERTO = 'aberto';
+    public const STATUS_FECHADO = 'fechado';
+    public const STATUS_PENDENTE = 'pendente';
+    public const STATUS_CANCELADO = 'cancelado';
+
+    public const STATUSES = [
+        self::STATUS_ABERTO,
+        self::STATUS_FECHADO,
+        self::STATUS_PENDENTE,
+        self::STATUS_CANCELADO,
+    ];
+
+    public const PAYMENT_METHODS = ['dinheiro', 'pix', 'credito', 'debito', 'pendente'];
 
     protected $fillable = [
         'partner_company_id',
@@ -20,41 +32,43 @@ class Order extends Model
         'closed_at',
     ];
 
-
-
     protected $casts = [
         'total' => 'decimal:2',
-        'order_date' => 'date',    // 👈 NOVO CAST
-        'closed_at' => 'datetime'
+        'order_date' => 'date:Y-m-d',
+        'closed_at' => 'datetime',
+        'sales_point_id' => 'integer',
+        'command_number' => 'integer',
     ];
 
-    // Relacionamento com a mesa
-    public function table()
-    {
-        return $this->belongsTo(Table::class);
-    }
-
-    // ✅ RELACIONAMENTO COM OS ITENS (CORRIGIDO)
     public function items()
     {
         return $this->hasMany(OrderItem::class);
     }
 
-    // Relacionamento com o restaurante
-    public function restaurant()
+    public function company()
     {
-        return $this->belongsTo(Restaurant::class);
+        return $this->belongsTo(PartnerCompany::class, 'partner_company_id');
     }
 
-    // Escopo para comandas abertas
-    public function scopeOpen($query)
+    public function scopeOfCompany($query, ?int $companyId)
     {
-        return $query->where('status', 'aberto');
+        return $query->where('partner_company_id', $companyId);
     }
 
-    // Escopo para comandas fechadas
-    public function scopeClosed($query)
+    public function isEditable(): bool
     {
-        return $query->where('status', 'fechado');
+        return $this->status === self::STATUS_ABERTO;
+    }
+
+    /**
+     * Recalcula o total a partir dos itens (preço unitário × quantidade).
+     */
+    public function recalculateTotal(): void
+    {
+        $total = $this->items()
+            ->selectRaw('COALESCE(SUM(price * quantity), 0) as total')
+            ->value('total');
+
+        $this->update(['total' => $total ?? 0]);
     }
 }

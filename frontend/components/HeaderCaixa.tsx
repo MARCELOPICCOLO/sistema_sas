@@ -57,11 +57,12 @@ export const HeaderCaixa: React.FC<HeaderCaixaProps> = ({
   return (
     <div
       style={{
-        background: "#ffffff",
-        borderRadius: 10,
+        background: "var(--surface)",
+        borderRadius: 12,
         marginBottom: 20,
-        border: "1px solid #e5e7eb",
+        border: "1px solid var(--border)",
         overflow: "hidden",
+        boxShadow: "var(--shadow-card)",
       }}
     >
       {/* HEADER */}
@@ -85,7 +86,7 @@ export const HeaderCaixa: React.FC<HeaderCaixaProps> = ({
               margin: 0,
               fontSize: 18,
               fontWeight: 600,
-              color: "#1f2937",
+              color: "var(--text)",
             }}
           >
             Fluxo de Caixa
@@ -102,10 +103,10 @@ export const HeaderCaixa: React.FC<HeaderCaixaProps> = ({
               onChange={(e) => setMesSelecionado(Number(e.target.value))}
               style={{
                 padding: "7px 10px",
-                borderRadius: 6,
-                border: "1px solid #e5e7eb",
-                background: "#ffffff",
-                color: "#374151",
+                borderRadius: 8,
+                border: "1px solid var(--border)",
+                background: "var(--surface)",
+                color: "var(--text-secondary)",
                 fontSize: 12,
                 cursor: "pointer",
                 outline: "none",
@@ -123,10 +124,10 @@ export const HeaderCaixa: React.FC<HeaderCaixaProps> = ({
               onChange={(e) => setAnoSelecionado(Number(e.target.value))}
               style={{
                 padding: "7px 10px",
-                borderRadius: 6,
-                border: "1px solid #e5e7eb",
-                background: "#ffffff",
-                color: "#374151",
+                borderRadius: 8,
+                border: "1px solid var(--border)",
+                background: "var(--surface)",
+                color: "var(--text-secondary)",
                 fontSize: 12,
                 cursor: "pointer",
                 outline: "none",
@@ -146,7 +147,7 @@ export const HeaderCaixa: React.FC<HeaderCaixaProps> = ({
           style={{
             marginTop: 16,
             paddingTop: 16,
-            borderTop: "1px solid #f0f1f3",
+            borderTop: "1px solid var(--surface-3)",
           }}
         >
           <div
@@ -171,7 +172,7 @@ export const HeaderCaixa: React.FC<HeaderCaixaProps> = ({
                 <div
                   style={{
                     fontSize: 11,
-                    color: "#6b7280",
+                    color: "var(--text-muted)",
                     marginBottom: 3,
                   }}
                 >
@@ -182,7 +183,7 @@ export const HeaderCaixa: React.FC<HeaderCaixaProps> = ({
                   style={{
                     fontSize: 17,
                     fontWeight: 600,
-                    color: "#059669",
+                    color: "var(--primary)",
                   }}
                 >
                   {formatCurrency(totalEntradas)}
@@ -194,7 +195,7 @@ export const HeaderCaixa: React.FC<HeaderCaixaProps> = ({
                 <div
                   style={{
                     fontSize: 11,
-                    color: "#6b7280",
+                    color: "var(--text-muted)",
                     marginBottom: 3,
                   }}
                 >
@@ -205,7 +206,7 @@ export const HeaderCaixa: React.FC<HeaderCaixaProps> = ({
                   style={{
                     fontSize: 17,
                     fontWeight: 600,
-                    color: "#374151",
+                    color: "var(--text-secondary)",
                   }}
                 >
                   {formatCurrency(totalSaidas)}
@@ -217,7 +218,7 @@ export const HeaderCaixa: React.FC<HeaderCaixaProps> = ({
                 <div
                   style={{
                     fontSize: 11,
-                    color: "#6b7280",
+                    color: "var(--text-muted)",
                     marginBottom: 3,
                   }}
                 >
@@ -228,7 +229,7 @@ export const HeaderCaixa: React.FC<HeaderCaixaProps> = ({
                   style={{
                     fontSize: 17,
                     fontWeight: 600,
-                    color: saldoGeral >= 0 ? "#059669" : "#374151",
+                    color: saldoGeral >= 0 ? "var(--primary)" : "var(--text-secondary)",
                   }}
                 >
                   {formatCurrency(saldoGeral)}
@@ -248,10 +249,10 @@ export const HeaderCaixa: React.FC<HeaderCaixaProps> = ({
                 onClick={() => setShowEntradas(!showEntradas)}
                 style={{
                   padding: "6px 12px",
-                  borderRadius: 6,
-                  border: "1px solid #e5e7eb",
-                  background: showEntradas ? "#f3f4f6" : "#ffffff",
-                  color: showEntradas ? "#374151" : "#6b7280",
+                  borderRadius: 8,
+                  border: "1px solid var(--border)",
+                  background: showEntradas ? "var(--surface-3)" : "var(--surface)",
+                  color: showEntradas ? "var(--text-secondary)" : "var(--text-muted)",
                   cursor: "pointer",
                   fontSize: 11,
                   fontWeight: 500,
@@ -265,10 +266,10 @@ export const HeaderCaixa: React.FC<HeaderCaixaProps> = ({
                 onClick={() => setShowSaidas(!showSaidas)}
                 style={{
                   padding: "6px 12px",
-                  borderRadius: 6,
-                  border: "1px solid #e5e7eb",
-                  background: showSaidas ? "#f3f4f6" : "#ffffff",
-                  color: showSaidas ? "#374151" : "#6b7280",
+                  borderRadius: 8,
+                  border: "1px solid var(--border)",
+                  background: showSaidas ? "var(--surface-3)" : "var(--surface)",
+                  color: showSaidas ? "var(--text-secondary)" : "var(--text-muted)",
                   cursor: "pointer",
                   fontSize: 11,
                   fontWeight: 500,
@@ -286,7 +287,7 @@ export const HeaderCaixa: React.FC<HeaderCaixaProps> = ({
       {categorias.length > 0 && (
         <div
           style={{
-            borderTop: "1px solid #f0f1f3",
+            borderTop: "1px solid var(--surface-3)",
             padding: "12px 20px",
           }}
         >

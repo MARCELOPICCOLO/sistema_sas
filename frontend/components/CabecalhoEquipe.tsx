@@ -34,9 +34,9 @@ export function CabecalhoEquipe({
           style={{
             width: 44,
             height: 44,
-            borderRadius: 10,
-            background: "#ecfdf5",
-            color: "#059669",
+            borderRadius: 12,
+            background: "var(--primary-soft)",
+            color: "var(--primary)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -52,7 +52,7 @@ export function CabecalhoEquipe({
               margin: 0,
               fontSize: 20,
               fontWeight: 600,
-              color: "#111827",
+              color: "var(--text)",
             }}
           >
             {titulo}
@@ -61,7 +61,7 @@ export function CabecalhoEquipe({
             style={{
               margin: "4px 0 0",
               fontSize: 13,
-              color: "#6b7280",
+              color: "var(--text-muted)",
             }}
           >
             {subtitulo}

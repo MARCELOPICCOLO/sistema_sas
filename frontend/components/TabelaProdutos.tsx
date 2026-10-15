@@ -64,7 +64,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
         style={{
           textAlign: "center",
           padding: "40px",
-          color: "#6b7280",
+          color: "var(--text-muted)",
           fontSize: 13,
         }}
       >
@@ -80,9 +80,10 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
           textAlign: "center",
           padding: "40px",
           background: "#fff",
-          border: "1px solid #e5e7eb",
-          borderRadius: 8,
-          color: "#6b7280",
+          border: "1px solid var(--border)",
+          borderRadius: 10,
+          color: "var(--text-muted)",
+          boxShadow: "var(--shadow-card)",
         }}
       >
         <div style={{ fontSize: 40, marginBottom: 12 }}>📦</div>
@@ -161,10 +162,10 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
   const BannerPendentes = () => (
     <div
       style={{
-        background: "#fffbeb",
-        border: "1px solid #fde68a",
+        background: "var(--warning-soft)",
+        border: "1px solid var(--warning-border)",
         padding: "10px 14px",
-        borderRadius: 8,
+        borderRadius: 10,
         marginBottom: 16,
         display: "flex",
         flexDirection: isMobile ? "column" : "row",
@@ -176,7 +177,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
       <div
         style={{
           fontSize: 12,
-          color: "#92400e",
+          color: "var(--warning-text)",
           textAlign: isMobile ? "center" : "left",
         }}
       >
@@ -196,9 +197,9 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
           style={{
             padding: "6px 12px",
             background: "#fff",
-            color: "#6b7280",
-            border: "1px solid #e5e7eb",
-            borderRadius: 6,
+            color: "var(--text-muted)",
+            border: "1px solid var(--border)",
+            borderRadius: 8,
             cursor: "pointer",
             fontSize: 12,
             display: "flex",
@@ -214,10 +215,10 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
           onClick={salvarAlteracoes}
           style={{
             padding: "6px 12px",
-            background: "#10b981",
+            background: "var(--primary)",
             color: "#fff",
             border: "none",
-            borderRadius: 6,
+            borderRadius: 8,
             cursor: "pointer",
             fontSize: 12,
             display: "flex",
@@ -239,14 +240,15 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
   if (!isMobile) {
     return (
       <div>
-        {modoEdicao && <BannerPendentes />}
+        {modoEdicao && BannerPendentes()}
 
         <div
           style={{
             overflowX: "auto",
-            border: "1px solid #e5e7eb",
-            borderRadius: 8,
+            border: "1px solid var(--border)",
+            borderRadius: 10,
             background: "#fff",
+            boxShadow: "var(--shadow-card)",
           }}
         >
           <table
@@ -258,8 +260,8 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
             <thead>
               <tr
                 style={{
-                  background: "#f9fafb",
-                  borderBottom: "1px solid #e5e7eb",
+                  background: "var(--surface-2)",
+                  borderBottom: "1px solid var(--border)",
                 }}
               >
                 <th
@@ -268,7 +270,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                     textAlign: "left",
                     fontSize: 12,
                     fontWeight: 600,
-                    color: "#374151",
+                    color: "var(--text-secondary)",
                   }}
                 >
                   Código
@@ -280,7 +282,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                     textAlign: "left",
                     fontSize: 12,
                     fontWeight: 600,
-                    color: "#374151",
+                    color: "var(--text-secondary)",
                   }}
                 >
                   Produto
@@ -292,7 +294,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                     textAlign: "left",
                     fontSize: 12,
                     fontWeight: 600,
-                    color: "#374151",
+                    color: "var(--text-secondary)",
                   }}
                 >
                   Categoria
@@ -304,7 +306,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                     textAlign: "right",
                     fontSize: 12,
                     fontWeight: 600,
-                    color: "#374151",
+                    color: "var(--text-secondary)",
                   }}
                 >
                   Preço
@@ -316,7 +318,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                     textAlign: "center",
                     fontSize: 12,
                     fontWeight: 600,
-                    color: "#374151",
+                    color: "var(--text-secondary)",
                   }}
                 >
                   Estoque
@@ -328,7 +330,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                     textAlign: "center",
                     fontSize: 12,
                     fontWeight: 600,
-                    color: "#374151",
+                    color: "var(--text-secondary)",
                   }}
                 >
                   Ações
@@ -350,14 +352,14 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                     style={{
                       borderBottom:
                         i < produtos.length - 1 ? "1px solid #f0f0f0" : "none",
-                      background: temAlteracao ? "#fffbeb" : "#fff",
+                      background: temAlteracao ? "var(--warning-soft)" : "#fff",
                     }}
                   >
                     <td
                       style={{
                         padding: "11px 14px",
                         fontSize: 12,
-                        color: "#6b7280",
+                        color: "var(--text-muted)",
                       }}
                     >
                       {p.product_code || "-"}
@@ -368,7 +370,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                         padding: "11px 14px",
                         fontSize: 13,
                         fontWeight: 500,
-                        color: "#111827",
+                        color: "var(--text)",
                       }}
                     >
                       {p.name}
@@ -378,7 +380,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                       style={{
                         padding: "11px 14px",
                         fontSize: 12,
-                        color: "#6b7280",
+                        color: "var(--text-muted)",
                       }}
                     >
                       {p.category?.name || "-"}
@@ -390,7 +392,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                         textAlign: "right",
                         fontSize: 13,
                         fontWeight: 600,
-                        color: "#059669",
+                        color: "var(--primary)",
                       }}
                     >
                       {formatCurrency(p.price)}
@@ -417,23 +419,23 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                           style={{
                             width: 26,
                             height: 26,
-                            borderRadius: 5,
-                            border: "1px solid #e5e7eb",
+                            borderRadius: 8,
+                            border: "1px solid var(--border)",
                             background: "#fff",
-                            color: "#6b7280",
+                            color: "var(--text-muted)",
                             cursor: "pointer",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.color = "#dc2626";
-                            e.currentTarget.style.borderColor = "#fecaca";
-                            e.currentTarget.style.background = "#fef2f2";
+                            e.currentTarget.style.color = "var(--danger)";
+                            e.currentTarget.style.borderColor = "var(--danger-border)";
+                            e.currentTarget.style.background = "var(--danger-soft)";
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.color = "#6b7280";
-                            e.currentTarget.style.borderColor = "#e5e7eb";
+                            e.currentTarget.style.color = "var(--text-muted)";
+                            e.currentTarget.style.borderColor = "var(--border)";
                             e.currentTarget.style.background = "#fff";
                           }}
                         >
@@ -449,7 +451,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                             fontSize: 13,
                             minWidth: 32,
                             textAlign: "center",
-                            color: temAlteracao ? "#d97706" : "#111827",
+                            color: temAlteracao ? "var(--warning)" : "var(--text)",
                           }}
                         >
                           {quantidadeAtual}
@@ -460,23 +462,23 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                           style={{
                             width: 26,
                             height: 26,
-                            borderRadius: 5,
-                            border: "1px solid #e5e7eb",
+                            borderRadius: 8,
+                            border: "1px solid var(--border)",
                             background: "#fff",
-                            color: "#6b7280",
+                            color: "var(--text-muted)",
                             cursor: "pointer",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.color = "#059669";
-                            e.currentTarget.style.borderColor = "#a7f3d0";
-                            e.currentTarget.style.background = "#ecfdf5";
+                            e.currentTarget.style.color = "var(--primary)";
+                            e.currentTarget.style.borderColor = "var(--primary-border)";
+                            e.currentTarget.style.background = "var(--primary-soft)";
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.color = "#6b7280";
-                            e.currentTarget.style.borderColor = "#e5e7eb";
+                            e.currentTarget.style.color = "var(--text-muted)";
+                            e.currentTarget.style.borderColor = "var(--border)";
                             e.currentTarget.style.background = "#fff";
                           }}
                         >
@@ -491,7 +493,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                         <div
                           style={{
                             fontSize: 9,
-                            color: "#d97706",
+                            color: "var(--warning)",
                             marginTop: 3,
                           }}
                         >
@@ -519,16 +521,16 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                             background: "none",
                             border: "none",
                             cursor: "pointer",
-                            color: "#6b7280",
+                            color: "var(--text-muted)",
                             fontSize: 14,
                             padding: 4,
                             transition: "all 0.2s",
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.color = "#10b981";
+                            e.currentTarget.style.color = "var(--primary)";
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.color = "#6b7280";
+                            e.currentTarget.style.color = "var(--text-muted)";
                           }}
                           title="Editar"
                         >
@@ -541,16 +543,16 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                             background: "none",
                             border: "none",
                             cursor: "pointer",
-                            color: "#6b7280",
+                            color: "var(--text-muted)",
                             fontSize: 14,
                             padding: 4,
                             transition: "all 0.2s",
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.color = "#dc2626";
+                            e.currentTarget.style.color = "var(--danger)";
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.color = "#6b7280";
+                            e.currentTarget.style.color = "var(--text-muted)";
                           }}
                           title="Excluir"
                         >
@@ -570,12 +572,12 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
           style={{
             marginTop: 10,
             padding: "8px 12px",
-            background: "#f9fafb",
-            border: "1px solid #e5e7eb",
-            borderRadius: 6,
+            background: "var(--surface-2)",
+            border: "1px solid var(--border)",
+            borderRadius: 8,
             textAlign: "center",
             fontSize: 11,
-            color: "#6b7280",
+            color: "var(--text-muted)",
           }}
         >
           Total: {produtos.length} produtos
@@ -590,7 +592,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
 
   return (
     <div>
-      {modoEdicao && <BannerPendentes />}
+      {modoEdicao && BannerPendentes()}
 
       <div
         style={{
@@ -608,10 +610,10 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
             <div
               key={p.id}
               style={{
-                background: temAlteracao ? "#fffbeb" : "#fff",
-                borderRadius: 8,
+                background: temAlteracao ? "var(--warning-soft)" : "#fff",
+                borderRadius: 10,
                 padding: 12,
-                border: "1px solid #e5e7eb",
+                border: "1px solid var(--border)",
               }}
             >
               <div
@@ -628,7 +630,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                     style={{
                       fontWeight: 600,
                       fontSize: 13,
-                      color: "#111827",
+                      color: "var(--text)",
                     }}
                   >
                     {p.name}
@@ -637,7 +639,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                   <div
                     style={{
                       fontSize: 11,
-                      color: "#6b7280",
+                      color: "var(--text-muted)",
                       marginTop: 2,
                     }}
                   >
@@ -649,7 +651,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                   style={{
                     fontWeight: 600,
                     fontSize: 13,
-                    color: "#059669",
+                    color: "var(--primary)",
                     whiteSpace: "nowrap",
                   }}
                 >
@@ -660,7 +662,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
               <div
                 style={{
                   fontSize: 11,
-                  color: "#6b7280",
+                  color: "var(--text-muted)",
                   marginBottom: 10,
                 }}
               >
@@ -673,13 +675,13 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                   alignItems: "center",
                   justifyContent: "space-between",
                   paddingTop: 8,
-                  borderTop: "1px solid #f0f0f0",
+                  borderTop: "1px solid var(--surface-3)",
                 }}
               >
                 <span
                   style={{
                     fontSize: 12,
-                    color: "#374151",
+                    color: "var(--text-secondary)",
                   }}
                 >
                   Estoque
@@ -697,10 +699,10 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                     style={{
                       width: 28,
                       height: 28,
-                      borderRadius: 5,
-                      border: "1px solid #e5e7eb",
+                      borderRadius: 8,
+                      border: "1px solid var(--border)",
                       background: "#fff",
-                      color: "#6b7280",
+                      color: "var(--text-muted)",
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
@@ -716,7 +718,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                       fontSize: 13,
                       minWidth: 28,
                       textAlign: "center",
-                      color: temAlteracao ? "#d97706" : "#111827",
+                      color: temAlteracao ? "var(--warning)" : "var(--text)",
                     }}
                   >
                     {quantidadeAtual}
@@ -727,10 +729,10 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                     style={{
                       width: 28,
                       height: 28,
-                      borderRadius: 5,
-                      border: "1px solid #e5e7eb",
+                      borderRadius: 8,
+                      border: "1px solid var(--border)",
                       background: "#fff",
-                      color: "#6b7280",
+                      color: "var(--text-muted)",
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
@@ -746,7 +748,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                 <div
                   style={{
                     fontSize: 10,
-                    color: "#d97706",
+                    color: "var(--warning)",
                     marginTop: 5,
                     textAlign: "right",
                   }}
@@ -762,17 +764,17 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                   gap: 8,
                   marginTop: 8,
                   paddingTop: 8,
-                  borderTop: "1px solid #f0f0f0",
+                  borderTop: "1px solid var(--surface-3)",
                 }}
               >
                 <button
                   onClick={() => abrirModalEditar(p)}
                   style={{
-                    background: "#f9fafb",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: 5,
+                    background: "var(--surface-2)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 8,
                     cursor: "pointer",
-                    color: "#6b7280",
+                    color: "var(--text-muted)",
                     fontSize: 13,
                     width: 30,
                     height: 30,
@@ -785,11 +787,11 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                 <button
                   onClick={() => removerProduto(p.id, p.name)}
                   style={{
-                    background: "#f9fafb",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: 5,
+                    background: "var(--surface-2)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 8,
                     cursor: "pointer",
-                    color: "#6b7280",
+                    color: "var(--text-muted)",
                     fontSize: 13,
                     width: 30,
                     height: 30,
@@ -809,12 +811,12 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
         style={{
           marginTop: 10,
           padding: "8px 12px",
-          background: "#f9fafb",
-          border: "1px solid #e5e7eb",
-          borderRadius: 6,
+          background: "var(--surface-2)",
+          border: "1px solid var(--border)",
+          borderRadius: 8,
           textAlign: "center",
           fontSize: 11,
-          color: "#6b7280",
+          color: "var(--text-muted)",
         }}
       >
         Total: {produtos.length} produtos

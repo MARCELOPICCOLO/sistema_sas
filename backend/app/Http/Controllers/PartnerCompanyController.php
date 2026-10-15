@@ -4,29 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Models\PartnerCompany;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
+/**
+ * Administração de empresas (somente usuários master).
+ */
 class PartnerCompanyController extends Controller
 {
-    /**
-     * Lista todas as empresas.
-     */
-    public function index()
+    private function rules(?int $ignoreId = null): array
     {
-        $companies = PartnerCompany::orderBy('corporate_name')->get();
-
-        return response()->json($companies);
-    }
-
-    /**
-     * Salva uma nova empresa.
-     */
-    public function store(Request $request)
-    {
-
-        $validated = $request->validate([
+        return [
             'corporate_name' => 'required|string|max:255',
             'trade_name'     => 'nullable|string|max:255',
-            'document'       => 'required|string|max:18|unique:partner_companies,document',
+            'document'       => ['required', 'string', 'max:18', Rule::unique('partner_companies', 'document')->ignore($ignoreId)],
             'zip_code'       => 'required|string|max:9',
             'street'         => 'required|string|max:255',
             'number'         => 'nullable|string|max:20',
@@ -34,59 +24,44 @@ class PartnerCompanyController extends Controller
             'city'           => 'required|string|max:255',
             'state'          => 'required|string|size:2',
             'active'         => 'required|boolean',
-        ]);
+        ];
+    }
 
-        $company = PartnerCompany::create($validated);
+    public function index()
+    {
+        return response()->json(PartnerCompany::orderBy('corporate_name')->get());
+    }
+
+    public function store(Request $request)
+    {
+        $company = PartnerCompany::create($request->validate($this->rules()));
 
         return response()->json([
             'message' => 'Empresa cadastrada com sucesso.',
-            'data' => $company
+            'data'    => $company,
         ], 201);
     }
 
-    /**
-     * Exibe uma empresa.
-     */
-    public function show(PartnerCompany $partnerCompany)
+    public function show(int $id)
     {
-        return response()->json($partnerCompany);
+        return response()->json(PartnerCompany::findOrFail($id));
     }
 
-    /**
-     * Atualiza uma empresa.
-     */
-    public function update(Request $request, PartnerCompany $partnerCompany)
+    public function update(Request $request, int $id)
     {
-        $validated = $request->validate([
-            'corporate_name' => 'required|string|max:255',
-            'trade_name'     => 'nullable|string|max:255',
-            'document'       => 'required|string|max:18|unique:partner_companies,document,' . $partnerCompany->id,
-            'zip_code'       => 'required|string|max:9',
-            'street'         => 'required|string|max:255',
-            'number'         => 'nullable|string|max:20',
-            'district'       => 'required|string|max:255',
-            'city'           => 'required|string|max:255',
-            'state'          => 'required|string|size:2',
-            'active'         => 'required|boolean',
-        ]);
-
-        $partnerCompany->update($validated);
+        $company = PartnerCompany::findOrFail($id);
+        $company->update($request->validate($this->rules($company->id)));
 
         return response()->json([
             'message' => 'Empresa atualizada com sucesso.',
-            'data' => $partnerCompany
+            'data'    => $company,
         ]);
     }
 
-    /**
-     * Exclui uma empresa.
-     */
-    public function destroy(PartnerCompany $partnerCompany)
+    public function destroy(int $id)
     {
-        $partnerCompany->delete();
+        PartnerCompany::findOrFail($id)->delete();
 
-        return response()->json([
-            'message' => 'Empresa removida com sucesso.'
-        ]);
+        return response()->json(['message' => 'Empresa removida com sucesso.']);
     }
 }

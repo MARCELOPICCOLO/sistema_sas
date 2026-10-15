@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\CurrentCompany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
@@ -19,11 +20,11 @@ class User extends Authenticatable implements JWTSubject
         'password',
         'active',
         'is_master',
-        'company_id',
     ];
 
     protected $hidden = [
         'password',
+        'remember_token',
     ];
 
     protected $casts = [
@@ -47,11 +48,6 @@ class User extends Authenticatable implements JWTSubject
         return [];
     }
 
-    public function restaurante()
-    {
-        return $this->belongsTo(Restaurant::class);
-    }
-
     public function partnerCompanies()
     {
         return $this->belongsToMany(
@@ -71,6 +67,38 @@ class User extends Authenticatable implements JWTSubject
             'usuario_telas',
             'user_id',
             'tela_id'
-        );
+        )->withTimestamps();
+    }
+
+    /**
+     * Telas ativas que o usuário pode acessar na empresa atual.
+     *
+     * Administradores (MASTER/ADMIN) acessam todas as telas;
+     * os demais, somente as telas atribuídas a eles.
+     */
+    public function allowedTelas()
+    {
+        if (!$this->active || !CurrentCompany::id()) {
+            return collect();
+        }
+
+        $query = CurrentCompany::isAdmin()
+            ? Tela::query()
+            : $this->telas();
+
+        return $query
+            ->where('telas.ativo', true)
+            ->orderBy('telas.id')
+            ->get(['telas.id', 'telas.nome', 'telas.slug', 'telas.descricao', 'telas.ativo'])
+            ->map(fn (Tela $tela) => $tela->setHidden(['pivot']))
+            ->values();
+    }
+
+    /**
+     * @return string[]
+     */
+    public function allowedTelaSlugs(): array
+    {
+        return $this->allowedTelas()->pluck('slug')->all();
     }
 }

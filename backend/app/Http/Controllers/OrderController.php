@@ -1,523 +1,373 @@
 <?php
-// app/Http/Controllers/OrderController.php
 
 namespace App\Http\Controllers;
 
 use App\Models\Expense;
 use App\Models\Order;
-use App\Models\OrderItem;
 use App\Services\CurrentCompany;
-use Faker\Provider\Company;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class OrderController extends Controller
 {
-    // 📋 LISTAR COMANDAS
+    private function findOrder($id): Order
+    {
+        return Order::ofCompany(CurrentCompany::id())->findOrFail($id);
+    }
+
+    /**
+     * Lista as comandas da empresa.
+     *
+     * Filtros opcionais (data de fechamento): start_date, end_date, status.
+     */
     public function index(Request $request)
     {
-        try {
-            $query = Order::with('items.product');
+        $data = $request->validate([
+            'start_date' => 'nullable|date_format:Y-m-d',
+            'end_date'   => 'nullable|date_format:Y-m-d|after_or_equal:start_date',
+            'status'     => ['nullable', Rule::in(Order::STATUSES)],
+        ]);
 
-            if ($request->has('restaurant_id')) {
-                $query->where('restaurant_id', $request->restaurant_id);
-            }
+        $query = Order::ofCompany(CurrentCompany::id())->with('items.product');
 
-            $orders = $query->get();
-
-            return response()->json($orders);
-        } catch (\Exception $e) {
-            \Log::error('Erro ao buscar orders: ' . $e->getMessage());
-            return response()->json([
-                'message' => 'Erro ao buscar comandas',
-                'error' => $e->getMessage()
-            ], 500);
+        if (!empty($data['start_date'])) {
+            $query->whereDate('closed_at', '>=', $data['start_date']);
         }
+
+        if (!empty($data['end_date'])) {
+            $query->whereDate('closed_at', '<=', $data['end_date']);
+        }
+
+        if (!empty($data['status'])) {
+            $query->where('status', $data['status']);
+        }
+
+        return response()->json($query->orderByDesc('id')->get());
     }
 
-    // 🔍 MOSTRAR UMA COMANDA
     public function show($id)
     {
-        try {
-            $order = Order::with('items.product')->findOrFail($id);
-            return response()->json($order);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Comanda não encontrada'
-            ], 404);
-        }
+        return response()->json($this->findOrder($id)->load('items.product'));
     }
 
-
-    // ➕ CRIAR COMANDA
+    /**
+     * Cria uma comanda. O número da comanda é sequencial por empresa.
+     *
+     * Também é usado para lançar vendas retroativas já fechadas
+     * (status "fechado" + closed_at), por exemplo na importação do caixa.
+     */
     public function store(Request $request)
     {
-        $partnerCompanyId = CurrentCompany::id();
+        $companyId = CurrentCompany::id();
 
         $data = $request->validate([
-            'sales_point_id'  => 'nullable|integer',
-            'order_date'      => 'nullable|date',
-            'customer_name'   => 'nullable|string|max:100',
-            'status'          => 'nullable|string|in:aberto,fechado,pendente,cancelado',
-            'total'           => 'nullable|numeric|min:0',
-            'payment_method'  => 'nullable|string|in:dinheiro,pix,credito,debito,pendente',
-            'closed_at'       => 'nullable|date',
+            'sales_point_id' => 'nullable|integer|min:0',
+            'order_date'     => 'nullable|date',
+            'customer_name'  => 'nullable|string|max:100',
+            'status'         => ['nullable', Rule::in(Order::STATUSES)],
+            'total'          => 'nullable|numeric|min:0|max:99999999',
+            'payment_method' => ['nullable', Rule::in(Order::PAYMENT_METHODS)],
+            'closed_at'      => 'nullable|date',
         ]);
 
-        /*
-     * Gera automaticamente o próximo número de comanda
-     * dentro da empresa atual.
-     *
-     * Exemplo:
-     * Empresa 1 → 190, 191, 192...
-     * Empresa 2 → 55, 56, 57...
-     */
-        $ultimoNumero = Order::where('partner_company_id', $partnerCompanyId)
-            ->max('command_number');
+        $status = $data['status'] ?? Order::STATUS_ABERTO;
 
-        $commandNumber = ($ultimoNumero ?? 0) + 1;
+        $orderDate = isset($data['order_date'])
+            ? Carbon::parse($data['order_date'])->toDateString()
+            : (isset($data['closed_at']) ? Carbon::parse($data['closed_at'])->toDateString() : now()->toDateString());
 
-        // Define valores padrão
-        $status = $data['status'] ?? 'aberto';
-        $total = $data['total'] ?? 0;
-        $customerName = $data['customer_name'] ?? 'Cliente';
+        $closedAt = null;
+        if (in_array($status, [Order::STATUS_FECHADO, Order::STATUS_PENDENTE], true)) {
+            $closedAt = isset($data['closed_at']) ? Carbon::parse($data['closed_at']) : $this->closingMoment($orderDate);
+        }
+
         $paymentMethod = $data['payment_method'] ?? null;
-        $orderDate = $data['order_date'] ?? now()->format('Y-m-d');
+        if ($status === Order::STATUS_PENDENTE) {
+            $paymentMethod = 'pendente';
+        }
 
-        $order = Order::create([
-            'partner_company_id' => $partnerCompanyId,
-            'sales_point_id'      => $data['sales_point_id'] ?? null,
-            'command_number'      => $commandNumber,
-            'order_date'          => $orderDate,
-            'customer_name'       => $customerName,
-            'status'              => $status,
-            'total'               => $total,
-            'payment_method'      => $paymentMethod,
-            'closed_at'           => null,
-        ]);
+        $order = DB::transaction(function () use ($companyId, $data, $status, $orderDate, $closedAt, $paymentMethod) {
+            $ultimoNumero = Order::ofCompany($companyId)->lockForUpdate()->max('command_number');
+
+            return Order::create([
+                'partner_company_id' => $companyId,
+                'sales_point_id'     => $data['sales_point_id'] ?? null,
+                'command_number'     => ((int) $ultimoNumero) + 1,
+                'order_date'         => $orderDate,
+                'customer_name'      => trim($data['customer_name'] ?? '') ?: 'Cliente',
+                'status'             => $status,
+                'total'              => $data['total'] ?? 0,
+                'payment_method'     => $paymentMethod,
+                'closed_at'          => $closedAt,
+            ]);
+        });
 
         return response()->json([
             'message' => 'Comanda criada com sucesso',
-            'order'   => $order,
+            'order'   => $order->fresh()->load('items.product'),
         ], 201);
     }
 
-
-
-    // ✏️ ATUALIZAR COMANDA
+    /**
+     * Atualiza dados da comanda (cliente, data, ponto, status, total).
+     *
+     * Se a comanda possui itens, o total é sempre recalculado no servidor.
+     */
     public function update(Request $request, $id)
     {
-        try {
-            $order = Order::findOrFail($id);
+        $order = $this->findOrder($id);
 
-            $data = $request->validate([
-                'order_number'  => 'nullable|string|max:20',
-                'order_date'    => 'nullable|date',
-                'customer_name' => 'nullable|string|max:100',
-                'status'        => 'nullable|string|in:aberto,fechado,pendente,cancelado',
-                'total'         => 'nullable|numeric|min:0',
-                'payment_method' => 'nullable|string|in:dinheiro,pix,credito,debito,pendente',
-                'closed_at'     => 'nullable|date',
-            ]);
+        $data = $request->validate([
+            'sales_point_id' => 'nullable|integer|min:0',
+            'order_date'     => 'nullable|date',
+            'customer_name'  => 'nullable|string|max:100',
+            'status'         => ['nullable', Rule::in([Order::STATUS_ABERTO, Order::STATUS_CANCELADO])],
+            'total'          => 'nullable|numeric|min:0|max:99999999',
+            'payment_method' => ['nullable', Rule::in(Order::PAYMENT_METHODS)],
+        ]);
 
-            $order->update($data);
-
-            return response()->json([
-                'message' => 'Comanda atualizada com sucesso',
-                'order' => $order
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('Erro ao atualizar comanda: ' . $e->getMessage());
-            return response()->json([
-                'message' => 'Erro ao atualizar comanda',
-                'error' => $e->getMessage()
-            ], 500);
+        if ($order->status === Order::STATUS_CANCELADO) {
+            return response()->json(['message' => 'Comanda cancelada não pode ser alterada.'], 422);
         }
+
+        $isClosed = in_array($order->status, [Order::STATUS_FECHADO, Order::STATUS_PENDENTE], true);
+
+        // Comanda fechada: só permite ajustar nome do cliente e forma de pagamento.
+        if ($isClosed) {
+            $data = array_intersect_key($data, array_flip(['customer_name', 'payment_method']));
+        }
+
+        if (array_key_exists('customer_name', $data)) {
+            $data['customer_name'] = trim((string) $data['customer_name']) ?: 'Cliente';
+        }
+
+        $hasItems = $order->items()->exists();
+        if ($hasItems) {
+            unset($data['total']);
+        }
+
+        $order->update(array_filter($data, fn ($v) => $v !== null));
+
+        if ($hasItems) {
+            $order->recalculateTotal();
+        }
+
+        return response()->json([
+            'message' => 'Comanda atualizada com sucesso',
+            'order'   => $order->fresh()->load('items.product'),
+        ]);
     }
 
-    // 🔢 Gerar número automático da comanda
-    private function generateOrderNumber($forceUnique = false)
-    {
-        $prefix = date('ymd');
-        $lastOrder = Order::where('order_number', 'LIKE', "{$prefix}%")
-            ->orderBy('order_number', 'desc')
-            ->first();
-
-        if ($lastOrder && $lastOrder->order_number) {
-            $lastNumber = intval(substr($lastOrder->order_number, -4));
-            $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
-        } else {
-            $newNumber = '0001';
-        }
-
-        $orderNumber = "{$prefix}{$newNumber}";
-
-        if ($forceUnique && Order::where('order_number', $orderNumber)->exists()) {
-            return $this->generateOrderNumber(true);
-        }
-
-        return $orderNumber;
-    }
-
-    // 💰 FECHAR COMANDA (CORRIGIDO)
+    /**
+     * Finaliza a comanda. Forma de pagamento "pendente" marca como não paga.
+     */
     public function close(Request $request, $id)
     {
-        try {
-            $order = Order::findOrFail($id);
+        $order = $this->findOrder($id);
 
-            if ($order->status === 'fechado') {
-                return response()->json([
-                    'message' => 'Comanda já está finalizada'
-                ], 400);
-            }
+        $data = $request->validate([
+            'payment_method' => ['required', Rule::in(Order::PAYMENT_METHODS)],
+            'total'          => 'nullable|numeric|min:0|max:99999999',
+            'customer_name'  => 'nullable|string|max:100',
+        ]);
 
-            $data = $request->validate([
-                'payment_method' => 'nullable|string|in:dinheiro,pix,credito,debito,pendente',
-                'total' => 'nullable|numeric|min:0'
-            ]);
-
-            // Se for comanda não paga
-            $status = $data['payment_method'] === 'pendente'
-                ? 'pendente'
-                : 'fechado';
-
-            // 👈 CORRETO: closed_at recebe a data da comanda (order_date)
-            $closedAt = $order->order_date;
-
-            $order->update([
-                'status' => $status,
-                'closed_at' => $closedAt,
-                'payment_method' => $data['payment_method'] ?? null,
-                'total' => $data['total'] ?? $order->total
-            ]);
-
+        if (!in_array($order->status, [Order::STATUS_ABERTO, Order::STATUS_PENDENTE], true)) {
             return response()->json([
-                'message' => $status === 'pendente'
-                    ? 'Comanda marcada como não paga'
-                    : 'Comanda finalizada com sucesso',
-                'order' => $order
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('Erro ao finalizar comanda: ' . $e->getMessage());
-            return response()->json([
-                'message' => 'Erro ao finalizar comanda',
-                'error' => $e->getMessage()
-            ], 500);
+                'message' => $order->status === Order::STATUS_CANCELADO
+                    ? 'Comanda cancelada não pode ser finalizada.'
+                    : 'Comanda já está finalizada.',
+            ], 422);
         }
+
+        $status = $data['payment_method'] === 'pendente'
+            ? Order::STATUS_PENDENTE
+            : Order::STATUS_FECHADO;
+
+        $attributes = [
+            'status'         => $status,
+            'payment_method' => $data['payment_method'],
+            // O fechamento é registrado na data da comanda (permite lançamentos retroativos).
+            'closed_at'      => $order->closed_at ?? $this->closingMoment($order->order_date?->toDateString()),
+        ];
+
+        if (!empty($data['customer_name'])) {
+            $attributes['customer_name'] = trim($data['customer_name']);
+        }
+
+        $hasItems = $order->items()->exists();
+        if (!$hasItems && isset($data['total'])) {
+            $attributes['total'] = $data['total'];
+        }
+
+        $order->update($attributes);
+
+        if ($hasItems) {
+            $order->recalculateTotal();
+        }
+
+        return response()->json([
+            'message' => $status === Order::STATUS_PENDENTE
+                ? 'Comanda marcada como não paga'
+                : 'Comanda finalizada com sucesso',
+            'order' => $order->fresh()->load('items.product'),
+        ]);
     }
 
-    // ❌ CANCELAR COMANDA
+    /**
+     * Cancela a comanda (não remove do banco).
+     */
     public function destroy($id)
     {
-        try {
-            $order = Order::findOrFail($id);
+        $order = $this->findOrder($id);
 
-            if ($order->status === 'cancelado') {
-                return response()->json([
-                    'message' => 'Comanda já está cancelada'
-                ], 400);
-            }
-
-            $order->update(['status' => 'cancelado']);
-
-            return response()->json([
-                'message' => 'Comanda cancelada com sucesso'
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Erro ao cancelar comanda',
-                'error' => $e->getMessage()
-            ], 500);
+        if ($order->status === Order::STATUS_CANCELADO) {
+            return response()->json(['message' => 'Comanda já está cancelada'], 422);
         }
+
+        $order->update(['status' => Order::STATUS_CANCELADO]);
+
+        return response()->json(['message' => 'Comanda cancelada com sucesso']);
     }
 
-    // 📊 BUSCAR COMANDA POR NÚMERO
-    public function getByOrderNumber($orderNumber)
-    {
-        try {
-            $order = Order::where('order_number', $orderNumber)
-                ->with('items.product')
-                ->first();
-
-            if (!$order) {
-                return response()->json([
-                    'message' => 'Comanda não encontrada'
-                ], 404);
-            }
-
-            return response()->json($order);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Erro ao buscar comanda',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    // 🔥 MÉTODO AUXILIAR - ATUALIZAR TOTAL
-    public static function updateTotal($order)
-    {
-        $total = $order->items()
-            ->selectRaw('SUM(price * quantity) as total')
-            ->value('total') ?? 0;
-
-        $order->update(['total' => $total]);
-    }
-
-    // 📊 RESUMO DE VENDAS POR DATA
+    /**
+     * Resumo de vendas fechadas em uma data.
+     */
     public function salesSummary(Request $request)
     {
-        try {
-            $request->validate([
-                'restaurant_id' => 'required|exists:restaurants,id',
-                'date' => 'required|date',
-            ]);
+        $data = $request->validate([
+            'date' => 'required|date_format:Y-m-d',
+        ]);
 
-            $totalSales = Order::where('restaurant_id', $request->restaurant_id)
-                ->where('status', 'fechado')
-                ->whereDate('order_date', $request->date)
-                ->sum('total');
+        $query = Order::ofCompany(CurrentCompany::id())
+            ->where('status', Order::STATUS_FECHADO)
+            ->whereDate('closed_at', $data['date']);
 
-            $totalOrders = Order::where('restaurant_id', $request->restaurant_id)
-                ->where('status', 'fechado')
-                ->whereDate('order_date', $request->date)
-                ->count();
-
-            return response()->json([
-                'date' => $request->date,
-                'total_sales' => (float) $totalSales,
-                'total_orders' => $totalOrders,
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Erro ao buscar resumo de vendas',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json([
+            'date'         => $data['date'],
+            'total_sales'  => (float) (clone $query)->sum('total'),
+            'total_orders' => $query->count(),
+        ]);
     }
+
+    /**
+     * Comandas de um dia (pela data da comanda), em qualquer status.
+     */
     public function byDate(string $date)
     {
-        try {
-            $companyId = CurrentCompany::id();
+        $parsed = $this->parseDate($date);
 
-            if (!$companyId) {
-                return response()->json([
-                    'message' => 'Empresa não identificada.'
-                ], 403);
-            }
-
-            // Validar formato da data
-            try {
-                $data = \Carbon\Carbon::createFromFormat('Y-m-d', $date);
-            } catch (\Exception $e) {
-                return response()->json([
-                    'message' => 'Data inválida. Use o formato YYYY-MM-DD.'
-                ], 422);
-            }
-
-            $inicio = $data->copy()->startOfDay();
-            $fim = $data->copy()->endOfDay();
-
-            $orders = Order::where('partner_company_id', $companyId)
-                ->where('closed_at', '>=', $inicio)
-                ->where('closed_at', '<=', $fim)
-                ->whereIn('status', ['fechado', 'pendente'])
-                ->orderBy('closed_at', 'desc')
-                ->get();
-
-            return response()->json($orders);
-        } catch (\Exception $e) {
+        if (!$parsed) {
             return response()->json([
-                'message' => 'Erro ao buscar vendas do dia.',
-                'error' => $e->getMessage(),
-            ], 500);
+                'message' => 'Data inválida. Use o formato YYYY-MM-DD.'
+            ], 422);
         }
+
+        $orders = Order::ofCompany(CurrentCompany::id())
+            ->with('items.product')
+            ->where(function ($q) use ($parsed) {
+                $q->whereDate('order_date', $parsed)
+                    ->orWhere(function ($q) use ($parsed) {
+                        $q->whereNull('order_date')->whereDate('created_at', $parsed);
+                    });
+            })
+            ->orderByDesc('command_number')
+            ->get();
+
+        return response()->json($orders);
     }
 
+    /**
+     * Entradas, saídas e saldo agrupados por dia.
+     */
     public function dailySummary(Request $request)
     {
-        try {
-            $companyId = CurrentCompany::id();
+        $data = $request->validate([
+            'start_date' => 'required|date_format:Y-m-d',
+            'end_date'   => 'required|date_format:Y-m-d|after_or_equal:start_date',
+        ]);
 
-            if (!$companyId) {
-                return response()->json([
-                    'message' => 'Empresa não identificada.'
-                ], 403);
-            }
+        $companyId = CurrentCompany::id();
 
-            $startDate = $request->query('start_date');
-            $endDate = $request->query('end_date');
+        $orders = Order::ofCompany($companyId)
+            ->where('status', Order::STATUS_FECHADO)
+            ->whereNotNull('closed_at')
+            ->whereDate('closed_at', '>=', $data['start_date'])
+            ->whereDate('closed_at', '<=', $data['end_date'])
+            ->selectRaw('DATE(closed_at) as date, COUNT(*) as total_vendas, SUM(total) as total_entradas')
+            ->groupByRaw('DATE(closed_at)')
+            ->get()
+            ->keyBy('date');
 
-            if (!$startDate || !$endDate) {
-                return response()->json([
-                    'message' => 'start_date e end_date são obrigatórios.'
-                ], 422);
-            }
+        $expenses = Expense::where('partner_company_id', $companyId)
+            ->whereDate('expense_date', '>=', $data['start_date'])
+            ->whereDate('expense_date', '<=', $data['end_date'])
+            ->selectRaw('DATE(expense_date) as date, SUM(amount) as total_saidas')
+            ->groupByRaw('DATE(expense_date)')
+            ->get()
+            ->keyBy('date');
 
-            // =========================
-            // VENDAS
-            // =========================
-
-            $orders = Order::where('partner_company_id', $companyId)
-                ->where('status', 'fechado')
-                ->whereNotNull('closed_at')
-                ->whereDate('closed_at', '>=', $startDate)
-                ->whereDate('closed_at', '<=', $endDate)
-                ->selectRaw('
-                DATE(closed_at) as date,
-                COUNT(*) as total_vendas,
-                SUM(total) as total_entradas
-            ')
-                ->groupByRaw('DATE(closed_at)')
-                ->get()
-                ->keyBy('date');
-
-
-            // =========================
-            // DESPESAS
-            // =========================
-
-            $expenses = Expense::where('partner_company_id', $companyId)
-                ->whereDate('expense_date', '>=', $startDate)
-                ->whereDate('expense_date', '<=', $endDate)
-                ->selectRaw('
-                DATE(expense_date) as date,
-                SUM(amount) as total_saidas
-            ')
-                ->groupByRaw('DATE(expense_date)')
-                ->get()
-                ->keyBy('date');
-
-
-            // =========================
-            // UNIR DATAS
-            // =========================
-
-            $dates = $orders->keys()
-                ->merge($expenses->keys())
-                ->unique()
-                ->sortDesc()
-                ->values();
-
-            // =========================
-            // MONTAR RESUMO
-            // =========================
-
-            $summary = $dates->map(function ($date) use ($orders, $expenses) {
-
-                $order = $orders->get($date);
-                $expense = $expenses->get($date);
-
-                $totalEntradas = $order
-                    ? (float) $order->total_entradas
-                    : 0;
-
-                $totalSaidas = $expense
-                    ? (float) $expense->total_saidas
-                    : 0;
+        $summary = $orders->keys()
+            ->merge($expenses->keys())
+            ->unique()
+            ->sortDesc()
+            ->values()
+            ->map(function ($date) use ($orders, $expenses) {
+                $entradas = (float) ($orders->get($date)?->total_entradas ?? 0);
+                $saidas = (float) ($expenses->get($date)?->total_saidas ?? 0);
 
                 return [
-                    'date' => $date,
-
-                    'total_vendas' => $order
-                        ? (int) $order->total_vendas
-                        : 0,
-
-                    'total_entradas' => number_format(
-                        $totalEntradas,
-                        2,
-                        '.',
-                        ''
-                    ),
-
-                    'total_saidas' => number_format(
-                        $totalSaidas,
-                        2,
-                        '.',
-                        ''
-                    ),
-
-                    'saldo' => number_format(
-                        $totalEntradas - $totalSaidas,
-                        2,
-                        '.',
-                        ''
-                    ),
+                    'date'           => $date,
+                    'total_vendas'   => (int) ($orders->get($date)?->total_vendas ?? 0),
+                    'total_entradas' => round($entradas, 2),
+                    'total_saidas'   => round($saidas, 2),
+                    'saldo'          => round($entradas - $saidas, 2),
                 ];
             });
 
-            return response()->json($summary);
-        } catch (\Exception $e) {
-
-            return response()->json([
-                'message' => 'Erro ao buscar resumo diário.',
-                'error' => $e->getMessage(),
-            ], 500);
-        }
+        return response()->json($summary);
     }
 
-    // 📊 RELATÓRIO DE ENTRADAS POR ANO
+    /**
+     * Vendas fechadas de um ano (relatórios).
+     */
     public function reportEntries(Request $request)
     {
-        try {
-            // =====================================================
-            // IDENTIFICAR A EMPRESA ATUAL
-            // =====================================================
-            $companyId = CurrentCompany::id();
+        $data = $request->validate([
+            'year' => 'required|integer|min:2000|max:2100',
+        ]);
 
-            if (!$companyId) {
-                return response()->json([
-                    'message' => 'Empresa não identificada.'
-                ], 403);
-            }
+        $orders = Order::ofCompany(CurrentCompany::id())
+            ->where('status', Order::STATUS_FECHADO)
+            ->whereNotNull('closed_at')
+            ->whereYear('closed_at', (int) $data['year'])
+            ->orderByDesc('closed_at')
+            ->get();
 
-            // =====================================================
-            // VALIDAR O ANO
-            // =====================================================
-            $request->validate([
-                'year' => 'required|integer|digits:4|min:2000|max:2100',
-            ]);
+        return response()->json($orders);
+    }
 
-            $year = (int) $request->query('year');
-
-            // =====================================================
-            // BUSCAR TODAS AS VENDAS DO ANO
-            // =====================================================
-            //
-            // Usamos closed_at porque ele representa a data em que
-            // a venda foi finalizada.
-            //
-            // No método close() da sua controller, closed_at recebe
-            // a data da comanda.
-            //
-            $orders = Order::where('partner_company_id', $companyId)
-                ->where('status', 'fechado')
-                ->whereNotNull('closed_at')
-                ->whereYear('closed_at', $year)
-                ->orderBy('closed_at', 'desc')
-                ->get();
-
-            // =====================================================
-            // RETORNAR AS VENDAS
-            // =====================================================
-            return response()->json($orders);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-
-            return response()->json([
-                'message' => 'Ano inválido.',
-                'errors' => $e->errors()
-            ], 422);
-        } catch (\Exception $e) {
-
-            \Log::error(
-                'Erro ao buscar entradas do relatório anual: ' .
-                    $e->getMessage()
-            );
-
-            return response()->json([
-                'message' => 'Erro ao buscar vendas do ano.',
-                'error' => $e->getMessage()
-            ], 500);
+    /**
+     * Momento de fechamento: agora, se a comanda é de hoje; senão, a data da comanda.
+     */
+    private function closingMoment(?string $orderDate): Carbon
+    {
+        if (!$orderDate || $orderDate === now()->toDateString()) {
+            return now();
         }
+
+        return Carbon::parse($orderDate)->setTime(12, 0);
+    }
+
+    private function parseDate(string $date): ?string
+    {
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            return null;
+        }
+
+        [$y, $m, $d] = array_map('intval', explode('-', $date));
+
+        return checkdate($m, $d, $y) ? $date : null;
     }
 }

@@ -10,7 +10,6 @@ import {
   faTag,
   faEdit,
   faTrash,
-  faChartLine,
 } from "@fortawesome/free-solid-svg-icons";
 import { TabelaProdutos } from "../../components/TabelaProdutos";
 import { ModalProduto } from "../../components/ModalProduto";
@@ -405,20 +404,21 @@ export default function Produtos({ setTela }: ProdutosProps) {
   // Sidebar para Desktop - NOVO VISUAL CLEAN
   const SidebarProdutos = () => (
     <div
+      className="sidebar-dark"
       style={{
-        background: "#ffffff",
+        background: "var(--surface)",
         display: "flex",
         flexDirection: "column",
         height: "100%",
         overflowY: "auto",
-        borderRight: "1px solid #e5e7eb",
+        borderRight: "1px solid var(--border)",
       }}
     >
       {/* Botão Voltar */}
       <div
         style={{
           padding: "16px 20px",
-          borderBottom: "1px solid #f1f5f9",
+          borderBottom: "1px solid var(--surface-3)",
         }}
       >
         <button
@@ -429,27 +429,27 @@ export default function Produtos({ setTela }: ProdutosProps) {
             gap: 8,
             width: "100%",
             padding: "9px 12px",
-            background: "#f8fafc",
-            border: "1px solid #e5e7eb",
-            borderRadius: 8,
+            background: "var(--surface-2)",
+            border: "1px solid var(--border)",
+            borderRadius: 10,
             cursor: "pointer",
-            color: "#6b7280",
+            color: "var(--text-muted)",
             fontSize: 13,
             transition: "all 0.2s",
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = "#ecfdf5";
-            e.currentTarget.style.borderColor = "#a7f3d0";
-            e.currentTarget.style.color = "#059669";
+            e.currentTarget.style.background = "var(--primary-soft)";
+            e.currentTarget.style.borderColor = "var(--primary-border)";
+            e.currentTarget.style.color = "var(--primary)";
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = "#f8fafc";
-            e.currentTarget.style.borderColor = "#e5e7eb";
-            e.currentTarget.style.color = "#6b7280";
+            e.currentTarget.style.background = "var(--surface-2)";
+            e.currentTarget.style.borderColor = "var(--border)";
+            e.currentTarget.style.color = "var(--text-muted)";
           }}
         >
           <FontAwesomeIcon icon={faArrowLeft} />
-          Voltar ao Dashboard
+          Voltar ao início
         </button>
       </div>
 
@@ -457,7 +457,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
       <div
         style={{
           padding: "24px 20px",
-          borderBottom: "1px solid #f1f5f9",
+          borderBottom: "1px solid var(--surface-3)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -465,8 +465,8 @@ export default function Produtos({ setTela }: ProdutosProps) {
             style={{
               width: 42,
               height: 42,
-              background: "#ecfdf5",
-              borderRadius: 10,
+              background: "var(--primary-soft)",
+              borderRadius: 12,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -474,7 +474,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
           >
             <FontAwesomeIcon
               icon={faBoxes}
-              style={{ fontSize: 19, color: "#059669" }}
+              style={{ fontSize: 19, color: "var(--primary)" }}
             />
           </div>
 
@@ -484,7 +484,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                 margin: 0,
                 fontSize: 17,
                 fontWeight: 600,
-                color: "#111827",
+                color: "var(--text)",
               }}
             >
               Produtos
@@ -494,7 +494,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
               style={{
                 margin: "3px 0 0",
                 fontSize: 12,
-                color: "#6b7280",
+                color: "var(--text-muted)",
               }}
             >
               Gerenciamento de estoque
@@ -526,14 +526,14 @@ export default function Produtos({ setTela }: ProdutosProps) {
               padding: "11px 12px",
               background: "transparent",
               border: "none",
-              borderRadius: 8,
+              borderRadius: 10,
               cursor: "pointer",
-              color: "#374151",
+              color: "var(--text-secondary)",
               transition: "all 0.2s",
               textAlign: "left",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#f8fafc";
+              e.currentTarget.style.background = "var(--surface-2)";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = "transparent";
@@ -543,8 +543,8 @@ export default function Produtos({ setTela }: ProdutosProps) {
               style={{
                 width: 32,
                 height: 32,
-                background: "#f3f4f6",
-                borderRadius: 8,
+                background: "var(--surface-3)",
+                borderRadius: 10,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -552,7 +552,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
             >
               <FontAwesomeIcon
                 icon={faPlus}
-                style={{ fontSize: 13, color: "#6b7280" }}
+                style={{ fontSize: 13, color: "var(--text-muted)" }}
               />
             </div>
 
@@ -561,7 +561,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                 style={{
                   fontSize: 13,
                   fontWeight: 500,
-                  color: "#374151",
+                  color: "var(--text-secondary)",
                 }}
               >
                 Novo Produto
@@ -570,7 +570,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
               <div
                 style={{
                   fontSize: 11,
-                  color: "#9ca3af",
+                  color: "var(--text-subtle)",
                   marginTop: 2,
                 }}
               >
@@ -589,14 +589,14 @@ export default function Produtos({ setTela }: ProdutosProps) {
               padding: "11px 12px",
               background: "transparent",
               border: "none",
-              borderRadius: 8,
+              borderRadius: 10,
               cursor: "pointer",
-              color: "#374151",
+              color: "var(--text-secondary)",
               transition: "all 0.2s",
               textAlign: "left",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#f8fafc";
+              e.currentTarget.style.background = "var(--surface-2)";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = "transparent";
@@ -606,8 +606,8 @@ export default function Produtos({ setTela }: ProdutosProps) {
               style={{
                 width: 32,
                 height: 32,
-                background: "#f3f4f6",
-                borderRadius: 8,
+                background: "var(--surface-3)",
+                borderRadius: 10,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -615,7 +615,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
             >
               <FontAwesomeIcon
                 icon={faTag}
-                style={{ fontSize: 13, color: "#6b7280" }}
+                style={{ fontSize: 13, color: "var(--text-muted)" }}
               />
             </div>
 
@@ -624,7 +624,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                 style={{
                   fontSize: 13,
                   fontWeight: 500,
-                  color: "#374151",
+                  color: "var(--text-secondary)",
                 }}
               >
                 Categorias
@@ -633,7 +633,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
               <div
                 style={{
                   fontSize: 11,
-                  color: "#9ca3af",
+                  color: "var(--text-subtle)",
                   marginTop: 2,
                 }}
               >
@@ -648,14 +648,14 @@ export default function Produtos({ setTela }: ProdutosProps) {
       <div
         style={{
           padding: "16px 20px",
-          borderTop: "1px solid #f1f5f9",
-          background: "#fafafa",
+          borderTop: "1px solid var(--surface-3)",
+          background: "var(--surface-2)",
         }}
       >
         <div
           style={{
             fontSize: 12,
-            color: "#9ca3af",
+            color: "var(--text-subtle)",
             textAlign: "center",
           }}
         >
@@ -674,10 +674,10 @@ export default function Produtos({ setTela }: ProdutosProps) {
             display: "grid",
             gridTemplateColumns: "260px 1fr",
             height: "100%",
-            background: "#f8fafc",
+            background: "var(--surface-2)",
           }}
         >
-          <SidebarProdutos />
+          {SidebarProdutos()}
 
           <div
             style={{
@@ -688,11 +688,12 @@ export default function Produtos({ setTela }: ProdutosProps) {
           >
             <div
               style={{
-                background: "#ffffff",
+                background: "var(--surface)",
                 padding: "18px 20px",
-                borderRadius: 10,
+                borderRadius: 12,
                 marginBottom: 20,
-                border: "1px solid #e5e7eb",
+                border: "1px solid var(--border)",
+                boxShadow: "var(--shadow-card)",
               }}
             >
               <div
@@ -710,7 +711,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                       margin: 0,
                       fontSize: 18,
                       fontWeight: 600,
-                      color: "#111827",
+                      color: "var(--text)",
                     }}
                   >
                     Lista de Produtos
@@ -720,7 +721,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                     style={{
                       margin: "4px 0 0",
                       fontSize: 13,
-                      color: "#6b7280",
+                      color: "var(--text-muted)",
                     }}
                   >
                     Gerencie seus produtos e níveis de estoque
@@ -737,7 +738,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                         top: "50%",
                         transform: "translateY(-50%)",
                         fontSize: 12,
-                        color: "#9ca3af",
+                        color: "var(--text-subtle)",
                       }}
                     />
 
@@ -748,13 +749,14 @@ export default function Produtos({ setTela }: ProdutosProps) {
                       onChange={(e) => setSearchTerm(e.target.value)}
                       style={{
                         padding: "9px 12px 9px 32px",
-                        borderRadius: 8,
-                        border: "1px solid #e5e7eb",
+                        borderRadius: 10,
+                        border: "1px solid var(--border)",
                         fontSize: 13,
                         width: 220,
                         outline: "none",
-                        background: "#ffffff",
-                        color: "#111827",
+                        background: "var(--surface)",
+                        color: "var(--text)",
+                        boxShadow: "var(--shadow-card)",
                       }}
                     />
                   </div>
@@ -768,13 +770,14 @@ export default function Produtos({ setTela }: ProdutosProps) {
                     style={{
                       width: 190,
                       padding: "9px 12px",
-                      borderRadius: 8,
-                      border: "1px solid #e5e7eb",
+                      borderRadius: 10,
+                      border: "1px solid var(--border)",
                       background: "#fff",
-                      color: "#374151",
+                      color: "var(--text-secondary)",
                       fontSize: 13,
                       cursor: "pointer",
                       outline: "none",
+                      boxShadow: "var(--shadow-card)",
                     }}
                   >
                     <option value="">Todas categorias</option>
@@ -834,7 +837,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
   return (
     <div
       style={{
-        background: "#f8fafc",
+        background: "var(--bg)",
         minHeight: "100vh",
       }}
     >
@@ -842,11 +845,11 @@ export default function Produtos({ setTela }: ProdutosProps) {
       <div
         style={{
           padding: "16px",
-          background: "#ffffff",
+          background: "var(--surface)",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          borderBottom: "1px solid #e5e7eb",
+          borderBottom: "1px solid var(--border)",
         }}
       >
         <div
@@ -860,8 +863,8 @@ export default function Produtos({ setTela }: ProdutosProps) {
             style={{
               width: 36,
               height: 36,
-              borderRadius: 9,
-              background: "#ecfdf5",
+              borderRadius: 12,
+              background: "var(--primary-soft)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -871,7 +874,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
               icon={faBoxes}
               style={{
                 fontSize: 17,
-                color: "#059669",
+                color: "var(--primary)",
               }}
             />
           </div>
@@ -881,7 +884,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
               margin: 0,
               fontSize: 18,
               fontWeight: 600,
-              color: "#111827",
+              color: "var(--text)",
             }}
           >
             Produtos
@@ -891,12 +894,12 @@ export default function Produtos({ setTela }: ProdutosProps) {
         <button
           onClick={() => setShowMobileMenu(true)}
           style={{
-            background: "#f8fafc",
-            border: "1px solid #e5e7eb",
-            borderRadius: 8,
+            background: "var(--surface-2)",
+            border: "1px solid var(--border)",
+            borderRadius: 10,
             padding: "8px 11px",
             cursor: "pointer",
-            color: "#374151",
+            color: "var(--text-secondary)",
           }}
         >
           <span style={{ fontSize: 16 }}>☰</span>
@@ -913,16 +916,17 @@ export default function Produtos({ setTela }: ProdutosProps) {
             gap: 8,
             width: "100%",
             padding: "10px 14px",
-            background: "#ffffff",
-            border: "1px solid #e5e7eb",
-            borderRadius: 8,
+            background: "var(--surface)",
+            border: "1px solid var(--border)",
+            borderRadius: 10,
             cursor: "pointer",
-            color: "#374151",
+            color: "var(--text-secondary)",
             fontSize: 13,
+            boxShadow: "var(--shadow-card)",
           }}
         >
           <FontAwesomeIcon icon={faArrowLeft} />
-          Voltar ao Dashboard
+          Voltar ao início
         </button>
       </div>
 
@@ -943,13 +947,14 @@ export default function Produtos({ setTela }: ProdutosProps) {
           />
 
           <div
+            className="sidebar-dark"
             style={{
               position: "fixed",
               top: 0,
               left: 0,
               bottom: 0,
               width: "280px",
-              background: "#ffffff",
+              background: "var(--surface)",
               zIndex: 1001,
               padding: "20px",
               overflowY: "auto",
@@ -966,13 +971,13 @@ export default function Produtos({ setTela }: ProdutosProps) {
               <button
                 onClick={() => setShowMobileMenu(false)}
                 style={{
-                  background: "#f8fafc",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: 8,
+                  background: "var(--surface-2)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 10,
                   width: 34,
                   height: 34,
                   cursor: "pointer",
-                  color: "#6b7280",
+                  color: "var(--text-muted)",
                 }}
               >
                 <FontAwesomeIcon icon={faTimes} />
@@ -1000,14 +1005,14 @@ export default function Produtos({ setTela }: ProdutosProps) {
                 padding: "12px",
                 background: "transparent",
                 border: "none",
-                borderRadius: 8,
+                borderRadius: 10,
                 cursor: "pointer",
-                color: "#374151",
+                color: "var(--text-secondary)",
                 marginBottom: 6,
                 textAlign: "left",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#f8fafc";
+                e.currentTarget.style.background = "var(--surface-2)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "transparent";
@@ -1017,8 +1022,8 @@ export default function Produtos({ setTela }: ProdutosProps) {
                 style={{
                   width: 32,
                   height: 32,
-                  background: "#ecfdf5",
-                  borderRadius: 8,
+                  background: "var(--primary-soft)",
+                  borderRadius: 10,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -1028,7 +1033,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                   icon={faPlus}
                   style={{
                     fontSize: 13,
-                    color: "#059669",
+                    color: "var(--primary)",
                   }}
                 />
               </div>
@@ -1056,13 +1061,13 @@ export default function Produtos({ setTela }: ProdutosProps) {
                 padding: "12px",
                 background: "transparent",
                 border: "none",
-                borderRadius: 8,
+                borderRadius: 10,
                 cursor: "pointer",
-                color: "#374151",
+                color: "var(--text-secondary)",
                 textAlign: "left",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#f8fafc";
+                e.currentTarget.style.background = "var(--surface-2)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "transparent";
@@ -1072,8 +1077,8 @@ export default function Produtos({ setTela }: ProdutosProps) {
                 style={{
                   width: 32,
                   height: 32,
-                  background: "#f3f4f6",
-                  borderRadius: 8,
+                  background: "var(--surface-3)",
+                  borderRadius: 10,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -1083,7 +1088,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                   icon={faTag}
                   style={{
                     fontSize: 13,
-                    color: "#6b7280",
+                    color: "var(--text-muted)",
                   }}
                 />
               </div>
@@ -1105,11 +1110,12 @@ export default function Produtos({ setTela }: ProdutosProps) {
       <div style={{ padding: "16px" }}>
         <div
           style={{
-            background: "#ffffff",
-            borderRadius: 10,
+            background: "var(--surface)",
+            borderRadius: 12,
             padding: "12px",
             marginBottom: 16,
-            border: "1px solid #e5e7eb",
+            border: "1px solid var(--border)",
+            boxShadow: "var(--shadow-card)",
           }}
         >
           <div
@@ -1126,7 +1132,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                 top: "50%",
                 transform: "translateY(-50%)",
                 fontSize: 13,
-                color: "#9ca3af",
+                color: "var(--text-subtle)",
               }}
             />
 
@@ -1138,12 +1144,13 @@ export default function Produtos({ setTela }: ProdutosProps) {
               style={{
                 width: "100%",
                 padding: "10px 12px 10px 36px",
-                borderRadius: 8,
-                border: "1px solid #e5e7eb",
+                borderRadius: 10,
+                border: "1px solid var(--border)",
                 fontSize: 14,
                 outline: "none",
-                color: "#111827",
-                background: "#ffffff",
+                color: "var(--text)",
+                background: "var(--surface)",
+                boxShadow: "var(--shadow-card)",
               }}
             />
           </div>
@@ -1158,13 +1165,14 @@ export default function Produtos({ setTela }: ProdutosProps) {
             style={{
               width: "100%",
               padding: "10px 12px",
-              borderRadius: 8,
-              border: "1px solid #e5e7eb",
+              borderRadius: 10,
+              border: "1px solid var(--border)",
               background: "#fff",
-              color: "#374151",
+              color: "var(--text-secondary)",
               fontSize: 14,
               cursor: "pointer",
               outline: "none",
+              boxShadow: "var(--shadow-card)",
             }}
           >
             <option value="">Todas categorias</option>
@@ -1183,7 +1191,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
               style={{
                 textAlign: "center",
                 padding: "40px",
-                color: "#6b7280",
+                color: "var(--text-muted)",
                 fontSize: 13,
               }}
             >
@@ -1194,11 +1202,12 @@ export default function Produtos({ setTela }: ProdutosProps) {
               <div
                 key={produto.id}
                 style={{
-                  background: "#ffffff",
-                  borderRadius: 10,
+                  background: "var(--surface)",
+                  borderRadius: 12,
                   padding: "14px",
                   marginBottom: 8,
-                  border: "1px solid #e5e7eb",
+                  border: "1px solid var(--border)",
+                  boxShadow: "var(--shadow-card)",
                 }}
               >
                 <div
@@ -1213,7 +1222,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                       style={{
                         fontWeight: 600,
                         fontSize: 14,
-                        color: "#111827",
+                        color: "var(--text)",
                       }}
                     >
                       {produto.name}
@@ -1222,7 +1231,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                     <div
                       style={{
                         fontSize: 11,
-                        color: "#6b7280",
+                        color: "var(--text-muted)",
                         marginTop: 3,
                       }}
                     >
@@ -1232,7 +1241,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                     <div
                       style={{
                         fontSize: 12,
-                        color: "#9ca3af",
+                        color: "var(--text-subtle)",
                         marginTop: 2,
                       }}
                     >
@@ -1245,7 +1254,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                       style={{
                         fontWeight: 700,
                         fontSize: 14,
-                        color: "#059669",
+                        color: "var(--primary)",
                       }}
                     >
                       {formatCurrency(produto.price)}
@@ -1254,7 +1263,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                     <div
                       style={{
                         fontSize: 12,
-                        color: "#374151",
+                        color: "var(--text-secondary)",
                         marginTop: 2,
                       }}
                     >
@@ -1269,7 +1278,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                     gap: 8,
                     marginTop: 8,
                     paddingTop: 8,
-                    borderTop: "1px solid #f1f5f9",
+                    borderTop: "1px solid var(--surface-3)",
                   }}
                 >
                   <button
@@ -1277,10 +1286,10 @@ export default function Produtos({ setTela }: ProdutosProps) {
                     style={{
                       flex: 1,
                       padding: "7px",
-                      borderRadius: 7,
-                      border: "1px solid #a7f3d0",
-                      background: "#ecfdf5",
-                      color: "#047857",
+                      borderRadius: 8,
+                      border: "1px solid var(--primary-border)",
+                      background: "var(--primary-soft)",
+                      color: "var(--primary-hover)",
                       fontSize: 12,
                       cursor: "pointer",
                       display: "flex",
@@ -1298,10 +1307,10 @@ export default function Produtos({ setTela }: ProdutosProps) {
                     style={{
                       flex: 1,
                       padding: "7px",
-                      borderRadius: 7,
-                      border: "1px solid #fecaca",
-                      background: "#fffafa",
-                      color: "#dc2626",
+                      borderRadius: 8,
+                      border: "1px solid var(--danger-border)",
+                      background: "var(--surface-2)",
+                      color: "var(--danger)",
                       fontSize: 12,
                       cursor: "pointer",
                       display: "flex",

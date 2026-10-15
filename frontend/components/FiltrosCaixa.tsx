@@ -34,10 +34,10 @@ export const FiltrosCaixa: React.FC<FiltrosCaixaProps> = ({
         onClick={() => setFiltroCategoria(null)}
         style={{
           padding: "5px 10px",
-          borderRadius: 6,
-          border: "1px solid #e5e7eb",
-          background: filtroCategoria === null ? "#f3f4f6" : "#ffffff",
-          color: filtroCategoria === null ? "#374151" : "#6b7280",
+          borderRadius: 8,
+          border: "1px solid var(--border)",
+          background: filtroCategoria === null ? "var(--surface-3)" : "var(--surface)",
+          color: filtroCategoria === null ? "var(--text-secondary)" : "var(--text-muted)",
           cursor: "pointer",
           fontSize: 11,
           fontWeight: 500,
@@ -53,10 +53,10 @@ export const FiltrosCaixa: React.FC<FiltrosCaixaProps> = ({
           onClick={() => setFiltroCategoria(cat.id)}
           style={{
             padding: "5px 10px",
-            borderRadius: 6,
-            border: "1px solid #e5e7eb",
-            background: filtroCategoria === cat.id ? "#f3f4f6" : "#ffffff",
-            color: filtroCategoria === cat.id ? "#374151" : "#6b7280",
+            borderRadius: 8,
+            border: "1px solid var(--border)",
+            background: filtroCategoria === cat.id ? "var(--surface-3)" : "var(--surface)",
+            color: filtroCategoria === cat.id ? "var(--text-secondary)" : "var(--text-muted)",
             cursor: "pointer",
             fontSize: 11,
             fontWeight: 500,

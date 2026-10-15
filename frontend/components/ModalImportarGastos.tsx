@@ -23,27 +23,6 @@ export const ModalImportarGastos: React.FC<ModalImportarGastosProps> = ({
 }) => {
   if (!showModalImportarGastos) return null;
 
-  // Função auxiliar para pegar o valor do campo independente do nome/case
-  const getFieldValue = (row: any, fieldNames: string[]): string => {
-    for (const name of fieldNames) {
-      if (row[name] !== undefined && row[name] !== null && row[name] !== "") {
-        return String(row[name]);
-      }
-      // Busca case insensitive
-      const key = Object.keys(row).find(
-        (k) => k.toLowerCase() === name.toLowerCase(),
-      );
-      if (
-        key &&
-        row[key] !== undefined &&
-        row[key] !== null &&
-        row[key] !== ""
-      ) {
-        return String(row[key]);
-      }
-    }
-    return "N/A";
-  };
 
   const formatPreviewDate = (dateStr: string): string => {
     if (!dateStr || dateStr === "N/A") return "N/A";
@@ -63,7 +42,7 @@ export const ModalImportarGastos: React.FC<ModalImportarGastosProps> = ({
         left: 0,
         right: 0,
         bottom: 0,
-        background: "rgba(0,0,0,0.5)",
+        background: "var(--overlay)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -74,7 +53,7 @@ export const ModalImportarGastos: React.FC<ModalImportarGastosProps> = ({
       <div
         style={{
           background: "#fff",
-          borderRadius: 12,
+          borderRadius: 14,
           padding: 24,
           width: "90%",
           maxWidth: 750,
@@ -91,23 +70,23 @@ export const ModalImportarGastos: React.FC<ModalImportarGastosProps> = ({
           style={{
             marginBottom: 16,
             padding: 12,
-            background: "#f3f4f6",
-            borderRadius: 8,
+            background: "var(--surface-3)",
+            borderRadius: 10,
           }}
         >
           <p style={{ margin: 0, fontSize: 13, fontWeight: 500 }}>
             📋 Formato esperado:
           </p>
-          <p style={{ margin: "8px 0 0", fontSize: 12, color: "#6b7280" }}>
+          <p style={{ margin: "8px 0 0", fontSize: 12, color: "var(--text-muted)" }}>
             <strong>Delimitador:</strong> ponto e vírgula (;) <br />
             <strong>Colunas:</strong> Data;Descrição;Valor;Categoria
             <br />
             Exemplo: 03/01/2026;AÇUCAR;13.99;2
           </p>
-          <p style={{ margin: "8px 0 0", fontSize: 11, color: "#10b981" }}>
+          <p style={{ margin: "8px 0 0", fontSize: 11, color: "var(--primary)" }}>
             ✅ Datas nos formatos DD/MM/AAAA ou AAAA-MM-DD são aceitas
           </p>
-          <p style={{ margin: "4px 0 0", fontSize: 11, color: "#f59e0b" }}>
+          <p style={{ margin: "4px 0 0", fontSize: 11, color: "var(--warning)" }}>
             💡 Categoria deve ser o ID numérico (ex: 2) ou o nome exato
           </p>
         </div>
@@ -136,8 +115,8 @@ export const ModalImportarGastos: React.FC<ModalImportarGastosProps> = ({
             style={{
               width: "100%",
               padding: "8px",
-              borderRadius: 6,
-              border: "1px solid #e5e7eb",
+              borderRadius: 8,
+              border: "1px solid var(--border)",
             }}
           />
         </div>
@@ -156,11 +135,11 @@ export const ModalImportarGastos: React.FC<ModalImportarGastosProps> = ({
                 }}
               >
                 <thead>
-                  <tr style={{ background: "#f9fafb" }}>
+                  <tr style={{ background: "var(--surface-2)" }}>
                     <th
                       style={{
                         padding: "6px 8px",
-                        border: "1px solid #e5e7eb",
+                        border: "1px solid var(--border)",
                         textAlign: "left",
                       }}
                     >
@@ -169,7 +148,7 @@ export const ModalImportarGastos: React.FC<ModalImportarGastosProps> = ({
                     <th
                       style={{
                         padding: "6px 8px",
-                        border: "1px solid #e5e7eb",
+                        border: "1px solid var(--border)",
                         textAlign: "left",
                       }}
                     >
@@ -178,7 +157,7 @@ export const ModalImportarGastos: React.FC<ModalImportarGastosProps> = ({
                     <th
                       style={{
                         padding: "6px 8px",
-                        border: "1px solid #e5e7eb",
+                        border: "1px solid var(--border)",
                         textAlign: "left",
                       }}
                     >
@@ -187,7 +166,7 @@ export const ModalImportarGastos: React.FC<ModalImportarGastosProps> = ({
                     <th
                       style={{
                         padding: "6px 8px",
-                        border: "1px solid #e5e7eb",
+                        border: "1px solid var(--border)",
                         textAlign: "right",
                       }}
                     >
@@ -196,7 +175,7 @@ export const ModalImportarGastos: React.FC<ModalImportarGastosProps> = ({
                     <th
                       style={{
                         padding: "6px 8px",
-                        border: "1px solid #e5e7eb",
+                        border: "1px solid var(--border)",
                         textAlign: "left",
                       }}
                     >
@@ -223,7 +202,7 @@ export const ModalImportarGastos: React.FC<ModalImportarGastosProps> = ({
                         <td
                           style={{
                             padding: "6px 8px",
-                            border: "1px solid #e5e7eb",
+                            border: "1px solid var(--border)",
                           }}
                         >
                           {dataOriginal}
@@ -231,8 +210,8 @@ export const ModalImportarGastos: React.FC<ModalImportarGastosProps> = ({
                         <td
                           style={{
                             padding: "6px 8px",
-                            border: "1px solid #e5e7eb",
-                            color: "#10b981",
+                            border: "1px solid var(--border)",
+                            color: "var(--primary)",
                             fontWeight: 500,
                           }}
                         >
@@ -241,7 +220,7 @@ export const ModalImportarGastos: React.FC<ModalImportarGastosProps> = ({
                         <td
                           style={{
                             padding: "6px 8px",
-                            border: "1px solid #e5e7eb",
+                            border: "1px solid var(--border)",
                           }}
                         >
                           {descricao}
@@ -249,7 +228,7 @@ export const ModalImportarGastos: React.FC<ModalImportarGastosProps> = ({
                         <td
                           style={{
                             padding: "6px 8px",
-                            border: "1px solid #e5e7eb",
+                            border: "1px solid var(--border)",
                             textAlign: "right",
                           }}
                         >
@@ -258,7 +237,7 @@ export const ModalImportarGastos: React.FC<ModalImportarGastosProps> = ({
                         <td
                           style={{
                             padding: "6px 8px",
-                            border: "1px solid #e5e7eb",
+                            border: "1px solid var(--border)",
                             textAlign: "left",
                           }}
                         >
@@ -282,12 +261,13 @@ export const ModalImportarGastos: React.FC<ModalImportarGastosProps> = ({
             style={{
               flex: 1,
               padding: "10px",
-              borderRadius: 8,
-              border: "1px solid #e5e7eb",
+              borderRadius: 10,
+              border: "1px solid var(--border)",
               background: "#fff",
-              color: "#374151",
+              color: "var(--text-secondary)",
               fontWeight: "bold",
               cursor: "pointer",
+              boxShadow: "var(--shadow-card)",
             }}
           >
             Cancelar
@@ -298,9 +278,9 @@ export const ModalImportarGastos: React.FC<ModalImportarGastosProps> = ({
             style={{
               flex: 1,
               padding: "10px",
-              borderRadius: 8,
+              borderRadius: 10,
               border: "none",
-              background: !importFile || importing ? "#9ca3af" : "#10b981",
+              background: !importFile || importing ? "var(--text-subtle)" : "var(--primary)",
               color: "#fff",
               fontWeight: "bold",
               cursor: !importFile || importing ? "not-allowed" : "pointer",
@@ -311,7 +291,7 @@ export const ModalImportarGastos: React.FC<ModalImportarGastosProps> = ({
         </div>
 
         {importPreview.length === 0 && importFile && (
-          <p style={{ fontSize: 12, color: "#ef4444", marginTop: 12 }}>
+          <p style={{ fontSize: 12, color: "var(--danger)", marginTop: 12 }}>
             ⚠️ Nenhum dado válido encontrado. Verifique se o arquivo está no
             formato correto.
           </p>

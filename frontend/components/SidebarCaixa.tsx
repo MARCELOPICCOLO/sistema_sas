@@ -6,7 +6,7 @@ import {
   faFileImport,
   faFileExport,
   faWallet,
-  faChartLine,
+  faChevronRight,
   faArrowLeft,
 } from "@fortawesome/free-solid-svg-icons";
 
@@ -59,13 +59,13 @@ export const SidebarCaixa: React.FC<SidebarCaixaProps> = ({
   return (
     <div
       style={{
-        background: "#ffffff",
-        color: "#1f2937",
+        background: "var(--sidebar-bg)",
+        color: "var(--sidebar-text)",
         height: "100vh",
         overflowY: "auto",
         display: "flex",
         flexDirection: "column",
-        borderRight: "1px solid #e5e7eb",
+        borderRight: "1px solid var(--sidebar-border)",
       }}
     >
       {/* BOTÃO VOLTAR AO DASHBOARD */}
@@ -73,7 +73,7 @@ export const SidebarCaixa: React.FC<SidebarCaixaProps> = ({
         <div
           style={{
             padding: "16px 20px",
-            borderBottom: "1px solid #e5e7eb",
+            borderBottom: "1px solid var(--sidebar-border)",
           }}
         >
           <button
@@ -84,27 +84,25 @@ export const SidebarCaixa: React.FC<SidebarCaixaProps> = ({
               gap: 8,
               width: "100%",
               padding: "10px 16px",
-              background: "#ffffff",
-              border: "1px solid #e5e7eb",
-              borderRadius: 8,
+              background: "transparent",
+              border: "1px solid var(--sidebar-border)",
+              borderRadius: 10,
               cursor: "pointer",
               transition: "all 0.2s",
-              color: "#4b5563",
+              color: "var(--sidebar-text-muted)",
               fontSize: 13,
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#f9fafb";
-              e.currentTarget.style.borderColor = "#d1d5db";
-              e.currentTarget.style.color = "#111827";
+              e.currentTarget.style.background = "var(--sidebar-hover)";
+              e.currentTarget.style.color = "var(--sidebar-text)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = "#ffffff";
-              e.currentTarget.style.borderColor = "#e5e7eb";
-              e.currentTarget.style.color = "#4b5563";
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = "var(--sidebar-text-muted)";
             }}
           >
             <FontAwesomeIcon icon={faArrowLeft} />
-            Voltar ao Dashboard
+            Voltar ao início
           </button>
         </div>
       )}
@@ -113,7 +111,7 @@ export const SidebarCaixa: React.FC<SidebarCaixaProps> = ({
       <div
         style={{
           padding: "24px 20px",
-          borderBottom: "1px solid #e5e7eb",
+          borderBottom: "1px solid var(--sidebar-border)",
         }}
       >
         <div
@@ -127,8 +125,8 @@ export const SidebarCaixa: React.FC<SidebarCaixaProps> = ({
             style={{
               width: 40,
               height: 40,
-              background: "#ecfdf5",
-              borderRadius: 10,
+              background: "#fff",
+              borderRadius: 12,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -138,7 +136,7 @@ export const SidebarCaixa: React.FC<SidebarCaixaProps> = ({
               icon={faWallet}
               style={{
                 fontSize: 20,
-                color: "#10b981",
+                color: "var(--primary)",
               }}
             />
           </div>
@@ -149,7 +147,7 @@ export const SidebarCaixa: React.FC<SidebarCaixaProps> = ({
                 margin: 0,
                 fontSize: 18,
                 fontWeight: 600,
-                color: "#111827",
+                color: "var(--sidebar-text)",
               }}
             >
               Caixa
@@ -159,7 +157,7 @@ export const SidebarCaixa: React.FC<SidebarCaixaProps> = ({
               style={{
                 margin: "2px 0 0",
                 fontSize: 12,
-                color: "#6b7280",
+                color: "var(--sidebar-text-muted)",
               }}
             >
               Gestão financeira
@@ -194,13 +192,13 @@ export const SidebarCaixa: React.FC<SidebarCaixaProps> = ({
                 padding: "12px 16px",
                 background: "transparent",
                 border: "none",
-                borderRadius: 8,
+                borderRadius: 10,
                 cursor: "pointer",
                 transition: "all 0.2s",
-                color: "#1f2937",
+                color: "var(--sidebar-text)",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#f3f4f6";
+                e.currentTarget.style.background = "var(--sidebar-hover)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "transparent";
@@ -210,8 +208,8 @@ export const SidebarCaixa: React.FC<SidebarCaixaProps> = ({
                 style={{
                   width: 32,
                   height: 32,
-                  background: "#f3f4f6",
-                  borderRadius: 8,
+                  background: "var(--sidebar-hover)",
+                  borderRadius: 10,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -221,7 +219,7 @@ export const SidebarCaixa: React.FC<SidebarCaixaProps> = ({
                   icon={item.icon}
                   style={{
                     fontSize: 14,
-                    color: "#6b7280",
+                    color: "var(--sidebar-text)",
                   }}
                 />
               </div>
@@ -236,7 +234,7 @@ export const SidebarCaixa: React.FC<SidebarCaixaProps> = ({
                   style={{
                     fontSize: 14,
                     fontWeight: 500,
-                    color: "#1f2937",
+                    color: "var(--sidebar-text)",
                   }}
                 >
                   {item.label}
@@ -245,7 +243,7 @@ export const SidebarCaixa: React.FC<SidebarCaixaProps> = ({
                 <div
                   style={{
                     fontSize: 11,
-                    color: "#9ca3af",
+                    color: "var(--sidebar-text-muted)",
                     marginTop: 2,
                   }}
                 >
@@ -254,10 +252,10 @@ export const SidebarCaixa: React.FC<SidebarCaixaProps> = ({
               </div>
 
               <FontAwesomeIcon
-                icon={faChartLine}
+                icon={faChevronRight}
                 style={{
                   fontSize: 12,
-                  color: "#d1d5db",
+                  color: "var(--sidebar-text-muted)",
                 }}
               />
             </button>
@@ -270,8 +268,8 @@ export const SidebarCaixa: React.FC<SidebarCaixaProps> = ({
         style={{
           marginTop: "auto",
           padding: "20px",
-          borderTop: "1px solid #e5e7eb",
-          background: "#f9fafb",
+          borderTop: "1px solid var(--sidebar-border)",
+          background: "transparent",
         }}
       />
     </div>
