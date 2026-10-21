@@ -15,18 +15,20 @@
 
 /* ---------- Banner: título + resumo do dia ---------- */
 
+/* Banner: saudação no topo e o card de indicadores no rodapé */
 .dash-banner {
   position: relative;
   overflow: hidden;
   display: grid;
   gap: 14px;
-  padding: 18px 22px;
+  padding: 16px 20px 18px;
   border-radius: var(--radius-lg);
   color: #fff;
   background:
-    radial-gradient(circle at 85% -10%, rgba(255, 255, 255, 0.22), transparent 40%),
-    linear-gradient(120deg, var(--hero-from) 0%, var(--hero-to) 100%);
-  box-shadow: 0 18px 40px -18px rgba(29, 78, 216, 0.6);
+    radial-gradient(circle at 90% 0%, rgba(255, 255, 255, 0.2), transparent 45%),
+    radial-gradient(circle at 0% 100%, rgba(124, 58, 237, 0.35), transparent 50%),
+    linear-gradient(115deg, var(--hero-from) 0%, var(--hero-via) 50%, var(--hero-to) 100%);
+  box-shadow: 0 18px 40px -18px rgba(37, 99, 235, 0.65);
 }
 
 /* Malha decorativa */
@@ -48,8 +50,15 @@
   z-index: 1;
 }
 
+.dash-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
 .dash-header h1 {
-  margin: 8px 0 0;
+  margin: 6px 0 0;
   font-size: var(--fs-2xl);
   font-weight: 700;
   line-height: 1.2;
@@ -78,38 +87,57 @@
 
 /* ---------- Indicadores do dia ---------- */
 
+/* Indicadores: um único card retangular no rodapé do banner, com os itens
+   lado a lado separados por meia borda vertical centralizada */
 .dash-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr));
-  gap: 10px;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
+  padding: 8px 4px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 22px -12px rgba(15, 23, 42, 0.5);
 }
 
 .dash-stat {
   --stat: var(--primary);
+  position: relative;
+  min-width: 0;
+  padding: 2px 12px;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 2px;
-  padding: 10px 12px;
+  text-align: center;
   color: var(--text);
-  background: var(--surface);
-  border-radius: var(--radius);
-  box-shadow: 0 8px 24px -12px rgba(15, 23, 42, 0.35);
+}
+
+/* Meia borda: só no meio da altura, entre um item e outro */
+.dash-stat + .dash-stat::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 25%;
+  bottom: 25%;
+  width: 1px;
+  background: var(--border-strong);
 }
 
 .dash-stat__head {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .dash-stat__icon {
   flex-shrink: 0;
-  width: 24px;
-  height: 24px;
-  border-radius: 7px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
   display: grid;
   place-items: center;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-xs);
   color: var(--stat);
   background: color-mix(in srgb, var(--stat) 12%, transparent);
 }
@@ -121,8 +149,9 @@
 }
 
 .dash-stat__value {
-  margin-top: 2px;
-  font-size: var(--fs-xl);
+  max-width: 100%;
+  margin-top: 1px;
+  font-size: var(--fs-lg);
   font-weight: 700;
   line-height: 1.15;
   letter-spacing: -0.02em;
@@ -133,24 +162,6 @@
 }
 
 .dash-stat__value.is-negative {
-  color: var(--danger);
-}
-
-.dash-stat__detail,
-.dash-stat__trend {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: var(--fs-xs);
-  font-weight: 500;
-  color: var(--text-muted);
-}
-
-.dash-stat__trend.is-up {
-  color: var(--success);
-}
-
-.dash-stat__trend.is-down {
   color: var(--danger);
 }
 
@@ -186,7 +197,14 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
+}
+
+/* Linha abaixo do título "Módulos" */
+.dash-divider {
+  margin: 0 0 14px;
+  border: 0;
+  border-top: 1px solid var(--border);
 }
 
 .dash-section-title h2 {
@@ -349,25 +367,40 @@
   }
 
   .dash-banner {
-    padding: 14px 12px;
-    gap: 12px;
+    padding: 12px;
   }
 
   .dash-header h1 {
     font-size: var(--fs-xl);
   }
 
+  /* Celular: 2x2, com meia borda vertical e horizontal entre os itens */
   .dash-stats {
+    grid-auto-flow: row;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    padding: 4px;
   }
 
   .dash-stat {
-    padding: 9px 10px;
+    padding: 8px;
   }
 
-  .dash-stat__icon {
+  .dash-stat + .dash-stat::before {
     display: none;
+  }
+
+  .dash-stat:nth-child(even)::before {
+    display: block;
+  }
+
+  .dash-stat:nth-child(n + 3)::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 25%;
+    right: 25%;
+    height: 1px;
+    background: var(--border-strong);
   }
 
   .dash-stat__value {

@@ -1537,7 +1537,7 @@ export default function Caixa() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "280px 1fr",
+          gridTemplateColumns: "auto 1fr",
           height: "100%",
           background: "var(--surface-2)",
         }}

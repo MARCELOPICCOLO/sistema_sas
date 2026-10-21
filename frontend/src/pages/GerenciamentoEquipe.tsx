@@ -968,7 +968,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "280px 1fr",
+            gridTemplateColumns: "auto 1fr",
             height: "var(--page-h)",
             background: "var(--bg)",
           }}

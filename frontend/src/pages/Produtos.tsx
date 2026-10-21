@@ -16,6 +16,7 @@ import { ModalProduto } from "../../components/ModalProduto";
 import { ModalCategorias } from "../../components/ModalCategorias";
 
 import api from "../api/axios";
+import ModuleSidebar from "../components/ModuleSidebar";
 import { notify, confirmar } from "../feedback";
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -398,229 +399,40 @@ export default function Produtos() {
     return produto.category?.id === categoriaFiltro;
   });
 
-  // Sidebar para Desktop - NOVO VISUAL CLEAN
+  // Menu lateral (desktop), encolhível
   const SidebarProdutos = () => (
-    <div
-      className="sidebar-dark"
-      style={{
-        background: "var(--surface)",
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        overflowY: "auto",
-        borderRight: "1px solid var(--border)",
-      }}
-    >
-      {/* Cabeçalho */}
-      <div
-        style={{
-          padding: "24px 20px",
-          borderBottom: "1px solid var(--surface-3)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div
-            style={{
-              width: 42,
-              height: 42,
-              background: "var(--primary-soft)",
-              borderRadius: 12,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <FontAwesomeIcon
-              icon={faBoxes}
-              style={{ fontSize: "var(--fs-xl)", color: "var(--primary)" }}
-            />
-          </div>
-
-          <div>
-            <h2
-              style={{
-                margin: 0,
-                fontSize: "var(--fs-xl)",
-                fontWeight: 600,
-                color: "var(--text)",
-              }}
-            >
-              Produtos
-            </h2>
-
-            <p
-              style={{
-                margin: "3px 0 0",
-                fontSize: "var(--fs-xs)",
-                color: "var(--text-muted)",
-              }}
-            >
-              Gerenciamento de estoque
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Menu */}
-      <div style={{ padding: "20px", flex: 1 }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <button
-            onClick={() => {
-              setEditando(null);
-              setFormData({
-                name: "",
-                product_code: "",
-                price: 0,
-                quantity: 0,
-                category_id: 0,
-              });
-              setShowModal(true);
-            }}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              width: "100%",
-              padding: "11px 12px",
-              background: "transparent",
-              border: "none",
-              borderRadius: 10,
-              cursor: "pointer",
-              color: "var(--text-secondary)",
-              transition: "all 0.2s",
-              textAlign: "left",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "var(--surface-2)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent";
-            }}
-          >
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                background: "var(--surface-3)",
-                borderRadius: 10,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <FontAwesomeIcon
-                icon={faPlus}
-                style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)" }}
-              />
-            </div>
-
-            <div style={{ flex: 1 }}>
-              <div
-                style={{
-                  fontSize: "var(--fs-sm)",
-                  fontWeight: 500,
-                  color: "var(--text-secondary)",
-                }}
-              >
-                Novo Produto
-              </div>
-
-              <div
-                style={{
-                  fontSize: "var(--fs-2xs)",
-                  color: "var(--text-subtle)",
-                  marginTop: 2,
-                }}
-              >
-                Adicionar ao catálogo
-              </div>
-            </div>
-          </button>
-
-          <button
-            onClick={() => setShowModalCategoria(true)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              width: "100%",
-              padding: "11px 12px",
-              background: "transparent",
-              border: "none",
-              borderRadius: 10,
-              cursor: "pointer",
-              color: "var(--text-secondary)",
-              transition: "all 0.2s",
-              textAlign: "left",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "var(--surface-2)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent";
-            }}
-          >
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                background: "var(--surface-3)",
-                borderRadius: 10,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <FontAwesomeIcon
-                icon={faTag}
-                style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)" }}
-              />
-            </div>
-
-            <div style={{ flex: 1 }}>
-              <div
-                style={{
-                  fontSize: "var(--fs-sm)",
-                  fontWeight: 500,
-                  color: "var(--text-secondary)",
-                }}
-              >
-                Categorias
-              </div>
-
-              <div
-                style={{
-                  fontSize: "var(--fs-2xs)",
-                  color: "var(--text-subtle)",
-                  marginTop: 2,
-                }}
-              >
-                Gerenciar categorias
-              </div>
-            </div>
-          </button>
-        </div>
-      </div>
-
-      {/* Rodapé */}
-      <div
-        style={{
-          padding: "16px 20px",
-          borderTop: "1px solid var(--surface-3)",
-          background: "var(--surface-2)",
-        }}
-      >
-        <div
-          style={{
-            fontSize: "var(--fs-xs)",
-            color: "var(--text-subtle)",
-            textAlign: "center",
-          }}
-        >
-          Total: {produtos.length} produtos
-        </div>
-      </div>
-    </div>
+    <ModuleSidebar
+      icon={faBoxes}
+      title="Produtos"
+      subtitle="Gerenciamento de estoque"
+      items={[
+        {
+          id: "novo",
+          icon: faPlus,
+          label: "Novo Produto",
+          description: "Adicionar ao catálogo",
+          onClick: () => {
+            setEditando(null);
+            setFormData({
+              name: "",
+              product_code: "",
+              price: 0,
+              quantity: 0,
+              category_id: 0,
+            });
+            setShowModal(true);
+          },
+        },
+        {
+          id: "categorias",
+          icon: faTag,
+          label: "Categorias",
+          description: "Gerenciar categorias",
+          onClick: () => setShowModalCategoria(true),
+        },
+      ]}
+      footer={`Total: ${produtos.length} produtos`}
+    />
   );
 
   // Desktop
@@ -630,7 +442,7 @@ export default function Produtos() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "260px 1fr",
+            gridTemplateColumns: "auto 1fr",
             height: "100%",
             background: "var(--surface-2)",
           }}

@@ -4,8 +4,6 @@ import type { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import {
   faArrowDown,
   faArrowRight,
-  faArrowTrendDown,
-  faArrowTrendUp,
   faArrowUp,
   faCalendarDay,
   faLock,
@@ -40,17 +38,12 @@ interface Stat {
   icon: IconDefinition;
   cor: string;
   negativo?: boolean;
-  detalhe?: string;
-  /** Variação percentual contra ontem (null = ontem sem movimento). */
-  variacao?: number | null;
-  /** Quando "subir" é ruim (ex.: saídas), a cor da variação é invertida. */
-  inverterVariacao?: boolean;
 }
 
 type Linha = Record<string, unknown>;
 
-/** Hoje e ontem: o suficiente para a variação "vs ontem" dos indicadores. */
-const DIAS_RESUMO = 2;
+/** Os indicadores mostram apenas o dia de hoje. */
+const DIAS_RESUMO = 1;
 
 const isoDe = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -63,11 +56,6 @@ const diasAtras = (n: number) => {
 
 const moeda = (valor: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valor);
-
-const variacao = (hoje: number, ontem: number): number | null => {
-  if (!ontem) return hoje ? null : 0;
-  return ((hoje - ontem) / Math.abs(ontem)) * 100;
-};
 
 const saudacao = () => {
   const hora = new Date().getHours();
@@ -151,7 +139,6 @@ export default function Dashboard({ user, setTela }: DashboardProps) {
   const qtdSkeletons = (podeVerCaixa ? 3 : 0) + (podeVerVendas ? 1 : 0);
 
   const hoje = dias?.[dias.length - 1];
-  const ontem = dias?.[dias.length - 2];
 
   const stats: Stat[] = [];
   if (hoje) {
@@ -161,15 +148,12 @@ export default function Dashboard({ user, setTela }: DashboardProps) {
         valor: moeda(hoje.entradas),
         icon: faArrowUp,
         cor: "var(--c-green)",
-        variacao: variacao(hoje.entradas, ontem?.entradas ?? 0),
       },
       {
         label: "Saídas hoje",
         valor: moeda(hoje.saidas),
         icon: faArrowDown,
         cor: "var(--c-red)",
-        variacao: variacao(hoje.saidas, ontem?.saidas ?? 0),
-        inverterVariacao: true,
       },
       {
         label: "Saldo do dia",
@@ -177,19 +161,15 @@ export default function Dashboard({ user, setTela }: DashboardProps) {
         icon: faScaleBalanced,
         cor: "var(--c-blue)",
         negativo: hoje.saldo < 0,
-        variacao: variacao(hoje.saldo, ontem?.saldo ?? 0),
       },
     );
   }
   if (pedidos) {
-    const abertos = pedidos.filter((o) => o.status === "aberto").length;
-    const pagos = pedidos.filter((o) => o.status === "fechado").length;
     stats.push({
       label: "Pedidos abertos",
-      valor: String(abertos),
+      valor: String(pedidos.filter((o) => o.status === "aberto").length),
       icon: faReceipt,
       cor: "var(--c-violet)",
-      detalhe: `${pagos} ${pagos === 1 ? "pago" : "pagos"} hoje`,
     });
   }
 
@@ -221,46 +201,23 @@ export default function Dashboard({ user, setTela }: DashboardProps) {
                       <span className="dash-skeleton dash-skeleton--value" />
                     </div>
                   ))
-                : stats.map((s) => {
-                    const subiu = (s.variacao ?? 0) >= 0;
-                    const bom = s.inverterVariacao ? !subiu : subiu;
-                    const classeTendencia =
-                      s.variacao === null || s.variacao === 0 ? "" : bom ? "is-up" : "is-down";
-
-                    return (
-                      <div
-                        key={s.label}
-                        className="dash-stat"
-                        style={{ "--stat": s.cor } as CSSProperties}
-                      >
-                        <div className="dash-stat__head">
-                          <span className="dash-stat__icon">
-                            <FontAwesomeIcon icon={s.icon} />
-                          </span>
-                          <span className="dash-stat__label">{s.label}</span>
-                        </div>
-                        <strong className={`dash-stat__value${s.negativo ? " is-negative" : ""}`}>
-                          {s.valor}
-                        </strong>
-                        {s.variacao !== undefined ? (
-                          <span className={`dash-stat__trend ${classeTendencia}`}>
-                            {s.variacao === null ? (
-                              "Sem movimento ontem"
-                            ) : s.variacao === 0 ? (
-                              "Igual a ontem"
-                            ) : (
-                              <>
-                                <FontAwesomeIcon icon={subiu ? faArrowTrendUp : faArrowTrendDown} />
-                                {Math.abs(s.variacao).toFixed(0)}% vs ontem
-                              </>
-                            )}
-                          </span>
-                        ) : (
-                          s.detalhe && <span className="dash-stat__detail">{s.detalhe}</span>
-                        )}
+                : stats.map((s) => (
+                    <div
+                      key={s.label}
+                      className="dash-stat"
+                      style={{ "--stat": s.cor } as CSSProperties}
+                    >
+                      <div className="dash-stat__head">
+                        <span className="dash-stat__icon">
+                          <FontAwesomeIcon icon={s.icon} />
+                        </span>
+                        <span className="dash-stat__label">{s.label}</span>
                       </div>
-                    );
-                  })}
+                      <strong className={`dash-stat__value${s.negativo ? " is-negative" : ""}`}>
+                        {s.valor}
+                      </strong>
+                    </div>
+                  ))}
             </section>
           )}
         </section>
@@ -270,6 +227,7 @@ export default function Dashboard({ user, setTela }: DashboardProps) {
             <h2>Módulos</h2>
             <span className="dash-pill">{modulos.length} disponíveis</span>
           </div>
+          <hr className="dash-divider" />
 
           {modulos.length === 0 ? (
             <div className="dash-empty">
