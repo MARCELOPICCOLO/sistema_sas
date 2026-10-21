@@ -1,5 +1,6 @@
 // components/ModalAbrirComanda.tsx
 import React, { useState } from "react";
+import { notify } from "../src/feedback";
 
 interface ModalAbrirComandaProps {
   showModal: boolean;
@@ -30,7 +31,7 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
 
     // Validar número da comanda - obrigatório
     if (numeroComanda === "" || numeroComanda <= 0) {
-      alert("Digite um número de terminal válido (maior que 0)");
+      notify("Digite um número de terminal válido (maior que 0)");
       return;
     }
 
@@ -49,7 +50,7 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
       onClose();
     } catch (error) {
       console.error("Erro ao abrir comanda:", error);
-      alert("Erro ao abrir atendimento");
+      notify("Erro ao abrir atendimento");
     } finally {
       setLoading(false);
     }
@@ -63,7 +64,7 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
     border: "1px solid var(--border)",
     background: "var(--surface-2)",
     color: "var(--text)",
-    fontSize: 13,
+    fontSize: "var(--fs-sm)",
     outline: "none",
     transition: "all 0.15s",
   };
@@ -71,7 +72,7 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
   const labelStyle: React.CSSProperties = {
     display: "block",
     marginBottom: 6,
-    fontSize: 12,
+    fontSize: "var(--fs-xs)",
     fontWeight: 600,
     color: "var(--text-muted)",
   };
@@ -95,7 +96,7 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
     >
       <div
         style={{
-          background: "#fff",
+          background: "var(--surface)",
           borderRadius: 12,
           padding: 20,
           width: "100%",
@@ -117,19 +118,19 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
             <h2
               style={{
                 margin: 0,
-                fontSize: 18,
+                fontSize: "var(--fs-xl)",
                 fontWeight: 600,
                 color: "var(--text)",
               }}
             >
-              Abrir Comanda
+              Novo pedido
             </h2>
 
             <p
               style={{
                 margin: "4px 0 0",
                 color: "var(--text-subtle)",
-                fontSize: 12,
+                fontSize: "var(--fs-xs)",
               }}
             >
               Informe os dados do atendimento
@@ -166,7 +167,7 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
                 autoFocus
                 style={inputStyle}
                 onFocus={(e) => {
-                  e.currentTarget.style.background = "#fff";
+                  e.currentTarget.style.background = "var(--surface)";
                   e.currentTarget.style.borderColor = "var(--primary)";
                   e.currentTarget.style.boxShadow = "0 0 0 2px var(--primary-soft)";
                 }}
@@ -190,7 +191,7 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
 
             {/* Data */}
             <div style={{ flex: 1 }}>
-              <label style={labelStyle}>Data da Comanda</label>
+              <label style={labelStyle}>Data do pedido</label>
 
               <input
                 type="date"
@@ -198,7 +199,7 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
                 onChange={(e) => setDataComanda(e.target.value)}
                 style={inputStyle}
                 onFocus={(e) => {
-                  e.currentTarget.style.background = "#fff";
+                  e.currentTarget.style.background = "var(--surface)";
                   e.currentTarget.style.borderColor = "var(--primary)";
                   e.currentTarget.style.boxShadow = "0 0 0 2px var(--primary-soft)";
                 }}
@@ -218,7 +219,7 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
               <span
                 style={{
                   color: "var(--text-subtle)",
-                  fontSize: 10,
+                  fontSize: "var(--fs-2xs)",
                   fontWeight: 400,
                 }}
               >
@@ -233,7 +234,7 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
               placeholder="Deixe vazio para Venda Rápida"
               style={inputStyle}
               onFocus={(e) => {
-                e.currentTarget.style.background = "#fff";
+                e.currentTarget.style.background = "var(--surface)";
                 e.currentTarget.style.borderColor = "var(--primary)";
                 e.currentTarget.style.boxShadow = "0 0 0 2px var(--primary-soft)";
               }}
@@ -247,7 +248,7 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
             <div
               style={{
                 marginTop: 5,
-                fontSize: 13,
+                fontSize: "var(--fs-sm)",
                 color: "var(--text-subtle)",
               }}
             >
@@ -271,9 +272,9 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
                 padding: "9px 14px",
                 borderRadius: 8,
                 border: "1px solid var(--border)",
-                background: "#fff",
+                background: "var(--surface)",
                 color: "var(--text-muted)",
-                fontSize: 12,
+                fontSize: "var(--fs-xs)",
                 fontWeight: 600,
                 cursor: "pointer",
                 transition: "all 0.15s",
@@ -282,7 +283,7 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
                 e.currentTarget.style.background = "var(--surface-2)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = "#fff";
+                e.currentTarget.style.background = "var(--surface)";
               }}
             >
               Cancelar
@@ -298,7 +299,7 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
                 border: "none",
                 background: loading ? "var(--border-strong)" : "var(--primary)",
                 color: "#fff",
-                fontSize: 12,
+                fontSize: "var(--fs-xs)",
                 fontWeight: 600,
                 cursor: loading ? "not-allowed" : "pointer",
                 transition: "background 0.15s",
@@ -314,7 +315,7 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
                 }
               }}
             >
-              {loading ? "Abrindo..." : "Abrir Comanda"}
+              {loading ? "Abrindo..." : "Criar pedido"}
             </button>
           </div>
         </form>

@@ -84,7 +84,7 @@ export const HeaderCaixa: React.FC<HeaderCaixaProps> = ({
           <h2
             style={{
               margin: 0,
-              fontSize: 18,
+              fontSize: "var(--fs-xl)",
               fontWeight: 600,
               color: "var(--text)",
             }}
@@ -107,7 +107,7 @@ export const HeaderCaixa: React.FC<HeaderCaixaProps> = ({
                 border: "1px solid var(--border)",
                 background: "var(--surface)",
                 color: "var(--text-secondary)",
-                fontSize: 12,
+                fontSize: "var(--fs-xs)",
                 cursor: "pointer",
                 outline: "none",
               }}
@@ -128,7 +128,7 @@ export const HeaderCaixa: React.FC<HeaderCaixaProps> = ({
                 border: "1px solid var(--border)",
                 background: "var(--surface)",
                 color: "var(--text-secondary)",
-                fontSize: 12,
+                fontSize: "var(--fs-xs)",
                 cursor: "pointer",
                 outline: "none",
               }}
@@ -171,7 +171,7 @@ export const HeaderCaixa: React.FC<HeaderCaixaProps> = ({
               <div>
                 <div
                   style={{
-                    fontSize: 11,
+                    fontSize: "var(--fs-2xs)",
                     color: "var(--text-muted)",
                     marginBottom: 3,
                   }}
@@ -181,7 +181,7 @@ export const HeaderCaixa: React.FC<HeaderCaixaProps> = ({
 
                 <div
                   style={{
-                    fontSize: 17,
+                    fontSize: "var(--fs-xl)",
                     fontWeight: 600,
                     color: "var(--primary)",
                   }}
@@ -194,7 +194,7 @@ export const HeaderCaixa: React.FC<HeaderCaixaProps> = ({
               <div>
                 <div
                   style={{
-                    fontSize: 11,
+                    fontSize: "var(--fs-2xs)",
                     color: "var(--text-muted)",
                     marginBottom: 3,
                   }}
@@ -204,7 +204,7 @@ export const HeaderCaixa: React.FC<HeaderCaixaProps> = ({
 
                 <div
                   style={{
-                    fontSize: 17,
+                    fontSize: "var(--fs-xl)",
                     fontWeight: 600,
                     color: "var(--text-secondary)",
                   }}
@@ -217,7 +217,7 @@ export const HeaderCaixa: React.FC<HeaderCaixaProps> = ({
               <div>
                 <div
                   style={{
-                    fontSize: 11,
+                    fontSize: "var(--fs-2xs)",
                     color: "var(--text-muted)",
                     marginBottom: 3,
                   }}
@@ -227,7 +227,7 @@ export const HeaderCaixa: React.FC<HeaderCaixaProps> = ({
 
                 <div
                   style={{
-                    fontSize: 17,
+                    fontSize: "var(--fs-xl)",
                     fontWeight: 600,
                     color: saldoGeral >= 0 ? "var(--primary)" : "var(--text-secondary)",
                   }}
@@ -254,7 +254,7 @@ export const HeaderCaixa: React.FC<HeaderCaixaProps> = ({
                   background: showEntradas ? "var(--surface-3)" : "var(--surface)",
                   color: showEntradas ? "var(--text-secondary)" : "var(--text-muted)",
                   cursor: "pointer",
-                  fontSize: 11,
+                  fontSize: "var(--fs-2xs)",
                   fontWeight: 500,
                   whiteSpace: "nowrap",
                 }}
@@ -271,7 +271,7 @@ export const HeaderCaixa: React.FC<HeaderCaixaProps> = ({
                   background: showSaidas ? "var(--surface-3)" : "var(--surface)",
                   color: showSaidas ? "var(--text-secondary)" : "var(--text-muted)",
                   cursor: "pointer",
-                  fontSize: 11,
+                  fontSize: "var(--fs-2xs)",
                   fontWeight: 500,
                   whiteSpace: "nowrap",
                 }}

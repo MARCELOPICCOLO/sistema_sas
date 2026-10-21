@@ -49,7 +49,7 @@ export const ModalAdicionarCategoria: React.FC<
     >
       <div
         style={{
-          background: "#fff",
+          background: "var(--surface)",
           borderRadius: 14,
           padding: 24,
           width: "90%",
@@ -57,14 +57,14 @@ export const ModalAdicionarCategoria: React.FC<
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ margin: "0 0 20px 0", fontSize: 20 }}>Nova Categoria</h2>
+        <h2 style={{ margin: "0 0 20px 0", fontSize: "var(--fs-2xl)" }}>Nova Categoria</h2>
 
         <div style={{ marginBottom: 16 }}>
           <label
             style={{
               display: "block",
               marginBottom: 8,
-              fontSize: 14,
+              fontSize: "var(--fs-md)",
               fontWeight: 500,
             }}
           >
@@ -82,7 +82,7 @@ export const ModalAdicionarCategoria: React.FC<
               padding: "10px",
               borderRadius: 8,
               border: "1px solid var(--border)",
-              fontSize: 14,
+              fontSize: "var(--fs-md)",
             }}
             autoFocus
           />
@@ -93,7 +93,7 @@ export const ModalAdicionarCategoria: React.FC<
             style={{
               display: "block",
               marginBottom: 8,
-              fontSize: 14,
+              fontSize: "var(--fs-md)",
               fontWeight: 500,
             }}
           >
@@ -151,9 +151,9 @@ export const ModalAdicionarCategoria: React.FC<
               padding: "10px",
               borderRadius: 10,
               border: "1px solid var(--border)",
-              background: "#fff",
+              background: "var(--surface)",
               color: "var(--text-secondary)",
-              fontWeight: "bold",
+              fontWeight: 700,
               cursor: "pointer",
               boxShadow: "var(--shadow-card)",
             }}
@@ -169,7 +169,7 @@ export const ModalAdicionarCategoria: React.FC<
               border: "none",
               background: "var(--primary)",
               color: "#fff",
-              fontWeight: "bold",
+              fontWeight: 700,
               cursor: "pointer",
             }}
           >

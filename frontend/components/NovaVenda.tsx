@@ -19,6 +19,7 @@ import {
   faSave,
 } from "@fortawesome/free-solid-svg-icons";
 import { ModalFinalizarVenda } from "../components/ModalFinalizarVenda";
+import { notify, confirmar } from "../src/feedback";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -470,7 +471,7 @@ export default function NovaVenda({
 
           console.error("Erro ao remover item:", error);
 
-          alert(
+          notify(
             `Erro ao remover item do banco.\n${
               error?.response?.data?.message || error.message
             }`,
@@ -510,9 +511,9 @@ export default function NovaVenda({
     }
 
     if (
-      !window.confirm(
-        "Tem certeza que deseja remover todos os itens da comanda?",
-      )
+      !(await confirmar(
+        "Tem certeza que deseja remover todos os itens do pedido?",
+      ))
     ) {
       return;
     }
@@ -551,7 +552,7 @@ export default function NovaVenda({
       } catch (error: any) {
         console.error("Erro ao limpar carrinho:", error);
 
-        alert(
+        notify(
           `Erro ao remover alguns itens do banco.\n${
             error?.response?.data?.message || error.message
           }`,
@@ -735,7 +736,7 @@ export default function NovaVenda({
     } catch (error: any) {
       console.error("Erro ao salvar alterações:", error);
 
-      alert(
+      notify(
         error?.response?.data?.message ||
           "Não foi possível salvar as alterações.",
       );
@@ -756,8 +757,8 @@ export default function NovaVenda({
     const existente = carrinho.find((item) => item.produto.id === produto.id);
 
     if (existente) {
-      alert(
-        "Este produto já está na comanda. Altere a quantidade pelos controles do carrinho.",
+      notify(
+        "Este produto já está no pedido. Altere a quantidade pelos controles do carrinho.",
       );
 
       return;
@@ -796,13 +797,13 @@ export default function NovaVenda({
     const preco = Number(precoItem);
 
     if (!Number.isInteger(quantidade) || quantidade < 1) {
-      alert("Informe uma quantidade válida.");
+      notify("Informe uma quantidade válida.");
 
       return;
     }
 
     if (!Number.isFinite(preco) || preco < 0) {
-      alert("Informe um valor válido para o item.");
+      notify("Informe um valor válido para o item.");
 
       return;
     }
@@ -880,7 +881,7 @@ export default function NovaVenda({
     } catch (error: any) {
       console.error("Erro ao adicionar item:", error);
 
-      alert(
+      notify(
         error?.response?.data?.message || "Não foi possível adicionar o item.",
       );
     } finally {
@@ -992,7 +993,7 @@ export default function NovaVenda({
     } catch (error: any) {
       console.error("Erro ao atualizar comanda:", error);
 
-      alert(error?.response?.data?.message || "Não foi possível atualizar.");
+      notify(error?.response?.data?.message || "Não foi possível atualizar.");
     } finally {
       setSalvando(false);
     }
@@ -1002,22 +1003,22 @@ export default function NovaVenda({
   // 💰 ABRIR MODAL FINALIZAR
   // ============================================================
 
-  const abrirModalFinalizar = () => {
+  const abrirModalFinalizar = async () => {
     if (!podeFinalizar) {
       return;
     }
 
     if (carrinho.length === 0) {
-      alert("Adicione pelo menos um produto à comanda.");
+      notify("Adicione pelo menos um produto ao pedido.");
 
       return;
     }
 
     if (temItensModificados) {
       if (
-        !window.confirm(
+        !(await confirmar(
           "Existem alterações não salvas no carrinho. Deseja salvar antes de finalizar?",
-        )
+        ))
       ) {
         return;
       }
@@ -1092,7 +1093,7 @@ export default function NovaVenda({
     } catch (error: any) {
       console.error("Erro ao finalizar venda:", error);
 
-      alert(error?.response?.data?.message || "Não foi possível finalizar.");
+      notify(error?.response?.data?.message || "Não foi possível finalizar.");
     } finally {
       setSalvando(false);
     }
@@ -1102,12 +1103,12 @@ export default function NovaVenda({
   // ↩️ VOLTAR
   // ============================================================
 
-  const voltar = () => {
+  const voltar = async () => {
     if (temItensModificados && !isComandaFinalizada) {
       if (
-        !window.confirm(
+        !(await confirmar(
           "Existem alterações não salvas. Deseja voltar sem salvar?",
-        )
+        ))
       ) {
         return;
       }
@@ -1159,7 +1160,7 @@ export default function NovaVenda({
 
         <div
           style={{
-            background: "#fff",
+            background: "var(--surface)",
             border: "1px solid var(--border)",
             borderRadius: 12,
             padding: 16,
@@ -1194,14 +1195,14 @@ export default function NovaVenda({
                   flexShrink: 0,
                   borderRadius: 8,
                   border: "1px solid var(--border)",
-                  background: "#fff",
+                  background: "var(--surface)",
                   color: "var(--text-secondary)",
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   gap: 7,
-                  fontSize: 12,
+                  fontSize: "var(--fs-xs)",
                   fontWeight: 500,
                 }}
                 title="Voltar"
@@ -1209,7 +1210,7 @@ export default function NovaVenda({
                 <FontAwesomeIcon
                   icon={faArrowLeft}
                   style={{
-                    fontSize: 11,
+                    fontSize: "var(--fs-2xs)",
                   }}
                 />
                 Voltar
@@ -1232,13 +1233,13 @@ export default function NovaVenda({
                   <h1
                     style={{
                       margin: 0,
-                      fontSize: 21,
+                      fontSize: "var(--fs-2xl)",
                       lineHeight: 1.2,
                       fontWeight: 600,
                       color: "var(--text)",
                     }}
                   >
-                    Comanda #{comanda.numero}
+                    Pedido #{comanda.numero}
                   </h1>
 
                   <span
@@ -1247,7 +1248,7 @@ export default function NovaVenda({
                       borderRadius: 20,
                       background: isComandaFinalizada ? "var(--surface-3)" : "var(--primary-soft)",
                       color: isComandaFinalizada ? "var(--text-muted)" : "var(--primary-hover)",
-                      fontSize: 10,
+                      fontSize: "var(--fs-2xs)",
                       fontWeight: 600,
                       whiteSpace: "nowrap",
                     }}
@@ -1264,7 +1265,7 @@ export default function NovaVenda({
                           borderRadius: 20,
                           background: "var(--warning-soft)",
                           color: "var(--warning)",
-                          fontSize: 10,
+                          fontSize: "var(--fs-2xs)",
                           fontWeight: 600,
                           whiteSpace: "nowrap",
                         }}
@@ -1277,13 +1278,13 @@ export default function NovaVenda({
                 <p
                   style={{
                     margin: "5px 0 0",
-                    fontSize: 14,
+                    fontSize: "var(--fs-md)",
                     color: "var(--text-muted)",
                   }}
                 >
                   {isComandaFinalizada
-                    ? "Comanda finalizada - Visualização apenas"
-                    : "Adicione produtos à comanda"}
+                    ? "Pedido finalizado - somente visualização"
+                    : "Adicione produtos ao pedido"}
                 </p>
               </div>
             </div>
@@ -1314,7 +1315,7 @@ export default function NovaVenda({
                       alignItems: "center",
                       justifyContent: "center",
                       gap: 6,
-                      fontSize: 12,
+                      fontSize: "var(--fs-xs)",
                       fontWeight: 600,
                       opacity: salvandoItens ? 0.7 : 1,
                     }}
@@ -1322,7 +1323,7 @@ export default function NovaVenda({
                     <FontAwesomeIcon
                       icon={faSave}
                       style={{
-                        fontSize: 11,
+                        fontSize: "var(--fs-2xs)",
                       }}
                     />
 
@@ -1341,21 +1342,21 @@ export default function NovaVenda({
                     padding: "0 12px",
                     borderRadius: 8,
                     border: "1px solid var(--border)",
-                    background: "#fff",
+                    background: "var(--surface)",
                     color: "var(--text-secondary)",
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     gap: 6,
-                    fontSize: 12,
+                    fontSize: "var(--fs-xs)",
                     fontWeight: 500,
                   }}
                 >
                   <FontAwesomeIcon
                     icon={faPenToSquare}
                     style={{
-                      fontSize: 11,
+                      fontSize: "var(--fs-2xs)",
                     }}
                   />
                   Editar
@@ -1371,10 +1372,10 @@ export default function NovaVenda({
                       padding: "0 12px",
                       borderRadius: 8,
                       border: "1px solid var(--border)",
-                      background: "#fff",
+                      background: "var(--surface)",
                       color: "var(--text-muted)",
                       cursor: salvando ? "not-allowed" : "pointer",
-                      fontSize: 12,
+                      fontSize: "var(--fs-xs)",
                       fontWeight: 500,
                     }}
                   >
@@ -1397,7 +1398,7 @@ export default function NovaVenda({
                       alignItems: "center",
                       justifyContent: "center",
                       gap: 6,
-                      fontSize: 12,
+                      fontSize: "var(--fs-xs)",
                       fontWeight: 600,
                       opacity: salvando ? 0.7 : 1,
                     }}
@@ -1405,7 +1406,7 @@ export default function NovaVenda({
                     <FontAwesomeIcon
                       icon={faFloppyDisk}
                       style={{
-                        fontSize: 11,
+                        fontSize: "var(--fs-2xs)",
                       }}
                     />
 
@@ -1422,9 +1423,9 @@ export default function NovaVenda({
                   padding: "8px 11px",
                   border: "1px solid var(--border)",
                   borderRadius: 8,
-                  background: "#fff",
+                  background: "var(--surface)",
                   color: "var(--text-muted)",
-                  fontSize: 13,
+                  fontSize: "var(--fs-sm)",
                   whiteSpace: "nowrap",
                   flexShrink: 0,
                 }}
@@ -1433,7 +1434,7 @@ export default function NovaVenda({
                   icon={faCartShopping}
                   style={{
                     color: "var(--primary)",
-                    fontSize: 14,
+                    fontSize: "var(--fs-md)",
                   }}
                 />
                 {totalItens} {totalItens === 1 ? "item" : "itens"}
@@ -1459,7 +1460,7 @@ export default function NovaVenda({
                 style={{
                   display: "block",
                   marginBottom: 6,
-                  fontSize: 11,
+                  fontSize: "var(--fs-2xs)",
                   fontWeight: 500,
                   color: "var(--text-muted)",
                 }}
@@ -1480,7 +1481,7 @@ export default function NovaVenda({
                     top: "50%",
                     transform: "translateY(-50%)",
                     color: "var(--text-subtle)",
-                    fontSize: 11,
+                    fontSize: "var(--fs-2xs)",
                     zIndex: 1,
                   }}
                 />
@@ -1499,13 +1500,13 @@ export default function NovaVenda({
                     borderRadius: 8,
                     border: "1px solid var(--border)",
                     outline: "none",
-                    fontSize: 12,
+                    fontSize: "var(--fs-xs)",
                     color:
                       modoEdicao && !isComandaFinalizada
                         ? "var(--text)"
                         : "var(--text-muted)",
                     background:
-                      modoEdicao && !isComandaFinalizada ? "#fff" : "#f8fafc",
+                      modoEdicao && !isComandaFinalizada ? "var(--surface)" : "var(--surface-2)",
                     cursor:
                       modoEdicao && !isComandaFinalizada
                         ? "text"
@@ -1520,7 +1521,7 @@ export default function NovaVenda({
                 style={{
                   display: "block",
                   marginBottom: 6,
-                  fontSize: 11,
+                  fontSize: "var(--fs-2xs)",
                   fontWeight: 500,
                   color: "var(--text-muted)",
                 }}
@@ -1541,7 +1542,7 @@ export default function NovaVenda({
                     top: "50%",
                     transform: "translateY(-50%)",
                     color: "var(--text-subtle)",
-                    fontSize: 11,
+                    fontSize: "var(--fs-2xs)",
                     pointerEvents: "none",
                     zIndex: 1,
                   }}
@@ -1575,13 +1576,13 @@ export default function NovaVenda({
                     borderRadius: 8,
                     border: "1px solid var(--border)",
                     outline: "none",
-                    fontSize: 12,
+                    fontSize: "var(--fs-xs)",
                     color:
                       modoEdicao && !isComandaFinalizada
                         ? "var(--text)"
                         : "var(--text-muted)",
                     background:
-                      modoEdicao && !isComandaFinalizada ? "#fff" : "#f8fafc",
+                      modoEdicao && !isComandaFinalizada ? "var(--surface)" : "var(--surface-2)",
                     cursor:
                       modoEdicao && !isComandaFinalizada
                         ? "text"
@@ -1597,7 +1598,7 @@ export default function NovaVenda({
                 style={{
                   display: "block",
                   marginBottom: 6,
-                  fontSize: 11,
+                  fontSize: "var(--fs-2xs)",
                   fontWeight: 500,
                   color: "var(--text-muted)",
                 }}
@@ -1618,7 +1619,7 @@ export default function NovaVenda({
                     top: "50%",
                     transform: "translateY(-50%)",
                     color: "var(--text-subtle)",
-                    fontSize: 11,
+                    fontSize: "var(--fs-2xs)",
                   }}
                 />
 
@@ -1635,9 +1636,9 @@ export default function NovaVenda({
                     borderRadius: 8,
                     border: "1px solid var(--border)",
                     outline: "none",
-                    background: "#fff",
+                    background: "var(--surface)",
                     color: "var(--text)",
-                    fontSize: 12,
+                    fontSize: "var(--fs-xs)",
                   }}
                 />
 
@@ -1661,7 +1662,7 @@ export default function NovaVenda({
                     <FontAwesomeIcon
                       icon={faXmark}
                       style={{
-                        fontSize: 14,
+                        fontSize: "var(--fs-md)",
                       }}
                     />
                   </button>
@@ -1697,10 +1698,10 @@ export default function NovaVenda({
                     padding: "7px 13px",
                     borderRadius: 20,
                     border: ativa ? "1px solid var(--primary)" : "1px solid var(--border)",
-                    background: ativa ? "var(--primary-soft)" : "#fff",
+                    background: ativa ? "var(--primary-soft)" : "var(--surface)",
                     color: ativa ? "var(--primary)" : "var(--text-muted)",
                     cursor: "pointer",
-                    fontSize: 14,
+                    fontSize: "var(--fs-md)",
                     fontWeight: ativa ? 600 : 500,
                   }}
                 >
@@ -1731,7 +1732,7 @@ export default function NovaVenda({
           <div
             style={{
               minWidth: 0,
-              background: "#fff",
+              background: "var(--surface)",
               border: "1px solid var(--border)",
               borderRadius: 12,
               overflow: "hidden",
@@ -1750,7 +1751,7 @@ export default function NovaVenda({
               <div>
                 <strong
                   style={{
-                    fontSize: 14,
+                    fontSize: "var(--fs-md)",
                     fontWeight: 600,
                     color: "var(--text-secondary)",
                   }}
@@ -1761,7 +1762,7 @@ export default function NovaVenda({
                 <span
                   style={{
                     marginLeft: 8,
-                    fontSize: 14,
+                    fontSize: "var(--fs-md)",
                     color: "var(--text-subtle)",
                   }}
                 >
@@ -1805,7 +1806,7 @@ export default function NovaVenda({
 
                   <span
                     style={{
-                      fontSize: 13,
+                      fontSize: "var(--fs-sm)",
                     }}
                   >
                     Carregando produtos...
@@ -1837,7 +1838,7 @@ export default function NovaVenda({
                 >
                   <span
                     style={{
-                      fontSize: 13,
+                      fontSize: "var(--fs-sm)",
                     }}
                   >
                     {erroProdutos}
@@ -1851,10 +1852,10 @@ export default function NovaVenda({
                       padding: "8px 16px",
                       borderRadius: 8,
                       border: "1px solid var(--border)",
-                      background: "#fff",
+                      background: "var(--surface)",
                       color: "var(--text-secondary)",
                       cursor: "pointer",
-                      fontSize: 12,
+                      fontSize: "var(--fs-xs)",
                       fontWeight: 500,
                     }}
                   >
@@ -1880,14 +1881,14 @@ export default function NovaVenda({
                       <FontAwesomeIcon
                         icon={faMagnifyingGlass}
                         style={{
-                          fontSize: 24,
+                          fontSize: "var(--fs-3xl)",
                           marginBottom: 10,
                         }}
                       />
 
                       <span
                         style={{
-                          fontSize: 13,
+                          fontSize: "var(--fs-sm)",
                         }}
                       >
                         {busca || categoriaSelecionada !== 0
@@ -1914,7 +1915,7 @@ export default function NovaVenda({
                           padding: "10px 12px",
                           background: "var(--surface-2)",
                           borderBottom: "1px solid var(--surface-3)",
-                          fontSize: 10,
+                          fontSize: "var(--fs-2xs)",
                           fontWeight: 600,
                           color: "var(--text-muted)",
                           textTransform: "uppercase",
@@ -1970,7 +1971,7 @@ export default function NovaVenda({
                                 index < produtosFiltrados.length - 1
                                   ? "1px solid var(--surface-3)"
                                   : "none",
-                              background: quantidade > 0 ? "var(--surface-2)" : "#fff",
+                              background: quantidade > 0 ? "var(--surface-2)" : "var(--surface)",
                             }}
                           >
                             <div
@@ -1980,7 +1981,7 @@ export default function NovaVenda({
                             >
                               <div
                                 style={{
-                                  fontSize: 13,
+                                  fontSize: "var(--fs-sm)",
                                   fontWeight: 500,
                                   color: "var(--text)",
                                   overflow: "hidden",
@@ -1996,7 +1997,7 @@ export default function NovaVenda({
                             <div
                               style={{
                                 textAlign: "center",
-                                fontSize: 11,
+                                fontSize: "var(--fs-2xs)",
                                 color: "var(--text-subtle)",
                                 whiteSpace: "nowrap",
                               }}
@@ -2007,7 +2008,7 @@ export default function NovaVenda({
                             <div
                               style={{
                                 textAlign: "right",
-                                fontSize: 13,
+                                fontSize: "var(--fs-sm)",
                                 fontWeight: 600,
                                 color: "var(--primary)",
                                 whiteSpace: "nowrap",
@@ -2047,7 +2048,7 @@ export default function NovaVenda({
                                   alignItems: "center",
                                   justifyContent: "center",
                                   gap: 5,
-                                  fontSize: 11,
+                                  fontSize: "var(--fs-2xs)",
                                   fontWeight: 600,
                                   whiteSpace: "nowrap",
                                   opacity: isComandaFinalizada ? 0.6 : 1,
@@ -2056,7 +2057,7 @@ export default function NovaVenda({
                                 <FontAwesomeIcon
                                   icon={faPlus}
                                   style={{
-                                    fontSize: 9,
+                                    fontSize: "var(--fs-2xs)",
                                   }}
                                 />
                                 Adicionar
@@ -2079,17 +2080,17 @@ export default function NovaVenda({
           <div
             className="nova-venda-comanda"
             style={{
-              background: "#fff",
+              background: "var(--surface)",
               border: "1px solid var(--border)",
               borderRadius: 12,
               overflow: "hidden",
               minWidth: 0,
-              height: "min(760px, calc(100vh - 140px))",
+              height: "min(760px, calc(var(--page-h) - 140px))",
               minHeight: 450,
               display: "flex",
               flexDirection: "column",
               position: "sticky",
-              top: 18,
+              top: "calc(var(--topbar-h) + 18px)",
             }}
           >
             <div
@@ -2120,18 +2121,18 @@ export default function NovaVenda({
                     icon={faCartShopping}
                     style={{
                       color: "var(--primary)",
-                      fontSize: 14,
+                      fontSize: "var(--fs-md)",
                     }}
                   />
 
                   <strong
                     style={{
-                      fontSize: 14,
+                      fontSize: "var(--fs-md)",
                       fontWeight: 600,
                       color: "var(--text)",
                     }}
                   >
-                    Comanda #{comanda.numero}
+                    Pedido #{comanda.numero}
                   </strong>
 
                   <span
@@ -2140,7 +2141,7 @@ export default function NovaVenda({
                       borderRadius: 20,
                       background: isComandaFinalizada ? "var(--surface-3)" : "var(--primary-soft)",
                       color: isComandaFinalizada ? "var(--text-muted)" : "var(--primary-hover)",
-                      fontSize: 14,
+                      fontSize: "var(--fs-md)",
                       fontWeight: 600,
                     }}
                   >
@@ -2156,7 +2157,7 @@ export default function NovaVenda({
                           borderRadius: 20,
                           background: "var(--warning-soft)",
                           color: "var(--warning)",
-                          fontSize: 10,
+                          fontSize: "var(--fs-2xs)",
                           fontWeight: 600,
                         }}
                       >
@@ -2179,14 +2180,14 @@ export default function NovaVenda({
                       display: "flex",
                       alignItems: "center",
                       gap: 4,
-                      fontSize: 12,
+                      fontSize: "var(--fs-xs)",
                       color: "var(--text-muted)",
                     }}
                   >
                     <FontAwesomeIcon
                       icon={faUser}
                       style={{
-                        fontSize: 10,
+                        fontSize: "var(--fs-2xs)",
                       }}
                     />
 
@@ -2198,14 +2199,14 @@ export default function NovaVenda({
                       display: "flex",
                       alignItems: "center",
                       gap: 4,
-                      fontSize: 11,
+                      fontSize: "var(--fs-2xs)",
                       color: "var(--text-muted)",
                     }}
                   >
                     <FontAwesomeIcon
                       icon={faStore}
                       style={{
-                        fontSize: 10,
+                        fontSize: "var(--fs-2xs)",
                       }}
                     />
 
@@ -2224,7 +2225,7 @@ export default function NovaVenda({
                     background: "transparent",
                     color: "var(--text-subtle)",
                     cursor: "pointer",
-                    fontSize: 11,
+                    fontSize: "var(--fs-2xs)",
                     padding: "5px",
                     flexShrink: 0,
                   }}
@@ -2265,32 +2266,32 @@ export default function NovaVenda({
                   <FontAwesomeIcon
                     icon={faCartShopping}
                     style={{
-                      fontSize: 21,
+                      fontSize: "var(--fs-2xl)",
                     }}
                   />
                 </div>
 
                 <strong
                   style={{
-                    fontSize: 14,
+                    fontSize: "var(--fs-md)",
                     color: "var(--text-secondary)",
                     fontWeight: 500,
                   }}
                 >
-                  Comanda vazia
+                  Pedido vazio
                 </strong>
 
                 <span
                   style={{
                     marginTop: 5,
-                    fontSize: 11,
+                    fontSize: "var(--fs-2xs)",
                     color: "var(--text-subtle)",
                     lineHeight: 1.5,
                   }}
                 >
                   {isComandaFinalizada
-                    ? "Esta comanda foi finalizada sem itens."
-                    : "Clique em um produto para adicioná-lo à comanda."}
+                    ? "Este pedido foi finalizado sem itens."
+                    : "Clique em um produto para adicioná-lo ao pedido."}
                 </span>
               </div>
             ) : (
@@ -2317,7 +2318,7 @@ export default function NovaVenda({
                             ? "var(--warning-soft)"
                             : isComandaFinalizada
                               ? "var(--surface-2)"
-                              : "#fff",
+                              : "var(--surface)",
                         borderLeft:
                           estaModificado && !isComandaFinalizada
                             ? "3px solid var(--warning)"
@@ -2340,7 +2341,7 @@ export default function NovaVenda({
                         >
                           <div
                             style={{
-                              fontSize: 14,
+                              fontSize: "var(--fs-md)",
                               fontWeight: 500,
                               color: "var(--text)",
                               overflow: "hidden",
@@ -2354,7 +2355,7 @@ export default function NovaVenda({
                               <span
                                 style={{
                                   marginLeft: 6,
-                                  fontSize: 10,
+                                  fontSize: "var(--fs-2xs)",
                                   color: "var(--warning)",
                                   fontWeight: 600,
                                 }}
@@ -2367,7 +2368,7 @@ export default function NovaVenda({
                           <div
                             style={{
                               marginTop: 4,
-                              fontSize: 14,
+                              fontSize: "var(--fs-md)",
                               color: "var(--text-subtle)",
                             }}
                           >
@@ -2378,7 +2379,7 @@ export default function NovaVenda({
 
                         <strong
                           style={{
-                            fontSize: 14,
+                            fontSize: "var(--fs-md)",
                             color: "var(--primary)",
                             whiteSpace: "nowrap",
                           }}
@@ -2427,7 +2428,7 @@ export default function NovaVenda({
                             <FontAwesomeIcon
                               icon={faTrash}
                               style={{
-                                fontSize: 10,
+                                fontSize: "var(--fs-2xs)",
                               }}
                             />
                           </button>
@@ -2454,7 +2455,7 @@ export default function NovaVenda({
                                 width: 30,
                                 height: 28,
                                 border: "none",
-                                background: "#fff",
+                                background: "var(--surface)",
                                 color: "var(--text-muted)",
                                 cursor: "pointer",
                               }}
@@ -2463,7 +2464,7 @@ export default function NovaVenda({
                               <FontAwesomeIcon
                                 icon={faMinus}
                                 style={{
-                                  fontSize: 9,
+                                  fontSize: "var(--fs-2xs)",
                                 }}
                               />
                             </button>
@@ -2472,7 +2473,7 @@ export default function NovaVenda({
                               style={{
                                 minWidth: 30,
                                 textAlign: "center",
-                                fontSize: 11,
+                                fontSize: "var(--fs-2xs)",
                                 fontWeight: 600,
                                 color: estaModificado ? "var(--warning)" : "var(--text-secondary)",
                               }}
@@ -2489,7 +2490,7 @@ export default function NovaVenda({
                                 width: 30,
                                 height: 28,
                                 border: "none",
-                                background: "#fff",
+                                background: "var(--surface)",
                                 color: "var(--primary)",
                                 cursor: "pointer",
                               }}
@@ -2498,7 +2499,7 @@ export default function NovaVenda({
                               <FontAwesomeIcon
                                 icon={faPlus}
                                 style={{
-                                  fontSize: 9,
+                                  fontSize: "var(--fs-2xs)",
                                 }}
                               />
                             </button>
@@ -2521,7 +2522,7 @@ export default function NovaVenda({
                                 cursor: salvandoItens
                                   ? "not-allowed"
                                   : "pointer",
-                                fontSize: 10,
+                                fontSize: "var(--fs-2xs)",
                                 fontWeight: 600,
                                 display: "flex",
                                 alignItems: "center",
@@ -2532,7 +2533,7 @@ export default function NovaVenda({
                               <FontAwesomeIcon
                                 icon={faSave}
                                 style={{
-                                  fontSize: 9,
+                                  fontSize: "var(--fs-2xs)",
                                 }}
                               />
 
@@ -2569,7 +2570,7 @@ export default function NovaVenda({
               >
                 <span
                   style={{
-                    fontSize: 12,
+                    fontSize: "var(--fs-xs)",
                     color: "var(--text-muted)",
                   }}
                 >
@@ -2578,7 +2579,7 @@ export default function NovaVenda({
 
                 <strong
                   style={{
-                    fontSize: 21,
+                    fontSize: "var(--fs-2xl)",
                     color: "var(--primary)",
                     fontWeight: 700,
                     whiteSpace: "nowrap",
@@ -2612,7 +2613,7 @@ export default function NovaVenda({
                     carrinho.length > 0 && !salvando && podeFinalizar
                       ? "pointer"
                       : "not-allowed",
-                  fontSize: 12,
+                  fontSize: "var(--fs-xs)",
                   fontWeight: 600,
                   display: "flex",
                   alignItems: "center",
@@ -2627,12 +2628,12 @@ export default function NovaVenda({
                 <FontAwesomeIcon
                   icon={faCheck}
                   style={{
-                    fontSize: 11,
+                    fontSize: "var(--fs-2xs)",
                   }}
                 />
 
                 {!podeFinalizar
-                  ? "Comanda finalizada"
+                  ? "Pedido finalizado"
                   : salvando
                     ? "Finalizando..."
                     : comanda.status === "pendente"
@@ -2645,16 +2646,16 @@ export default function NovaVenda({
                   style={{
                     marginTop: 8,
                     textAlign: "center",
-                    fontSize: 11,
+                    fontSize: "var(--fs-2xs)",
                     color: "var(--text-subtle)",
                   }}
                 >
-                  Esta comanda já foi{" "}
+                  Este pedido já foi{" "}
                   {comanda.status === "fechado"
-                    ? "finalizada"
+                    ? "finalizado"
                     : comanda.status === "finalizado"
-                      ? "finalizada"
-                      : "cancelada"}
+                      ? "finalizado"
+                      : "cancelado"}
                   .
                   {comanda.status !== "cancelada" &&
                     comanda.status !== "cancelado" &&
@@ -2694,7 +2695,7 @@ export default function NovaVenda({
               style={{
                 width: "100%",
                 maxWidth: 420,
-                background: "#fff",
+                background: "var(--surface)",
                 border: "1px solid var(--border)",
                 borderRadius: 14,
                 boxShadow: "var(--shadow-modal)",
@@ -2719,7 +2720,7 @@ export default function NovaVenda({
                   <strong
                     style={{
                       display: "block",
-                      fontSize: 14,
+                      fontSize: "var(--fs-md)",
                       color: "var(--text)",
                       fontWeight: 600,
                     }}
@@ -2731,7 +2732,7 @@ export default function NovaVenda({
                     style={{
                       display: "block",
                       marginTop: 4,
-                      fontSize: 11,
+                      fontSize: "var(--fs-2xs)",
                       color: "var(--text-muted)",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
@@ -2751,7 +2752,7 @@ export default function NovaVenda({
                     height: 30,
                     borderRadius: 8,
                     border: "1px solid var(--border)",
-                    background: "#fff",
+                    background: "var(--surface)",
                     color: "var(--text-muted)",
                     cursor: salvandoItem ? "not-allowed" : "pointer",
                     display: "flex",
@@ -2763,7 +2764,7 @@ export default function NovaVenda({
                   <FontAwesomeIcon
                     icon={faXmark}
                     style={{
-                      fontSize: 11,
+                      fontSize: "var(--fs-2xs)",
                     }}
                   />
                 </button>
@@ -2786,7 +2787,7 @@ export default function NovaVenda({
                       style={{
                         display: "block",
                         marginBottom: 6,
-                        fontSize: 11,
+                        fontSize: "var(--fs-2xs)",
                         fontWeight: 600,
                         color: "var(--text-secondary)",
                       }}
@@ -2810,9 +2811,9 @@ export default function NovaVenda({
                         border: "1px solid var(--border)",
                         borderRadius: 8,
                         outline: "none",
-                        fontSize: 12,
+                        fontSize: "var(--fs-xs)",
                         color: "var(--text)",
-                        background: "#fff",
+                        background: "var(--surface)",
                       }}
                     />
                   </div>
@@ -2822,7 +2823,7 @@ export default function NovaVenda({
                       style={{
                         display: "block",
                         marginBottom: 6,
-                        fontSize: 11,
+                        fontSize: "var(--fs-2xs)",
                         fontWeight: 600,
                         color: "var(--text-secondary)",
                       }}
@@ -2844,9 +2845,9 @@ export default function NovaVenda({
                         border: "1px solid var(--border)",
                         borderRadius: 8,
                         outline: "none",
-                        fontSize: 12,
+                        fontSize: "var(--fs-xs)",
                         color: "var(--text)",
-                        background: "#fff",
+                        background: "var(--surface)",
                       }}
                     />
                   </div>
@@ -2867,7 +2868,7 @@ export default function NovaVenda({
                 >
                   <span
                     style={{
-                      fontSize: 11,
+                      fontSize: "var(--fs-2xs)",
                       color: "var(--text-muted)",
                     }}
                   >
@@ -2876,7 +2877,7 @@ export default function NovaVenda({
 
                   <strong
                     style={{
-                      fontSize: 15,
+                      fontSize: "var(--fs-md)",
                       color: "var(--primary)",
                     }}
                   >
@@ -2904,10 +2905,10 @@ export default function NovaVenda({
                     padding: "0 13px",
                     borderRadius: 8,
                     border: "1px solid var(--border)",
-                    background: "#fff",
+                    background: "var(--surface)",
                     color: "var(--text-muted)",
                     cursor: salvandoItem ? "not-allowed" : "pointer",
-                    fontSize: 11,
+                    fontSize: "var(--fs-2xs)",
                     fontWeight: 500,
                   }}
                 >
@@ -2926,7 +2927,7 @@ export default function NovaVenda({
                     background: salvandoItem ? "var(--primary-border)" : "var(--primary)",
                     color: "#fff",
                     cursor: salvandoItem ? "not-allowed" : "pointer",
-                    fontSize: 11,
+                    fontSize: "var(--fs-2xs)",
                     fontWeight: 600,
                     display: "inline-flex",
                     alignItems: "center",
@@ -2937,7 +2938,7 @@ export default function NovaVenda({
                   <FontAwesomeIcon
                     icon={faFloppyDisk}
                     style={{
-                      fontSize: 10,
+                      fontSize: "var(--fs-2xs)",
                     }}
                   />
 
@@ -2972,8 +2973,8 @@ export default function NovaVenda({
 
           .nova-venda-page input:focus,
           .nova-venda-page select:focus {
-            border-color: #10b981 !important;
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.08);
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 0 3px var(--primary-ring);
           }
 
           input:disabled,

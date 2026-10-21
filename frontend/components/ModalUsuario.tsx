@@ -171,7 +171,7 @@ export function ModalUsuario({
               <h2
                 style={{
                   margin: 0,
-                  fontSize: 17,
+                  fontSize: "var(--fs-xl)",
                   fontWeight: 600,
                   color: "var(--text)",
                 }}
@@ -182,7 +182,7 @@ export function ModalUsuario({
               <p
                 style={{
                   margin: "3px 0 0",
-                  fontSize: 12,
+                  fontSize: "var(--fs-xs)",
                   color: "var(--text-muted)",
                 }}
               >
@@ -336,7 +336,7 @@ export function ModalUsuario({
                 {telas.length > 0 && (
                   <span
                     style={{
-                      fontSize: 11,
+                      fontSize: "var(--fs-2xs)",
                       color: "var(--text-muted)",
                     }}
                   >
@@ -360,7 +360,7 @@ export function ModalUsuario({
                     style={{
                       padding: 18,
                       textAlign: "center",
-                      fontSize: 13,
+                      fontSize: "var(--fs-sm)",
                       color: "var(--text-muted)",
                     }}
                   >
@@ -374,7 +374,7 @@ export function ModalUsuario({
                     style={{
                       padding: 18,
                       textAlign: "center",
-                      fontSize: 13,
+                      fontSize: "var(--fs-sm)",
                       color: "var(--text-muted)",
                     }}
                   >
@@ -413,7 +413,7 @@ export function ModalUsuario({
                         >
                           <div
                             style={{
-                              fontSize: 13,
+                              fontSize: "var(--fs-sm)",
                               fontWeight: 500,
                               color: "var(--text-secondary)",
                             }}
@@ -425,7 +425,7 @@ export function ModalUsuario({
                             <div
                               style={{
                                 marginTop: 2,
-                                fontSize: 11,
+                                fontSize: "var(--fs-2xs)",
                                 color: "var(--text-subtle)",
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",
@@ -535,7 +535,7 @@ export function ModalUsuario({
 const labelStyle: React.CSSProperties = {
   display: "block",
   marginBottom: 7,
-  fontSize: 12,
+  fontSize: "var(--fs-xs)",
   fontWeight: 600,
   color: "var(--text-secondary)",
 };
@@ -548,7 +548,7 @@ const inputStyle: React.CSSProperties = {
   borderRadius: 8,
   background: "var(--surface)",
   color: "var(--text)",
-  fontSize: 13,
+  fontSize: "var(--fs-sm)",
   outline: "none",
   boxSizing: "border-box",
 };
@@ -564,7 +564,7 @@ const closeButtonStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  fontSize: 15,
+  fontSize: "var(--fs-md)",
 };
 
 const passwordButtonStyle: React.CSSProperties = {
@@ -591,7 +591,7 @@ const secondaryButtonStyle: React.CSSProperties = {
   background: "var(--surface)",
   color: "var(--text-muted)",
   cursor: "pointer",
-  fontSize: 13,
+  fontSize: "var(--fs-sm)",
   fontWeight: 500,
 };
 
@@ -603,6 +603,6 @@ const primaryButtonStyle: React.CSSProperties = {
   background: "var(--primary)",
   color: "var(--surface)",
   cursor: "pointer",
-  fontSize: 13,
+  fontSize: "var(--fs-sm)",
   fontWeight: 500,
 };

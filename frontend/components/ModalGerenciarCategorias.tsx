@@ -1,3 +1,5 @@
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPen, faTrash } from "@fortawesome/free-solid-svg-icons";
 import React from "react";
 
 interface ExpenseCategory {
@@ -62,7 +64,7 @@ export const ModalGerenciarCategorias: React.FC<
     >
       <div
         style={{
-          background: "#fff",
+          background: "var(--surface)",
           borderRadius: 14,
           padding: 24,
           width: "90%",
@@ -80,7 +82,7 @@ export const ModalGerenciarCategorias: React.FC<
             marginBottom: 20,
           }}
         >
-          <h2 style={{ margin: 0, fontSize: 20 }}>Gerenciar Categorias</h2>
+          <h2 style={{ margin: 0, fontSize: "var(--fs-2xl)" }}>Gerenciar Categorias</h2>
           <button
             onClick={() => setShowModalCategoria(true)}
             style={{
@@ -90,7 +92,7 @@ export const ModalGerenciarCategorias: React.FC<
               border: "none",
               borderRadius: 8,
               cursor: "pointer",
-              fontSize: 12,
+              fontSize: "var(--fs-xs)",
             }}
           >
             + Nova Categoria
@@ -196,7 +198,7 @@ export const ModalGerenciarCategorias: React.FC<
                         border: "1px solid var(--border)",
                       }}
                     />
-                    <span style={{ fontSize: 14, fontWeight: 500 }}>
+                    <span style={{ fontSize: "var(--fs-md)", fontWeight: 500 }}>
                       {cat.name}
                     </span>
                     {transacoes.some(
@@ -204,7 +206,7 @@ export const ModalGerenciarCategorias: React.FC<
                     ) && (
                       <span
                         style={{
-                          fontSize: 11,
+                          fontSize: "var(--fs-2xs)",
                           color: "var(--warning)",
                           background: "var(--warning-soft)",
                           padding: "2px 6px",
@@ -221,26 +223,26 @@ export const ModalGerenciarCategorias: React.FC<
                       style={{
                         background: "none",
                         border: "none",
-                        fontSize: 18,
+                        fontSize: "var(--fs-xl)",
                         cursor: "pointer",
                         color: "var(--text-muted)",
                       }}
                       title="Editar"
                     >
-                      ✏️
+                      <FontAwesomeIcon icon={faPen} style={{ fontSize: "var(--fs-sm)" }} />
                     </button>
                     <button
                       onClick={() => excluirCategoria(cat.id, cat.name)}
                       style={{
                         background: "none",
                         border: "none",
-                        fontSize: 18,
+                        fontSize: "var(--fs-xl)",
                         cursor: "pointer",
                         color: "var(--danger)",
                       }}
                       title="Excluir"
                     >
-                      🗑️
+                      <FontAwesomeIcon icon={faTrash} style={{ fontSize: "var(--fs-sm)" }} />
                     </button>
                   </div>
                 </>

@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Services\CurrentCompany;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -209,7 +210,8 @@ class OrderItemController extends Controller
             ->join('products', 'order_items.product_id', '=', 'products.id')
             ->where('orders.partner_company_id', CurrentCompany::id())
             ->where('orders.status', Order::STATUS_FECHADO)
-            ->whereYear('orders.closed_at', $year)
+            ->where('orders.closed_at', '>=', Carbon::create($year)->startOfYear())
+            ->where('orders.closed_at', '<', Carbon::create($year + 1)->startOfYear())
             ->select(
                 'products.id',
                 'products.name as product_name',

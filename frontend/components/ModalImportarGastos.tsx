@@ -1,3 +1,5 @@
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCircleCheck, faFileLines, faLightbulb, faTriangleExclamation } from "@fortawesome/free-solid-svg-icons";
 import React from "react";
 
 interface ModalImportarGastosProps {
@@ -52,7 +54,7 @@ export const ModalImportarGastos: React.FC<ModalImportarGastosProps> = ({
     >
       <div
         style={{
-          background: "#fff",
+          background: "var(--surface)",
           borderRadius: 14,
           padding: 24,
           width: "90%",
@@ -62,7 +64,7 @@ export const ModalImportarGastos: React.FC<ModalImportarGastosProps> = ({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ margin: "0 0 20px 0", fontSize: 20 }}>
+        <h2 style={{ margin: "0 0 20px 0", fontSize: "var(--fs-2xl)" }}>
           Importar Gastos (CSV)
         </h2>
 
@@ -74,20 +76,20 @@ export const ModalImportarGastos: React.FC<ModalImportarGastosProps> = ({
             borderRadius: 10,
           }}
         >
-          <p style={{ margin: 0, fontSize: 13, fontWeight: 500 }}>
-            📋 Formato esperado:
+          <p style={{ margin: 0, fontSize: "var(--fs-sm)", fontWeight: 500 }}>
+            <FontAwesomeIcon icon={faFileLines} style={{ marginRight: 6, color: "var(--primary)" }} /> Formato esperado:
           </p>
-          <p style={{ margin: "8px 0 0", fontSize: 12, color: "var(--text-muted)" }}>
+          <p style={{ margin: "8px 0 0", fontSize: "var(--fs-xs)", color: "var(--text-muted)" }}>
             <strong>Delimitador:</strong> ponto e vírgula (;) <br />
             <strong>Colunas:</strong> Data;Descrição;Valor;Categoria
             <br />
             Exemplo: 03/01/2026;AÇUCAR;13.99;2
           </p>
-          <p style={{ margin: "8px 0 0", fontSize: 11, color: "var(--primary)" }}>
-            ✅ Datas nos formatos DD/MM/AAAA ou AAAA-MM-DD são aceitas
+          <p style={{ margin: "8px 0 0", fontSize: "var(--fs-2xs)", color: "var(--primary)" }}>
+            <FontAwesomeIcon icon={faCircleCheck} style={{ marginRight: 6 }} /> Datas nos formatos DD/MM/AAAA ou AAAA-MM-DD são aceitas
           </p>
-          <p style={{ margin: "4px 0 0", fontSize: 11, color: "var(--warning)" }}>
-            💡 Categoria deve ser o ID numérico (ex: 2) ou o nome exato
+          <p style={{ margin: "4px 0 0", fontSize: "var(--fs-2xs)", color: "var(--warning)" }}>
+            <FontAwesomeIcon icon={faLightbulb} style={{ marginRight: 6 }} /> Categoria deve ser o ID numérico (ex: 2) ou o nome exato
           </p>
         </div>
 
@@ -96,7 +98,7 @@ export const ModalImportarGastos: React.FC<ModalImportarGastosProps> = ({
             style={{
               display: "block",
               marginBottom: 8,
-              fontSize: 14,
+              fontSize: "var(--fs-md)",
               fontWeight: 500,
             }}
           >
@@ -123,14 +125,14 @@ export const ModalImportarGastos: React.FC<ModalImportarGastosProps> = ({
 
         {importPreview.length > 0 && (
           <div style={{ marginBottom: 16 }}>
-            <p style={{ fontSize: 13, fontWeight: 500, marginBottom: 8 }}>
+            <p style={{ fontSize: "var(--fs-sm)", fontWeight: 500, marginBottom: 8 }}>
               Preview (primeiras 5 linhas):
             </p>
             <div style={{ overflowX: "auto" }}>
               <table
                 style={{
                   width: "100%",
-                  fontSize: 12,
+                  fontSize: "var(--fs-xs)",
                   borderCollapse: "collapse",
                 }}
               >
@@ -263,9 +265,9 @@ export const ModalImportarGastos: React.FC<ModalImportarGastosProps> = ({
               padding: "10px",
               borderRadius: 10,
               border: "1px solid var(--border)",
-              background: "#fff",
+              background: "var(--surface)",
               color: "var(--text-secondary)",
-              fontWeight: "bold",
+              fontWeight: 700,
               cursor: "pointer",
               boxShadow: "var(--shadow-card)",
             }}
@@ -282,7 +284,7 @@ export const ModalImportarGastos: React.FC<ModalImportarGastosProps> = ({
               border: "none",
               background: !importFile || importing ? "var(--text-subtle)" : "var(--primary)",
               color: "#fff",
-              fontWeight: "bold",
+              fontWeight: 700,
               cursor: !importFile || importing ? "not-allowed" : "pointer",
             }}
           >
@@ -291,8 +293,8 @@ export const ModalImportarGastos: React.FC<ModalImportarGastosProps> = ({
         </div>
 
         {importPreview.length === 0 && importFile && (
-          <p style={{ fontSize: 12, color: "var(--danger)", marginTop: 12 }}>
-            ⚠️ Nenhum dado válido encontrado. Verifique se o arquivo está no
+          <p style={{ fontSize: "var(--fs-xs)", color: "var(--danger)", marginTop: 12 }}>
+            <FontAwesomeIcon icon={faTriangleExclamation} style={{ marginRight: 6 }} /> Nenhum dado válido encontrado. Verifique se o arquivo está no
             formato correto.
           </p>
         )}

@@ -35,11 +35,11 @@ class ExpenseController extends Controller
         $query = Expense::where('partner_company_id', CurrentCompany::id())->with('category');
 
         if (!empty($data['start_date'])) {
-            $query->whereDate('expense_date', '>=', $data['start_date']);
+            $query->where('expense_date', '>=', Carbon::parse($data['start_date'])->toDateString());
         }
 
         if (!empty($data['end_date'])) {
-            $query->whereDate('expense_date', '<=', $data['end_date']);
+            $query->where('expense_date', '<=', Carbon::parse($data['end_date'])->toDateString());
         }
 
         if (!empty($data['expense_category_id'])) {
@@ -111,7 +111,7 @@ class ExpenseController extends Controller
         ]);
 
         $query = Expense::where('partner_company_id', CurrentCompany::id())
-            ->whereDate('expense_date', $data['date']);
+            ->where('expense_date', Carbon::parse($data['date'])->toDateString());
 
         return response()->json([
             'date'                 => $data['date'],

@@ -49,7 +49,7 @@ export function FiltrosEquipe({
             top: "50%",
             transform: "translateY(-50%)",
             color: "var(--text-subtle)",
-            fontSize: 12,
+            fontSize: "var(--fs-xs)",
           }}
         />
 
@@ -65,7 +65,7 @@ export function FiltrosEquipe({
             border: "1px solid var(--border)",
             borderRadius: 8,
             padding: "0 12px 0 34px",
-            fontSize: 13,
+            fontSize: "var(--fs-sm)",
             color: "var(--text-secondary)",
             outline: "none",
             transition: "border-color 0.2s ease",
@@ -93,7 +93,7 @@ export function FiltrosEquipe({
           border: "1px solid var(--border)",
           borderRadius: 8,
           padding: "0 10px",
-          fontSize: 13,
+          fontSize: "var(--fs-sm)",
           color: "var(--text-secondary)",
           background: "var(--surface)",
           outline: "none",

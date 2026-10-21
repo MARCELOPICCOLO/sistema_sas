@@ -59,13 +59,13 @@ const cardStyle: React.CSSProperties = {
 };
 
 const labelStyle: React.CSSProperties = {
-  fontSize: 12,
+  fontSize: "var(--fs-xs)",
   color: "var(--text-muted)",
   marginBottom: 6,
 };
 
 const valueStyle: React.CSSProperties = {
-  fontSize: 22,
+  fontSize: "var(--fs-3xl)",
   fontWeight: 600,
   color: "var(--text)",
 };

@@ -98,14 +98,14 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
           alignItems: "center",
           justifyContent: "center",
           color: "var(--text-subtle)",
-          fontSize: 18,
+          fontSize: "var(--fs-xl)",
         }}
       >
         <FontAwesomeIcon icon={faUsers} />
       </div>
       <div
         style={{
-          fontSize: 13,
+          fontSize: "var(--fs-sm)",
           color: "var(--text-muted)",
         }}
       >
@@ -194,7 +194,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        fontSize: 14,
+                        fontSize: "var(--fs-md)",
                         fontWeight: 600,
                         flexShrink: 0,
                       }}
@@ -205,7 +205,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                     <div>
                       <div
                         style={{
-                          fontSize: 14,
+                          fontSize: "var(--fs-md)",
                           fontWeight: 600,
                           color: "var(--text)",
                         }}
@@ -214,7 +214,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                       </div>
                       <div
                         style={{
-                          fontSize: 12,
+                          fontSize: "var(--fs-xs)",
                           color: "var(--text-muted)",
                         }}
                       >
@@ -229,7 +229,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                       display: "flex",
                       alignItems: "center",
                       gap: 6,
-                      fontSize: 11,
+                      fontSize: "var(--fs-2xs)",
                       fontWeight: 500,
                       color: usuario.active ? "var(--primary)" : "var(--text-subtle)",
                     }}
@@ -264,7 +264,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                   >
                     <span
                       style={{
-                        fontSize: 12,
+                        fontSize: "var(--fs-xs)",
                         color: "var(--text-muted)",
                       }}
                     >
@@ -272,7 +272,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                     </span>
                     <span
                       style={{
-                        fontSize: 13,
+                        fontSize: "var(--fs-sm)",
                         color: "var(--text)",
                       }}
                     >
@@ -290,7 +290,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                     >
                       <span
                         style={{
-                          fontSize: 12,
+                          fontSize: "var(--fs-xs)",
                           color: "var(--text-muted)",
                         }}
                       >
@@ -298,7 +298,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                       </span>
                       <span
                         style={{
-                          fontSize: 13,
+                          fontSize: "var(--fs-sm)",
                           color: "var(--text)",
                         }}
                       >
@@ -316,7 +316,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                   >
                     <span
                       style={{
-                        fontSize: 12,
+                        fontSize: "var(--fs-xs)",
                         color: "var(--text-muted)",
                       }}
                     >
@@ -332,7 +332,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                         background: roleStyle.background,
                         color: roleStyle.color,
                         border: `1px solid ${roleStyle.border}`,
-                        fontSize: 11,
+                        fontSize: "var(--fs-2xs)",
                         fontWeight: 600,
                       }}
                     >
@@ -364,7 +364,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                       background: "var(--surface)",
                       color: "var(--text-secondary)",
                       cursor: "pointer",
-                      fontSize: 12,
+                      fontSize: "var(--fs-xs)",
                       fontWeight: 500,
                       display: "flex",
                       alignItems: "center",
@@ -401,7 +401,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                       background: usuario.active ? "var(--primary)" : "var(--text-muted)",
                       color: "var(--surface)",
                       cursor: "pointer",
-                      fontSize: 12,
+                      fontSize: "var(--fs-xs)",
                       fontWeight: 500,
                       display: "flex",
                       alignItems: "center",
@@ -445,7 +445,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
         style={{
           width: "100%",
           borderCollapse: "collapse",
-          fontSize: 13,
+          fontSize: "var(--fs-sm)",
         }}
       >
         <thead>
@@ -531,7 +531,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          fontSize: 12,
+                          fontSize: "var(--fs-xs)",
                           fontWeight: 600,
                           flexShrink: 0,
                         }}
@@ -542,7 +542,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                       <div>
                         <div
                           style={{
-                            fontSize: 13,
+                            fontSize: "var(--fs-sm)",
                             fontWeight: 600,
                             color: "var(--text)",
                           }}
@@ -552,7 +552,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                         {usuario.contact && (
                           <div
                             style={{
-                              fontSize: 11,
+                              fontSize: "var(--fs-2xs)",
                               color: "var(--text-subtle)",
                               marginTop: 2,
                             }}
@@ -600,7 +600,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                         background: roleStyle.background,
                         color: roleStyle.color,
                         border: `1px solid ${roleStyle.border}`,
-                        fontSize: 11,
+                        fontSize: "var(--fs-2xs)",
                         fontWeight: 600,
                       }}
                     >
@@ -623,7 +623,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
                         display: "inline-flex",
                         alignItems: "center",
                         gap: 6,
-                        fontSize: 11,
+                        fontSize: "var(--fs-2xs)",
                         fontWeight: 500,
                         color: usuario.active ? "var(--primary)" : "var(--text-subtle)",
                       }}
@@ -740,7 +740,7 @@ const TabelaGestaoEquipe: React.FC<TabelaGestaoEquipeProps> = ({
 const thStyle: React.CSSProperties = {
   padding: "11px 16px",
   textAlign: "left",
-  fontSize: 11,
+  fontSize: "var(--fs-2xs)",
   fontWeight: 600,
   color: "var(--text-muted)",
   textTransform: "uppercase",
@@ -762,7 +762,7 @@ const actionButtonStyle: React.CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   padding: 0,
-  fontSize: 14,
+  fontSize: "var(--fs-md)",
   color: "var(--text-muted)",
   cursor: "pointer",
   transition: "all 0.15s ease",

@@ -40,7 +40,7 @@ export function CabecalhoEquipe({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 19,
+            fontSize: "var(--fs-xl)",
           }}
         >
           <FontAwesomeIcon icon={faUsers} />
@@ -50,7 +50,7 @@ export function CabecalhoEquipe({
           <h1
             style={{
               margin: 0,
-              fontSize: 20,
+              fontSize: "var(--fs-2xl)",
               fontWeight: 600,
               color: "var(--text)",
             }}
@@ -60,7 +60,7 @@ export function CabecalhoEquipe({
           <p
             style={{
               margin: "4px 0 0",
-              fontSize: 13,
+              fontSize: "var(--fs-sm)",
               color: "var(--text-muted)",
             }}
           >

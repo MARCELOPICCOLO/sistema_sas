@@ -2,11 +2,11 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faHouse,
   faRightFromBracket,
-  faUtensils,
 } from "@fortawesome/free-solid-svg-icons";
 import { NavLink, useNavigate } from "react-router-dom";
 
 import type { SessionUser } from "../auth/session";
+import { APP_ICON, APP_NAME } from "../brand";
 import { MODULOS } from "../modules";
 
 interface NavRailProps {
@@ -14,29 +14,20 @@ interface NavRailProps {
   onLogout: () => void;
 }
 
-const iniciais = (nome: string) =>
-  nome
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase())
-    .join("");
-
 /** Barra lateral fixa para alternar entre os módulos liberados ao usuário. */
 export default function NavRail({ user, onLogout }: NavRailProps) {
   const navigate = useNavigate();
   const permitidos = new Set(user.telas.map((t) => t.slug));
-  const nome = user.full_name || user.username;
 
   return (
     <aside className="rail" aria-label="Navegação principal">
       <button
         className="rail__logo"
         onClick={() => navigate("/")}
-        aria-label="Início"
-        title="Início"
+        aria-label={APP_NAME}
+        title={APP_NAME}
       >
-        <FontAwesomeIcon icon={faUtensils} />
+        <FontAwesomeIcon icon={APP_ICON} />
       </button>
 
       <nav className="rail__nav">
@@ -64,10 +55,6 @@ export default function NavRail({ user, onLogout }: NavRailProps) {
       </nav>
 
       <div className="rail__footer">
-        <span className="rail__avatar" title={nome}>
-          {iniciais(nome)}
-        </span>
-
         <button
           className="rail__item is-logout"
           onClick={onLogout}

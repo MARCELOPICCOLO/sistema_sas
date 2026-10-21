@@ -1,16 +1,12 @@
-import { useCallback, useEffect, useState, type ComponentType } from "react";
+import { Suspense, lazy, useCallback, useEffect, useState, type ComponentType } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faLock } from "@fortawesome/free-solid-svg-icons";
 
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import Produtos from "./pages/Produtos";
-import Caixa from "./pages/Caixa";
-import GestaoVendas from "./pages/GestaoVendas";
-import GerenciamentoEquipe from "./pages/GerenciamentoEquipe";
-import GestaoRelatorios from "./pages/GestaoRelatorios";
 import NavRail from "./components/NavRail";
+import Topbar from "./components/Topbar";
 import api, {
   SESSION_EXPIRED_EVENT,
   clearSession,
@@ -19,7 +15,14 @@ import api, {
 import { fetchSession, type SessionUser } from "./auth/session";
 import { MODULOS, pathDoModulo, type ModuloSlug } from "./modules";
 
-type PaginaModulo = ComponentType<{ setTela: (tela: string) => void }>;
+type PaginaModulo = ComponentType;
+
+// Cada módulo vira um arquivo separado, baixado só quando a tela é aberta.
+const Produtos = lazy(() => import("./pages/Produtos"));
+const Caixa = lazy(() => import("./pages/Caixa"));
+const GestaoVendas = lazy(() => import("./pages/GestaoVendas"));
+const GerenciamentoEquipe = lazy(() => import("./pages/GerenciamentoEquipe"));
+const GestaoRelatorios = lazy(() => import("./pages/GestaoRelatorios"));
 
 const PAGINAS: Record<ModuloSlug, PaginaModulo> = {
   produtos: Produtos,
@@ -137,6 +140,7 @@ export default function App() {
           <div className="shell">
             <NavRail user={user} onLogout={handleLogout} />
             <div className="shell-content">
+              <Topbar user={user} onLogout={handleLogout} />
               <Dashboard user={user} setTela={setTela} />
             </div>
           </div>
@@ -155,7 +159,10 @@ export default function App() {
                 <div className="shell">
                   <NavRail user={user} onLogout={handleLogout} />
                   <div className="shell-content module-page">
-                    <Pagina setTela={setTela} />
+                    <Topbar user={user} onLogout={handleLogout} />
+                    <Suspense fallback={<TelaCarregando />}>
+                      <Pagina />
+                    </Suspense>
                   </div>
                 </div>
               ) : (

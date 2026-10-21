@@ -52,9 +52,9 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
     padding: "0 12px",
     borderRadius: 10,
     border: "1px solid var(--border)",
-    background: "#fff",
+    background: "var(--surface)",
     color: "var(--text)",
-    fontSize: 13,
+    fontSize: "var(--fs-sm)",
     outline: "none",
   };
 
@@ -81,7 +81,7 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
           width: "100%",
           maxWidth: 500,
           maxHeight: "90vh",
-          background: "#fff",
+          background: "var(--surface)",
           borderRadius: 14,
           overflow: "hidden",
           boxShadow: "var(--shadow-modal)",
@@ -104,7 +104,7 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
             <h2
               style={{
                 margin: 0,
-                fontSize: 17,
+                fontSize: "var(--fs-xl)",
                 fontWeight: 600,
                 color: "var(--text)",
               }}
@@ -115,7 +115,7 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
             <p
               style={{
                 margin: "4px 0 0",
-                fontSize: 12,
+                fontSize: "var(--fs-xs)",
                 color: "var(--text-subtle)",
               }}
             >
@@ -140,7 +140,7 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
             }}
             title="Fechar"
           >
-            <FontAwesomeIcon icon={faTimes} style={{ fontSize: 14 }} />
+            <FontAwesomeIcon icon={faTimes} style={{ fontSize: "var(--fs-md)" }} />
           </button>
         </div>
 
@@ -157,7 +157,7 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
               style={{
                 display: "block",
                 marginBottom: 7,
-                fontSize: 12,
+                fontSize: "var(--fs-xs)",
                 fontWeight: 500,
                 color: "var(--text-secondary)",
               }}
@@ -204,7 +204,7 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
                   background: novaCategoria.name.trim() ? "var(--primary)" : "var(--border)",
                   color: novaCategoria.name.trim() ? "#fff" : "var(--text-subtle)",
                   cursor: novaCategoria.name.trim() ? "pointer" : "not-allowed",
-                  fontSize: 13,
+                  fontSize: "var(--fs-sm)",
                   fontWeight: 600,
                   whiteSpace: "nowrap",
                 }}
@@ -235,7 +235,7 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
             >
               <span
                 style={{
-                  fontSize: 12,
+                  fontSize: "var(--fs-xs)",
                   fontWeight: 600,
                   color: "var(--text-secondary)",
                 }}
@@ -245,7 +245,7 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
 
               <span
                 style={{
-                  fontSize: 11,
+                  fontSize: "var(--fs-2xs)",
                   color: "var(--text-subtle)",
                 }}
               >
@@ -267,7 +267,7 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
                 <p
                   style={{
                     margin: 0,
-                    fontSize: 12,
+                    fontSize: "var(--fs-xs)",
                   }}
                 >
                   Nenhuma categoria cadastrada.
@@ -293,7 +293,7 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
                           index !== categorias.length - 1
                             ? "1px solid var(--surface-3)"
                             : "none",
-                        background: editando ? "var(--surface-2)" : "#fff",
+                        background: editando ? "var(--surface-2)" : "var(--surface)",
                       }}
                     >
                       {editando ? (
@@ -341,7 +341,7 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
                           >
                             <FontAwesomeIcon
                               icon={faCheck}
-                              style={{ fontSize: 13 }}
+                              style={{ fontSize: "var(--fs-sm)" }}
                             />
                           </button>
 
@@ -353,7 +353,7 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
                               height: 36,
                               borderRadius: 10,
                               border: "1px solid var(--border)",
-                              background: "#fff",
+                              background: "var(--surface)",
                               color: "var(--text-muted)",
                               cursor: "pointer",
                               display: "flex",
@@ -365,7 +365,7 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
                           >
                             <FontAwesomeIcon
                               icon={faTimes}
-                              style={{ fontSize: 13 }}
+                              style={{ fontSize: "var(--fs-sm)" }}
                             />
                           </button>
                         </div>
@@ -381,7 +381,7 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
                         >
                           <span
                             style={{
-                              fontSize: 13,
+                              fontSize: "var(--fs-sm)",
                               fontWeight: 500,
                               color: "var(--text-secondary)",
                             }}
@@ -416,7 +416,7 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
                             >
                               <FontAwesomeIcon
                                 icon={faPen}
-                                style={{ fontSize: 12 }}
+                                style={{ fontSize: "var(--fs-xs)" }}
                               />
                             </button>
 
@@ -440,7 +440,7 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
                             >
                               <FontAwesomeIcon
                                 icon={faTrash}
-                                style={{ fontSize: 12 }}
+                                style={{ fontSize: "var(--fs-xs)" }}
                               />
                             </button>
                           </div>
@@ -470,10 +470,10 @@ export const ModalCategorias: React.FC<ModalCategoriasProps> = ({
               padding: "10px 18px",
               borderRadius: 10,
               border: "1px solid var(--border)",
-              background: "#fff",
+              background: "var(--surface)",
               color: "var(--text-secondary)",
               cursor: "pointer",
-              fontSize: 13,
+              fontSize: "var(--fs-sm)",
               fontWeight: 500,
               boxShadow: "var(--shadow-card)",
             }}

@@ -10,11 +10,15 @@ import { ModalImportarVendas } from "../../components/ModalImportarVendas";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faArrowLeft,
-  faTimes,
+  faArrowUp,
   faBars,
+  faFileExport,
+  faFileImport,
+  faTags,
+  faTimes,
   faWallet,
 } from "@fortawesome/free-solid-svg-icons";
+import { notify, confirmar } from "../feedback";
 const API_URL = import.meta.env.VITE_API_URL;
 
 interface ExpenseCategory {
@@ -56,10 +60,6 @@ interface DailySummary {
   saldo: number;
 }
 
-interface CaixaProps {
-  setTela?: (tela: string) => void;
-}
-
 interface CSVPreview {
   data_original?: string;
   descricao?: string;
@@ -69,7 +69,7 @@ interface CSVPreview {
   pagamento?: string;
 }
 
-export default function Caixa({ setTela }: CaixaProps) {
+export default function Caixa() {
   // =========================================================
   // ESTADOS
   // =========================================================
@@ -478,7 +478,7 @@ export default function Caixa({ setTela }: CaixaProps) {
 
   const adicionarCategoria = async () => {
     if (!novaCategoria.name.trim()) {
-      alert("Digite o nome da categoria");
+      notify("Digite o nome da categoria");
       return;
     }
 
@@ -486,7 +486,7 @@ export default function Caixa({ setTela }: CaixaProps) {
       const token = getToken();
 
       if (!token) {
-        alert("Sessão expirada. Faça login novamente.");
+        notify("Sessão expirada. Faça login novamente.");
         return;
       }
 
@@ -520,11 +520,11 @@ export default function Caixa({ setTela }: CaixaProps) {
         color: "#6b7280",
       });
 
-      alert("Categoria adicionada com sucesso!");
+      notify("Categoria adicionada com sucesso!");
     } catch (error) {
       console.error("Erro ao adicionar categoria:", error);
 
-      alert(
+      notify(
         error instanceof Error ? error.message : "Erro ao adicionar categoria",
       );
     }
@@ -540,7 +540,7 @@ export default function Caixa({ setTela }: CaixaProps) {
     }
 
     if (!editandoCategoria.name.trim()) {
-      alert("Digite o nome da categoria");
+      notify("Digite o nome da categoria");
       return;
     }
 
@@ -548,7 +548,7 @@ export default function Caixa({ setTela }: CaixaProps) {
       const token = getToken();
 
       if (!token) {
-        alert("Sessão expirada. Faça login novamente.");
+        notify("Sessão expirada. Faça login novamente.");
         return;
       }
 
@@ -579,11 +579,11 @@ export default function Caixa({ setTela }: CaixaProps) {
 
       setEditandoCategoria(null);
 
-      alert("Categoria atualizada com sucesso!");
+      notify("Categoria atualizada com sucesso!");
     } catch (error) {
       console.error("Erro ao editar categoria:", error);
 
-      alert(
+      notify(
         error instanceof Error ? error.message : "Erro ao editar categoria",
       );
     }
@@ -606,7 +606,7 @@ export default function Caixa({ setTela }: CaixaProps) {
       ? `A categoria "${name}" possui gastos associados. Excluir mesmo assim?`
       : `Tem certeza que deseja excluir a categoria "${name}"?`;
 
-    if (!confirm(mensagem)) {
+    if (!(await confirmar(mensagem))) {
       return;
     }
 
@@ -614,7 +614,7 @@ export default function Caixa({ setTela }: CaixaProps) {
       const token = getToken();
 
       if (!token) {
-        alert("Sessão expirada. Faça login novamente.");
+        notify("Sessão expirada. Faça login novamente.");
         return;
       }
 
@@ -629,7 +629,7 @@ export default function Caixa({ setTela }: CaixaProps) {
       if (!response.ok) {
         const error = await response.json().catch(() => null);
 
-        alert(error?.message || "Erro ao excluir categoria");
+        notify(error?.message || "Erro ao excluir categoria");
 
         return;
       }
@@ -640,11 +640,11 @@ export default function Caixa({ setTela }: CaixaProps) {
         setFiltroCategoria(null);
       }
 
-      alert("Categoria excluída com sucesso!");
+      notify("Categoria excluída com sucesso!");
     } catch (error) {
       console.error("Erro ao excluir categoria:", error);
 
-      alert("Erro ao excluir categoria");
+      notify("Erro ao excluir categoria");
     }
   };
 
@@ -654,22 +654,22 @@ export default function Caixa({ setTela }: CaixaProps) {
 
   const adicionarSaida = async () => {
     if (!novaSaida.descricao.trim()) {
-      alert("Preencha a descrição");
+      notify("Preencha a descrição");
       return;
     }
 
     if (novaSaida.valor <= 0) {
-      alert("Digite um valor válido maior que zero");
+      notify("Digite um valor válido maior que zero");
       return;
     }
 
     if (!novaSaida.category_id) {
-      alert("Selecione uma categoria");
+      notify("Selecione uma categoria");
       return;
     }
 
     if (!novaSaida.data) {
-      alert("Selecione uma data");
+      notify("Selecione uma data");
       return;
     }
 
@@ -677,7 +677,7 @@ export default function Caixa({ setTela }: CaixaProps) {
       const token = getToken();
 
       if (!token) {
-        alert("Sessão expirada. Faça login novamente.");
+        notify("Sessão expirada. Faça login novamente.");
         return;
       }
 
@@ -722,11 +722,11 @@ export default function Caixa({ setTela }: CaixaProps) {
         await carregarTransacoesDoDia(novaSaida.data);
       }
 
-      alert("Saída adicionada com sucesso!");
+      notify("Saída adicionada com sucesso!");
     } catch (error) {
       console.error("Erro ao adicionar saída:", error);
 
-      alert(
+      notify(
         error instanceof Error
           ? error.message
           : "Erro ao conectar com o servidor",
@@ -743,12 +743,12 @@ export default function Caixa({ setTela }: CaixaProps) {
     type: string,
     source?: string,
   ) => {
-    if (!confirm("Remover esse lançamento?")) {
+    if (!(await confirmar("Remover esse lançamento?"))) {
       return;
     }
 
     if (type === "entrada" && source === "pdv") {
-      alert("Entradas do PDV não podem ser removidas aqui.");
+      notify("Entradas do PDV não podem ser removidas aqui.");
 
       return;
     }
@@ -757,7 +757,7 @@ export default function Caixa({ setTela }: CaixaProps) {
       const token = getToken();
 
       if (!token) {
-        alert("Sessão expirada. Faça login novamente.");
+        notify("Sessão expirada. Faça login novamente.");
         return;
       }
 
@@ -778,7 +778,7 @@ export default function Caixa({ setTela }: CaixaProps) {
       if (!response.ok) {
         const error = await response.json().catch(() => null);
 
-        alert(error?.message || "Erro ao remover lançamento");
+        notify(error?.message || "Erro ao remover lançamento");
 
         return;
       }
@@ -789,11 +789,11 @@ export default function Caixa({ setTela }: CaixaProps) {
         await carregarTransacoesDoDia(dataTransacao);
       }
 
-      alert("Removido com sucesso!");
+      notify("Removido com sucesso!");
     } catch (error) {
       console.error("Erro ao remover:", error);
 
-      alert("Erro ao conectar com o servidor");
+      notify("Erro ao conectar com o servidor");
     }
   };
 
@@ -1002,14 +1002,14 @@ export default function Caixa({ setTela }: CaixaProps) {
 
   const importarGastosCSV = async () => {
     if (!importFile) {
-      alert("Selecione um arquivo CSV");
+      notify("Selecione um arquivo CSV");
       return;
     }
 
     const token = getToken();
 
     if (!token) {
-      alert("Sessão expirada. Faça login novamente.");
+      notify("Sessão expirada. Faça login novamente.");
       return;
     }
 
@@ -1021,7 +1021,7 @@ export default function Caixa({ setTela }: CaixaProps) {
       const linhas = conteudo.split(/\r?\n/).filter((linha) => linha.trim());
 
       if (linhas.length < 2) {
-        alert("Arquivo vazio ou formato inválido");
+        notify("Arquivo vazio ou formato inválido");
         return;
       }
 
@@ -1118,10 +1118,10 @@ export default function Caixa({ setTela }: CaixaProps) {
         }
       }
 
-      alert(
+      notify(
         `Importação finalizada!\n\n` +
-          `✅ Sucesso: ${sucesso}\n` +
-          `❌ Erros: ${erros}`,
+          `Sucesso: ${sucesso}\n` +
+          `Erros: ${erros}`,
       );
 
       setShowModalImportarGastos(false);
@@ -1132,7 +1132,7 @@ export default function Caixa({ setTela }: CaixaProps) {
     } catch (error) {
       console.error("Erro ao processar CSV:", error);
 
-      alert("Erro ao processar o arquivo CSV.");
+      notify("Erro ao processar o arquivo CSV.");
     } finally {
       setImporting(false);
     }
@@ -1215,14 +1215,14 @@ export default function Caixa({ setTela }: CaixaProps) {
 
   const importarVendasCSV = async () => {
     if (!importFile) {
-      alert("Selecione um arquivo CSV");
+      notify("Selecione um arquivo CSV");
       return;
     }
 
     const token = getToken();
 
     if (!token) {
-      alert("Sessão expirada. Faça login novamente.");
+      notify("Sessão expirada. Faça login novamente.");
       return;
     }
 
@@ -1234,7 +1234,7 @@ export default function Caixa({ setTela }: CaixaProps) {
       const linhas = conteudo.split(/\r?\n/).filter((linha) => linha.trim());
 
       if (linhas.length < 2) {
-        alert("Arquivo vazio ou formato inválido");
+        notify("Arquivo vazio ou formato inválido");
         return;
       }
 
@@ -1335,10 +1335,10 @@ export default function Caixa({ setTela }: CaixaProps) {
         }
       }
 
-      alert(
+      notify(
         `Importação de vendas finalizada!\n\n` +
-          `✅ Sucesso: ${sucesso}\n` +
-          `❌ Erros: ${erros}`,
+          `Sucesso: ${sucesso}\n` +
+          `Erros: ${erros}`,
       );
 
       setShowModalImportarVendas(false);
@@ -1349,7 +1349,7 @@ export default function Caixa({ setTela }: CaixaProps) {
     } catch (error) {
       console.error("Erro ao processar vendas:", error);
 
-      alert("Erro ao processar o arquivo CSV.");
+      notify("Erro ao processar o arquivo CSV.");
     } finally {
       setImporting(false);
     }
@@ -1547,14 +1547,13 @@ export default function Caixa({ setTela }: CaixaProps) {
           setShowModalGerenciar={setShowModalGerenciar}
           setShowModalImportarGastos={setShowModalImportarGastos}
           setShowModalImportarVendas={setShowModalImportarVendas}
-          onVoltarDashboard={setTela ? () => setTela("dashboard") : undefined}
         />
 
         <div
           style={{
             padding: "20px",
             overflowY: "auto",
-            height: "100vh",
+            height: "var(--page-h)",
             background: "var(--bg)",
           }}
         >
@@ -1607,7 +1606,7 @@ export default function Caixa({ setTela }: CaixaProps) {
     <div
       style={{
         background: "var(--bg)",
-        minHeight: "100vh",
+        minHeight: "var(--page-h)",
       }}
     >
       {/* HEADER */}
@@ -1644,7 +1643,7 @@ export default function Caixa({ setTela }: CaixaProps) {
             <FontAwesomeIcon
               icon={faWallet}
               style={{
-                fontSize: 18,
+                fontSize: "var(--fs-xl)",
                 color: "var(--primary)",
               }}
             />
@@ -1653,7 +1652,7 @@ export default function Caixa({ setTela }: CaixaProps) {
           <h1
             style={{
               margin: 0,
-              fontSize: 18,
+              fontSize: "var(--fs-xl)",
               fontWeight: 600,
               color: "var(--text)",
             }}
@@ -1675,35 +1674,6 @@ export default function Caixa({ setTela }: CaixaProps) {
           }}
         >
           <FontAwesomeIcon icon={faBars} />
-        </button>
-      </div>
-
-      {/* VOLTAR */}
-
-      <div
-        style={{
-          padding: "12px 16px",
-        }}
-      >
-        <button
-          onClick={() => setTela && setTela("dashboard")}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            width: "100%",
-            padding: "10px 16px",
-            background: "var(--surface)",
-            border: "1px solid var(--border)",
-            borderRadius: 10,
-            cursor: "pointer",
-            color: "var(--text-secondary)",
-            fontSize: 14,
-            boxShadow: "var(--shadow-card)",
-          }}
-        >
-          <FontAwesomeIcon icon={faArrowLeft} />
-          Voltar ao início
         </button>
       </div>
 
@@ -1751,7 +1721,7 @@ export default function Caixa({ setTela }: CaixaProps) {
                 style={{
                   background: "transparent",
                   border: "none",
-                  fontSize: 20,
+                  fontSize: "var(--fs-2xl)",
                   cursor: "pointer",
                   color: "var(--text)",
                 }}
@@ -1793,7 +1763,7 @@ export default function Caixa({ setTela }: CaixaProps) {
                   justifyContent: "center",
                 }}
               >
-                📤
+                <FontAwesomeIcon icon={faArrowUp} style={{ color: "var(--primary)" }} />
               </div>
 
               <span>Nova Saída</span>
@@ -1832,7 +1802,7 @@ export default function Caixa({ setTela }: CaixaProps) {
                   justifyContent: "center",
                 }}
               >
-                🏷️
+                <FontAwesomeIcon icon={faTags} style={{ color: "var(--primary)" }} />
               </div>
 
               <span>Categorias</span>
@@ -1871,7 +1841,7 @@ export default function Caixa({ setTela }: CaixaProps) {
                   justifyContent: "center",
                 }}
               >
-                📥
+                <FontAwesomeIcon icon={faFileImport} style={{ color: "var(--primary)" }} />
               </div>
 
               <span>Importar Gastos</span>
@@ -1909,7 +1879,7 @@ export default function Caixa({ setTela }: CaixaProps) {
                   justifyContent: "center",
                 }}
               >
-                📤
+                <FontAwesomeIcon icon={faFileExport} style={{ color: "var(--primary)" }} />
               </div>
 
               <span>Importar Vendas</span>

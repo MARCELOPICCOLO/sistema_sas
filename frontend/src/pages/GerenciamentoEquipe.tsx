@@ -58,7 +58,6 @@ export interface FormularioUsuario {
 }
 
 interface GerenciamentoEquipeProps {
-  setTela?: (tela: string) => void;
   usuarios?: Usuario[];
   onEditarUsuario?: (usuario: Usuario) => void;
   onAlterarStatus?: (usuario: Usuario) => void;
@@ -82,7 +81,6 @@ const formularioInicial: FormularioUsuario = {
 // =========================================================
 
 const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
-  setTela,
   usuarios = [],
   onEditarUsuario,
 }) => {
@@ -152,7 +150,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
           padding: "10px 20px",
           borderRadius: 10,
           boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-          fontSize: 14,
+          fontSize: "var(--fs-md)",
           fontWeight: 500,
           animation: "slideDown 0.3s ease-out",
           minWidth: 200,
@@ -782,7 +780,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
                 <h2
                   style={{
                     margin: 0,
-                    fontSize: 17,
+                    fontSize: "var(--fs-xl)",
                     fontWeight: 600,
                     color: "var(--text)",
                   }}
@@ -794,7 +792,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
                 <p
                   style={{
                     margin: "3px 0 0",
-                    fontSize: 12,
+                    fontSize: "var(--fs-xs)",
                     color: "var(--text-muted)",
                   }}
                 >
@@ -818,7 +816,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: 15,
+                fontSize: "var(--fs-md)",
               }}
             >
               <FontAwesomeIcon icon={faTimes} />
@@ -842,7 +840,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
                 }`,
                 borderRadius: 10,
                 color: modalToggleStatus.active ? "var(--warning-text)" : "var(--primary-strong)",
-                fontSize: 12,
+                fontSize: "var(--fs-xs)",
                 lineHeight: 1.5,
               }}
             >
@@ -861,7 +859,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
             <div>
               <div
                 style={{
-                  fontSize: 12,
+                  fontSize: "var(--fs-xs)",
                   color: "var(--text-subtle)",
                 }}
               >
@@ -871,7 +869,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
               <div
                 style={{
                   marginTop: 4,
-                  fontSize: 14,
+                  fontSize: "var(--fs-md)",
                   fontWeight: 600,
                   color: "var(--text)",
                 }}
@@ -882,7 +880,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
               <div
                 style={{
                   marginTop: 3,
-                  fontSize: 12,
+                  fontSize: "var(--fs-xs)",
                   color: "var(--text-subtle)",
                 }}
               >
@@ -915,7 +913,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
                 background: "var(--surface)",
                 color: "var(--text-muted)",
                 cursor: "pointer",
-                fontSize: 13,
+                fontSize: "var(--fs-sm)",
                 fontWeight: 500,
               }}
             >
@@ -934,7 +932,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
                 background: modalToggleStatus.active ? "var(--danger)" : "var(--primary)",
                 color: "var(--surface)",
                 cursor: togglingStatus ? "not-allowed" : "pointer",
-                fontSize: 13,
+                fontSize: "var(--fs-sm)",
                 fontWeight: 500,
                 opacity: togglingStatus ? 0.55 : 1,
               }}
@@ -971,20 +969,19 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
           style={{
             display: "grid",
             gridTemplateColumns: "280px 1fr",
-            height: "100vh",
+            height: "var(--page-h)",
             background: "var(--bg)",
           }}
         >
           <SidebarEquipe
             onNovoColaborador={abrirModalNovoUsuario}
-            onVoltarDashboard={() => setTela && setTela("dashboard")}
           />
 
           <div
             style={{
               padding: "24px",
               overflowY: "auto",
-              height: "100vh",
+              height: "var(--page-h)",
             }}
           >
             <div
@@ -1017,7 +1014,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
               <div
                 style={{
                   marginTop: 10,
-                  fontSize: 11,
+                  fontSize: "var(--fs-2xs)",
                   color: "var(--text-subtle)",
                 }}
               >
@@ -1061,7 +1058,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
       <div
         style={{
           background: "var(--bg)",
-          minHeight: "100vh",
+          minHeight: "var(--page-h)",
           padding: "16px",
         }}
       >
@@ -1098,7 +1095,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
               <FontAwesomeIcon
                 icon={faUsers}
                 style={{
-                  fontSize: 18,
+                  fontSize: "var(--fs-xl)",
                   color: "var(--primary)",
                 }}
               />
@@ -1107,7 +1104,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
             <h1
               style={{
                 margin: 0,
-                fontSize: 18,
+                fontSize: "var(--fs-xl)",
                 fontWeight: 600,
                 color: "var(--text)",
               }}
@@ -1173,7 +1170,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
                   style={{
                     background: "transparent",
                     border: "none",
-                    fontSize: 20,
+                    fontSize: "var(--fs-2xl)",
                     cursor: "pointer",
                     color: "var(--text-secondary)",
                   }}
@@ -1194,7 +1191,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
                   gap: 12,
                   width: "100%",
                   padding: "12px 16px",
-                  background: "var(--primary)",
+                  background: "var(--primary-solid)",
                   border: "none",
                   borderRadius: 10,
                   cursor: "pointer",
@@ -1232,7 +1229,7 @@ const GerenciamentoEquipe: React.FC<GerenciamentoEquipeProps> = ({
         <div
           style={{
             marginTop: 10,
-            fontSize: 11,
+            fontSize: "var(--fs-2xs)",
             color: "var(--text-subtle)",
             textAlign: "center",
           }}

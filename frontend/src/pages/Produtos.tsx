@@ -2,13 +2,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faSearch,
-  faArrowLeft,
-  faPlus,
-  faTimes,
+  faBars,
   faBoxes,
-  faTag,
   faEdit,
+  faPlus,
+  faSearch,
+  faTag,
+  faTimes,
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { TabelaProdutos } from "../../components/TabelaProdutos";
@@ -16,6 +16,7 @@ import { ModalProduto } from "../../components/ModalProduto";
 import { ModalCategorias } from "../../components/ModalCategorias";
 
 import api from "../api/axios";
+import { notify, confirmar } from "../feedback";
 const API_URL = import.meta.env.VITE_API_URL;
 
 interface Product {
@@ -47,11 +48,7 @@ interface Category {
   restaurant_id: number;
 }
 
-interface ProdutosProps {
-  setTela: (tela: string) => void;
-}
-
-export default function Produtos({ setTela }: ProdutosProps) {
+export default function Produtos() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [produtos, setProdutos] = useState<Product[]>([]);
@@ -169,18 +166,18 @@ export default function Produtos({ setTela }: ProdutosProps) {
     setLoading(false);
 
     if (sucesso > 0) {
-      alert(
+      notify(
         `✅ ${sucesso} produto(s) atualizado(s) com sucesso!${erros > 0 ? `\n❌ ${erros} erro(s)` : ""}`,
       );
       fetchProdutos();
     } else if (erros > 0) {
-      alert("❌ Erro ao atualizar os produtos. Tente novamente.");
+      notify("❌ Erro ao atualizar os produtos. Tente novamente.");
     }
   };
 
   const salvarProduto = async () => {
     if (!formData.name || !formData.category_id) {
-      alert("Preencha nome e categoria");
+      notify("Preencha nome e categoria");
       return;
     }
 
@@ -213,21 +210,21 @@ export default function Produtos({ setTela }: ProdutosProps) {
 
       fetchProdutos();
 
-      alert(editando ? "Produto atualizado!" : "Produto adicionado!");
+      notify(editando ? "Produto atualizado!" : "Produto adicionado!");
     } catch (error: any) {
       console.error("Erro ao salvar produto:", error);
 
       if (error.response) {
-        alert(error.response.data.message || "Erro ao salvar produto");
+        notify(error.response.data.message || "Erro ao salvar produto");
       } else {
-        alert("Erro ao conectar com o servidor");
+        notify("Erro ao conectar com o servidor");
       }
     }
   };
 
   const adicionarCategoria = async () => {
     if (!novaCategoria.name.trim()) {
-      alert("Digite o nome da categoria");
+      notify("Digite o nome da categoria");
       return;
     }
 
@@ -248,7 +245,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
 
       if (!response.ok) {
         const error = await response.json();
-        alert(error.message || "Erro ao criar categoria");
+        notify(error.message || "Erro ao criar categoria");
         return;
       }
 
@@ -256,10 +253,10 @@ export default function Produtos({ setTela }: ProdutosProps) {
       setShowModalCategoria(false);
       setNovaCategoria({ name: "" });
 
-      alert("Categoria adicionada com sucesso!");
+      notify("Categoria adicionada com sucesso!");
     } catch (error) {
       console.error("Erro ao adicionar categoria:", error);
-      alert("Erro ao conectar com o servidor");
+      notify("Erro ao conectar com o servidor");
     }
   };
 
@@ -267,7 +264,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
     if (!editandoCategoria) return;
 
     if (!editandoCategoria.name.trim()) {
-      alert("Digite o nome da categoria");
+      notify("Digite o nome da categoria");
       return;
     }
 
@@ -291,17 +288,17 @@ export default function Produtos({ setTela }: ProdutosProps) {
 
       if (!response.ok) {
         const error = await response.json();
-        alert(error.message || "Erro ao editar categoria");
+        notify(error.message || "Erro ao editar categoria");
         return;
       }
 
       await fetchCategorias();
       setEditandoCategoria(null);
 
-      alert("Categoria atualizada com sucesso!");
+      notify("Categoria atualizada com sucesso!");
     } catch (error) {
       console.error("Erro ao editar categoria:", error);
-      alert("Erro ao conectar com o servidor");
+      notify("Erro ao conectar com o servidor");
     }
   };
 
@@ -310,13 +307,13 @@ export default function Produtos({ setTela }: ProdutosProps) {
 
     if (temProdutos) {
       if (
-        !confirm(
+        !(await confirmar(
           `A categoria "${name}" possui produtos associados. Excluir mesmo assim?`,
-        )
+        ))
       )
         return;
     } else {
-      if (!confirm(`Tem certeza que deseja excluir a categoria "${name}"?`))
+      if (!(await confirmar(`Tem certeza que deseja excluir a categoria "${name}"?`)))
         return;
     }
 
@@ -334,7 +331,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
 
       if (!response.ok) {
         const error = await response.json();
-        alert(error.message || "Erro ao excluir categoria");
+        notify(error.message || "Erro ao excluir categoria");
         return;
       }
 
@@ -344,15 +341,15 @@ export default function Produtos({ setTela }: ProdutosProps) {
         setCategoriaFiltro(null);
       }
 
-      alert("Categoria excluída com sucesso!");
+      notify("Categoria excluída com sucesso!");
     } catch (error) {
       console.error("Erro ao excluir categoria:", error);
-      alert("Erro ao conectar com o servidor");
+      notify("Erro ao conectar com o servidor");
     }
   };
 
   const removerProduto = async (id: number, name: string) => {
-    if (!confirm(`Tem certeza que deseja excluir "${name}"?`)) return;
+    if (!(await confirmar(`Tem certeza que deseja excluir "${name}"?`))) return;
 
     const token = localStorage.getItem("auth_token");
 
@@ -368,15 +365,15 @@ export default function Produtos({ setTela }: ProdutosProps) {
 
       if (!response.ok) {
         const error = await response.json();
-        alert(error.message || "Erro ao excluir produto");
+        notify(error.message || "Erro ao excluir produto");
         return;
       }
 
       await fetchProdutos();
-      alert("Produto excluído com sucesso!");
+      notify("Produto excluído com sucesso!");
     } catch (error) {
       console.error("Erro ao excluir produto:", error);
-      alert("Erro ao conectar com o servidor");
+      notify("Erro ao conectar com o servidor");
     }
   };
 
@@ -414,45 +411,6 @@ export default function Produtos({ setTela }: ProdutosProps) {
         borderRight: "1px solid var(--border)",
       }}
     >
-      {/* Botão Voltar */}
-      <div
-        style={{
-          padding: "16px 20px",
-          borderBottom: "1px solid var(--surface-3)",
-        }}
-      >
-        <button
-          onClick={() => setTela && setTela("dashboard")}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            width: "100%",
-            padding: "9px 12px",
-            background: "var(--surface-2)",
-            border: "1px solid var(--border)",
-            borderRadius: 10,
-            cursor: "pointer",
-            color: "var(--text-muted)",
-            fontSize: 13,
-            transition: "all 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "var(--primary-soft)";
-            e.currentTarget.style.borderColor = "var(--primary-border)";
-            e.currentTarget.style.color = "var(--primary)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "var(--surface-2)";
-            e.currentTarget.style.borderColor = "var(--border)";
-            e.currentTarget.style.color = "var(--text-muted)";
-          }}
-        >
-          <FontAwesomeIcon icon={faArrowLeft} />
-          Voltar ao início
-        </button>
-      </div>
-
       {/* Cabeçalho */}
       <div
         style={{
@@ -474,7 +432,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
           >
             <FontAwesomeIcon
               icon={faBoxes}
-              style={{ fontSize: 19, color: "var(--primary)" }}
+              style={{ fontSize: "var(--fs-xl)", color: "var(--primary)" }}
             />
           </div>
 
@@ -482,7 +440,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
             <h2
               style={{
                 margin: 0,
-                fontSize: 17,
+                fontSize: "var(--fs-xl)",
                 fontWeight: 600,
                 color: "var(--text)",
               }}
@@ -493,7 +451,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
             <p
               style={{
                 margin: "3px 0 0",
-                fontSize: 12,
+                fontSize: "var(--fs-xs)",
                 color: "var(--text-muted)",
               }}
             >
@@ -552,14 +510,14 @@ export default function Produtos({ setTela }: ProdutosProps) {
             >
               <FontAwesomeIcon
                 icon={faPlus}
-                style={{ fontSize: 13, color: "var(--text-muted)" }}
+                style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)" }}
               />
             </div>
 
             <div style={{ flex: 1 }}>
               <div
                 style={{
-                  fontSize: 13,
+                  fontSize: "var(--fs-sm)",
                   fontWeight: 500,
                   color: "var(--text-secondary)",
                 }}
@@ -569,7 +527,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
 
               <div
                 style={{
-                  fontSize: 11,
+                  fontSize: "var(--fs-2xs)",
                   color: "var(--text-subtle)",
                   marginTop: 2,
                 }}
@@ -615,14 +573,14 @@ export default function Produtos({ setTela }: ProdutosProps) {
             >
               <FontAwesomeIcon
                 icon={faTag}
-                style={{ fontSize: 13, color: "var(--text-muted)" }}
+                style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)" }}
               />
             </div>
 
             <div style={{ flex: 1 }}>
               <div
                 style={{
-                  fontSize: 13,
+                  fontSize: "var(--fs-sm)",
                   fontWeight: 500,
                   color: "var(--text-secondary)",
                 }}
@@ -632,7 +590,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
 
               <div
                 style={{
-                  fontSize: 11,
+                  fontSize: "var(--fs-2xs)",
                   color: "var(--text-subtle)",
                   marginTop: 2,
                 }}
@@ -654,7 +612,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
       >
         <div
           style={{
-            fontSize: 12,
+            fontSize: "var(--fs-xs)",
             color: "var(--text-subtle)",
             textAlign: "center",
           }}
@@ -683,7 +641,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
             style={{
               padding: "24px",
               overflowY: "auto",
-              height: "100vh",
+              height: "var(--page-h)",
             }}
           >
             <div
@@ -709,7 +667,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                   <h2
                     style={{
                       margin: 0,
-                      fontSize: 18,
+                      fontSize: "var(--fs-xl)",
                       fontWeight: 600,
                       color: "var(--text)",
                     }}
@@ -720,7 +678,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                   <p
                     style={{
                       margin: "4px 0 0",
-                      fontSize: 13,
+                      fontSize: "var(--fs-sm)",
                       color: "var(--text-muted)",
                     }}
                   >
@@ -737,7 +695,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                         left: 11,
                         top: "50%",
                         transform: "translateY(-50%)",
-                        fontSize: 12,
+                        fontSize: "var(--fs-xs)",
                         color: "var(--text-subtle)",
                       }}
                     />
@@ -751,7 +709,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                         padding: "9px 12px 9px 32px",
                         borderRadius: 10,
                         border: "1px solid var(--border)",
-                        fontSize: 13,
+                        fontSize: "var(--fs-sm)",
                         width: 220,
                         outline: "none",
                         background: "var(--surface)",
@@ -772,9 +730,9 @@ export default function Produtos({ setTela }: ProdutosProps) {
                       padding: "9px 12px",
                       borderRadius: 10,
                       border: "1px solid var(--border)",
-                      background: "#fff",
+                      background: "var(--surface)",
                       color: "var(--text-secondary)",
-                      fontSize: 13,
+                      fontSize: "var(--fs-sm)",
                       cursor: "pointer",
                       outline: "none",
                       boxShadow: "var(--shadow-card)",
@@ -838,7 +796,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
     <div
       style={{
         background: "var(--bg)",
-        minHeight: "100vh",
+        minHeight: "var(--page-h)",
       }}
     >
       {/* Header Mobile */}
@@ -873,7 +831,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
             <FontAwesomeIcon
               icon={faBoxes}
               style={{
-                fontSize: 17,
+                fontSize: "var(--fs-xl)",
                 color: "var(--primary)",
               }}
             />
@@ -882,7 +840,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
           <h1
             style={{
               margin: 0,
-              fontSize: 18,
+              fontSize: "var(--fs-xl)",
               fontWeight: 600,
               color: "var(--text)",
             }}
@@ -902,31 +860,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
             color: "var(--text-secondary)",
           }}
         >
-          <span style={{ fontSize: 16 }}>☰</span>
-        </button>
-      </div>
-
-      {/* Voltar */}
-      <div style={{ padding: "12px 16px" }}>
-        <button
-          onClick={() => setTela && setTela("dashboard")}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            width: "100%",
-            padding: "10px 14px",
-            background: "var(--surface)",
-            border: "1px solid var(--border)",
-            borderRadius: 10,
-            cursor: "pointer",
-            color: "var(--text-secondary)",
-            fontSize: 13,
-            boxShadow: "var(--shadow-card)",
-          }}
-        >
-          <FontAwesomeIcon icon={faArrowLeft} />
-          Voltar ao início
+          <FontAwesomeIcon icon={faBars} style={{ fontSize: "var(--fs-lg)" }} />
         </button>
       </div>
 
@@ -1032,7 +966,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                 <FontAwesomeIcon
                   icon={faPlus}
                   style={{
-                    fontSize: 13,
+                    fontSize: "var(--fs-sm)",
                     color: "var(--primary)",
                   }}
                 />
@@ -1040,7 +974,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
 
               <span
                 style={{
-                  fontSize: 13,
+                  fontSize: "var(--fs-sm)",
                   fontWeight: 500,
                 }}
               >
@@ -1087,7 +1021,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                 <FontAwesomeIcon
                   icon={faTag}
                   style={{
-                    fontSize: 13,
+                    fontSize: "var(--fs-sm)",
                     color: "var(--text-muted)",
                   }}
                 />
@@ -1095,7 +1029,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
 
               <span
                 style={{
-                  fontSize: 13,
+                  fontSize: "var(--fs-sm)",
                   fontWeight: 500,
                 }}
               >
@@ -1131,7 +1065,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                 left: 12,
                 top: "50%",
                 transform: "translateY(-50%)",
-                fontSize: 13,
+                fontSize: "var(--fs-sm)",
                 color: "var(--text-subtle)",
               }}
             />
@@ -1146,7 +1080,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                 padding: "10px 12px 10px 36px",
                 borderRadius: 10,
                 border: "1px solid var(--border)",
-                fontSize: 14,
+                fontSize: "var(--fs-md)",
                 outline: "none",
                 color: "var(--text)",
                 background: "var(--surface)",
@@ -1167,9 +1101,9 @@ export default function Produtos({ setTela }: ProdutosProps) {
               padding: "10px 12px",
               borderRadius: 10,
               border: "1px solid var(--border)",
-              background: "#fff",
+              background: "var(--surface)",
               color: "var(--text-secondary)",
-              fontSize: 14,
+              fontSize: "var(--fs-md)",
               cursor: "pointer",
               outline: "none",
               boxShadow: "var(--shadow-card)",
@@ -1192,7 +1126,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                 textAlign: "center",
                 padding: "40px",
                 color: "var(--text-muted)",
-                fontSize: 13,
+                fontSize: "var(--fs-sm)",
               }}
             >
               Carregando...
@@ -1221,7 +1155,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                     <div
                       style={{
                         fontWeight: 600,
-                        fontSize: 14,
+                        fontSize: "var(--fs-md)",
                         color: "var(--text)",
                       }}
                     >
@@ -1230,7 +1164,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
 
                     <div
                       style={{
-                        fontSize: 11,
+                        fontSize: "var(--fs-2xs)",
                         color: "var(--text-muted)",
                         marginTop: 3,
                       }}
@@ -1240,7 +1174,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
 
                     <div
                       style={{
-                        fontSize: 12,
+                        fontSize: "var(--fs-xs)",
                         color: "var(--text-subtle)",
                         marginTop: 2,
                       }}
@@ -1253,7 +1187,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                     <div
                       style={{
                         fontWeight: 700,
-                        fontSize: 14,
+                        fontSize: "var(--fs-md)",
                         color: "var(--primary)",
                       }}
                     >
@@ -1262,7 +1196,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
 
                     <div
                       style={{
-                        fontSize: 12,
+                        fontSize: "var(--fs-xs)",
                         color: "var(--text-secondary)",
                         marginTop: 2,
                       }}
@@ -1290,7 +1224,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                       border: "1px solid var(--primary-border)",
                       background: "var(--primary-soft)",
                       color: "var(--primary-hover)",
-                      fontSize: 12,
+                      fontSize: "var(--fs-xs)",
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
@@ -1311,7 +1245,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                       border: "1px solid var(--danger-border)",
                       background: "var(--surface-2)",
                       color: "var(--danger)",
-                      fontSize: 12,
+                      fontSize: "var(--fs-xs)",
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",

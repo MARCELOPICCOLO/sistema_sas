@@ -33,11 +33,11 @@ class OrderController extends Controller
         $query = Order::ofCompany(CurrentCompany::id())->with('items.product');
 
         if (!empty($data['start_date'])) {
-            $query->whereDate('closed_at', '>=', $data['start_date']);
+            $query->where('closed_at', '>=', $this->startOfDay($data['start_date']));
         }
 
         if (!empty($data['end_date'])) {
-            $query->whereDate('closed_at', '<=', $data['end_date']);
+            $query->where('closed_at', '<', $this->startOfNextDay($data['end_date']));
         }
 
         if (!empty($data['status'])) {
@@ -242,7 +242,8 @@ class OrderController extends Controller
 
         $query = Order::ofCompany(CurrentCompany::id())
             ->where('status', Order::STATUS_FECHADO)
-            ->whereDate('closed_at', $data['date']);
+            ->where('closed_at', '>=', $this->startOfDay($data['date']))
+            ->where('closed_at', '<', $this->startOfNextDay($data['date']));
 
         return response()->json([
             'date'         => $data['date'],
@@ -267,9 +268,11 @@ class OrderController extends Controller
         $orders = Order::ofCompany(CurrentCompany::id())
             ->with('items.product')
             ->where(function ($q) use ($parsed) {
-                $q->whereDate('order_date', $parsed)
+                $q->where('order_date', $parsed)
                     ->orWhere(function ($q) use ($parsed) {
-                        $q->whereNull('order_date')->whereDate('created_at', $parsed);
+                        $q->whereNull('order_date')
+                            ->where('created_at', '>=', $this->startOfDay($parsed))
+                            ->where('created_at', '<', $this->startOfNextDay($parsed));
                     });
             })
             ->orderByDesc('command_number')
@@ -293,16 +296,15 @@ class OrderController extends Controller
         $orders = Order::ofCompany($companyId)
             ->where('status', Order::STATUS_FECHADO)
             ->whereNotNull('closed_at')
-            ->whereDate('closed_at', '>=', $data['start_date'])
-            ->whereDate('closed_at', '<=', $data['end_date'])
+            ->where('closed_at', '>=', $this->startOfDay($data['start_date']))
+            ->where('closed_at', '<', $this->startOfNextDay($data['end_date']))
             ->selectRaw('DATE(closed_at) as date, COUNT(*) as total_vendas, SUM(total) as total_entradas')
             ->groupByRaw('DATE(closed_at)')
             ->get()
             ->keyBy('date');
 
         $expenses = Expense::where('partner_company_id', $companyId)
-            ->whereDate('expense_date', '>=', $data['start_date'])
-            ->whereDate('expense_date', '<=', $data['end_date'])
+            ->whereBetween('expense_date', [$data['start_date'], $data['end_date']])
             ->selectRaw('DATE(expense_date) as date, SUM(amount) as total_saidas')
             ->groupByRaw('DATE(expense_date)')
             ->get()
@@ -340,8 +342,8 @@ class OrderController extends Controller
 
         $orders = Order::ofCompany(CurrentCompany::id())
             ->where('status', Order::STATUS_FECHADO)
-            ->whereNotNull('closed_at')
-            ->whereYear('closed_at', (int) $data['year'])
+            ->where('closed_at', '>=', Carbon::create((int) $data['year'])->startOfYear())
+            ->where('closed_at', '<', Carbon::create((int) $data['year'] + 1)->startOfYear())
             ->orderByDesc('closed_at')
             ->get();
 
@@ -358,6 +360,16 @@ class OrderController extends Controller
         }
 
         return Carbon::parse($orderDate)->setTime(12, 0);
+    }
+
+    private function startOfDay(string $date): Carbon
+    {
+        return Carbon::parse($date)->startOfDay();
+    }
+
+    private function startOfNextDay(string $date): Carbon
+    {
+        return Carbon::parse($date)->addDay()->startOfDay();
     }
 
     private function parseDate(string $date): ?string

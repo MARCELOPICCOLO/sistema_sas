@@ -39,7 +39,7 @@ export const FiltrosCaixa: React.FC<FiltrosCaixaProps> = ({
           background: filtroCategoria === null ? "var(--surface-3)" : "var(--surface)",
           color: filtroCategoria === null ? "var(--text-secondary)" : "var(--text-muted)",
           cursor: "pointer",
-          fontSize: 11,
+          fontSize: "var(--fs-2xs)",
           fontWeight: 500,
           whiteSpace: "nowrap",
         }}
@@ -58,7 +58,7 @@ export const FiltrosCaixa: React.FC<FiltrosCaixaProps> = ({
             background: filtroCategoria === cat.id ? "var(--surface-3)" : "var(--surface)",
             color: filtroCategoria === cat.id ? "var(--text-secondary)" : "var(--text-muted)",
             cursor: "pointer",
-            fontSize: 11,
+            fontSize: "var(--fs-2xs)",
             fontWeight: 500,
             whiteSpace: "nowrap",
           }}

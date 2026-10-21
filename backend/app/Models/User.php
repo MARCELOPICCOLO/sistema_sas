@@ -33,6 +33,14 @@ class User extends Authenticatable implements JWTSubject
     ];
 
     /**
+     * Telas liberadas, memorizadas por empresa durante a requisição
+     * (o middleware de telas e o /auth/me consultam o mesmo dado).
+     *
+     * @var array<int, \Illuminate\Support\Collection>
+     */
+    private array $allowedTelasCache = [];
+
+    /**
      * Retorna o identificador que será gravado no JWT.
      */
     public function getJWTIdentifier(): mixed
@@ -78,15 +86,21 @@ class User extends Authenticatable implements JWTSubject
      */
     public function allowedTelas()
     {
-        if (!$this->active || !CurrentCompany::id()) {
+        $companyId = CurrentCompany::id();
+
+        if (!$this->active || !$companyId) {
             return collect();
+        }
+
+        if (isset($this->allowedTelasCache[$companyId])) {
+            return $this->allowedTelasCache[$companyId];
         }
 
         $query = CurrentCompany::isAdmin()
             ? Tela::query()
             : $this->telas();
 
-        return $query
+        return $this->allowedTelasCache[$companyId] = $query
             ->where('telas.ativo', true)
             ->orderBy('telas.id')
             ->get(['telas.id', 'telas.nome', 'telas.slug', 'telas.descricao', 'telas.ativo'])

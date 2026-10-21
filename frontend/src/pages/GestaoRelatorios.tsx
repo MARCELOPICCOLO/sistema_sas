@@ -3,7 +3,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faArrowLeft,
   faChartLine,
   faArrowTrendUp,
   faArrowTrendDown,
@@ -19,10 +18,6 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 const API_URL = import.meta.env.VITE_API_URL;
-
-interface GestaoRelatoriosProps {
-  setTela: (tela: string) => void;
-}
 
 interface Entrada {
   id: number;
@@ -70,7 +65,7 @@ interface ProdutoVendido {
   value: number;
 }
 
-export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
+export default function GestaoRelatorios() {
   const [entradas, setEntradas] = useState<Entrada[]>([]);
   const [loadingEntradas, setLoadingEntradas] = useState(true);
   const [erroEntradas, setErroEntradas] = useState("");
@@ -393,7 +388,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
     <div
       className="relatorios-page"
       style={{
-        height: "100vh",
+        height: "var(--page-h)",
         background: "var(--bg)",
         display: "flex",
         flexDirection: "column",
@@ -401,40 +396,6 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
       }}
     >
       <RelatoriosResponsiveStyles />
-
-      {/* Botão Voltar ao início */}
-      <div
-        style={{
-          padding: "10px 20px",
-          background: "var(--surface-2)",
-          borderBottom: "1px solid var(--border)",
-          flexShrink: 0,
-        }}
-      >
-        <button
-          onClick={() => setTela("dashboard")}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            background: "transparent",
-            border: "none",
-            color: "var(--text-muted)",
-            cursor: "pointer",
-            padding: "4px 0",
-            fontSize: 12,
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = "var(--text)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = "var(--text-muted)";
-          }}
-        >
-          <FontAwesomeIcon icon={faArrowLeft} size="sm" />
-          Voltar ao início
-        </button>
-      </div>
 
       {/* Conteúdo */}
       <div
@@ -468,7 +429,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
               <h1
                 style={{
                   margin: 0,
-                  fontSize: 22,
+                  fontSize: "var(--fs-3xl)",
                   fontWeight: 600,
                   color: "var(--text)",
                 }}
@@ -479,7 +440,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
               <p
                 style={{
                   margin: "6px 0 0",
-                  fontSize: 13,
+                  fontSize: "var(--fs-sm)",
                   color: "var(--text-muted)",
                 }}
               >
@@ -503,7 +464,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                 icon={faCalendarDays}
                 style={{
                   color: "var(--text-muted)",
-                  fontSize: 13,
+                  fontSize: "var(--fs-sm)",
                 }}
               />
 
@@ -543,7 +504,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                   outline: "none",
                   background: "var(--surface)",
                   color: "var(--text-secondary)",
-                  fontSize: 14,
+                  fontSize: "var(--fs-md)",
                   fontWeight: 600,
                   textAlign: "center",
                   padding: "4px 0",
@@ -587,7 +548,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                 border: "1px solid var(--danger-border)",
                 background: "var(--danger-soft)",
                 color: "var(--danger-hover)",
-                fontSize: 13,
+                fontSize: "var(--fs-sm)",
               }}
             >
               {erroEntradas}
@@ -603,7 +564,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                 border: "1px solid var(--danger-border)",
                 background: "var(--danger-soft)",
                 color: "var(--danger-hover)",
-                fontSize: 13,
+                fontSize: "var(--fs-sm)",
               }}
             >
               {erroDespesas}
@@ -619,7 +580,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                 border: "1px solid var(--danger-border)",
                 background: "var(--danger-soft)",
                 color: "var(--danger-hover)",
-                fontSize: 13,
+                fontSize: "var(--fs-sm)",
               }}
             >
               {erroProdutos}
@@ -690,7 +651,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
               variacao=""
               positivo={margem >= 0}
               icon={faPercent}
-              iconBackground="#f5f3ff"
+              iconBackground="var(--primary-soft)"
               iconColor="#7c3aed"
             />
           </div>
@@ -721,7 +682,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                     display: "flex",
                     alignItems: "center",
                     gap: 6,
-                    fontSize: 11,
+                    fontSize: "var(--fs-2xs)",
                     color: "var(--primary)",
                   }}
                 >
@@ -756,7 +717,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                       alignItems: "center",
                       justifyContent: "center",
                       color: "var(--text-subtle)",
-                      fontSize: 13,
+                      fontSize: "var(--fs-sm)",
                     }}
                   >
                     Carregando faturamento...
@@ -770,7 +731,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                       alignItems: "center",
                       justifyContent: "center",
                       color: "var(--text-subtle)",
-                      fontSize: 13,
+                      fontSize: "var(--fs-sm)",
                     }}
                   >
                     Nenhuma entrada encontrada em {anoSelecionado}.
@@ -797,7 +758,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                       >
                         <span
                           style={{
-                            fontSize: 10,
+                            fontSize: "var(--fs-2xs)",
                             color: "var(--text-muted)",
                             whiteSpace: "nowrap",
                           }}
@@ -821,7 +782,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
 
                         <span
                           style={{
-                            fontSize: 11,
+                            fontSize: "var(--fs-2xs)",
                             color: "var(--text-muted)",
                             paddingBottom: 8,
                           }}
@@ -855,7 +816,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                       justifyContent: "center",
                       minHeight: 250,
                       color: "var(--text-subtle)",
-                      fontSize: 13,
+                      fontSize: "var(--fs-sm)",
                     }}
                   >
                     Carregando produtos...
@@ -868,7 +829,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                       justifyContent: "center",
                       minHeight: 250,
                       color: "var(--text-subtle)",
-                      fontSize: 13,
+                      fontSize: "var(--fs-sm)",
                       textAlign: "center",
                     }}
                   >
@@ -913,7 +874,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                       justifyContent: "center",
                       minHeight: 250,
                       color: "var(--text-subtle)",
-                      fontSize: 13,
+                      fontSize: "var(--fs-sm)",
                     }}
                   >
                     Carregando despesas...
@@ -926,7 +887,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                       justifyContent: "center",
                       minHeight: 250,
                       color: "var(--text-subtle)",
-                      fontSize: 13,
+                      fontSize: "var(--fs-sm)",
                     }}
                   >
                     Nenhuma despesa encontrada em {anoSelecionado}.
@@ -966,7 +927,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                   icon={faChartLine}
                   style={{
                     color: "var(--text-muted)",
-                    fontSize: 15,
+                    fontSize: "var(--fs-md)",
                   }}
                 />
               </div>
@@ -994,7 +955,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                   <p
                     style={{
                       margin: "5px 0 0",
-                      fontSize: 17,
+                      fontSize: "var(--fs-xl)",
                       fontWeight: 600,
                       color: lucroAtual >= 0 ? "var(--primary)" : "var(--danger)",
                     }}
@@ -1009,7 +970,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                   <p
                     style={{
                       margin: "5px 0 0",
-                      fontSize: 17,
+                      fontSize: "var(--fs-xl)",
                       fontWeight: 600,
                       color: "var(--text)",
                     }}
@@ -1196,7 +1157,7 @@ function ProdutosRanking({
         }
 
         .ranking-numero {
-          font-size: 11px;
+          font-size: var(--fs-2xs);
           font-weight: 600;
           color: var(--text-subtle);
           min-width: 20px;
@@ -1204,7 +1165,7 @@ function ProdutosRanking({
         }
 
         .ranking-classificacao {
-          font-size: 10px;
+          font-size: var(--fs-2xs);
           font-weight: 700;
           padding: 1px 6px;
           border-radius: 4px;
@@ -1218,7 +1179,7 @@ function ProdutosRanking({
         }
 
         .ranking-nome {
-          font-size: 12px;
+          font-size: var(--fs-xs);
           color: var(--text-secondary);
           font-weight: 500;
           white-space: nowrap;
@@ -1251,14 +1212,14 @@ function ProdutosRanking({
         }
 
         .ranking-quantidade {
-          font-size: 11px;
+          font-size: var(--fs-2xs);
           color: var(--text-subtle);
           min-width: 40px;
           text-align: right;
         }
 
         .ranking-valor {
-          font-size: 12px;
+          font-size: var(--fs-xs);
           font-weight: 600;
           color: var(--text);
           min-width: 80px;
@@ -1266,7 +1227,7 @@ function ProdutosRanking({
         }
 
         .ranking-percentual {
-          font-size: 11px;
+          font-size: var(--fs-2xs);
           color: var(--text-subtle);
           min-width: 45px;
           text-align: right;
@@ -1278,7 +1239,7 @@ function ProdutosRanking({
           gap: 20px;
           margin-top: 16px;
           padding-top: 12px;
-          border-top: 1px solid #e5e7eb;
+          border-top: 1px solid var(--border);
           flex-wrap: wrap;
         }
 
@@ -1295,7 +1256,7 @@ function ProdutosRanking({
         }
 
         .legenda-texto {
-          font-size: 11px;
+          font-size: var(--fs-2xs);
           color: var(--text-muted);
         }
 
@@ -1522,13 +1483,13 @@ function RelatoriosResponsiveStyles() {
 
       .pizza-center span {
         color: var(--text-subtle);
-        font-size: 10px;
+        font-size: var(--fs-2xs);
         margin-bottom: 4px;
       }
 
       .pizza-center strong {
         color: var(--text);
-        font-size: 12px;
+        font-size: var(--fs-xs);
         font-weight: 600;
         max-width: 82px;
         overflow: hidden;
@@ -1553,7 +1514,7 @@ function RelatoriosResponsiveStyles() {
         align-items: center;
         justify-content: space-between;
         gap: 10px;
-        font-size: 12px;
+        font-size: var(--fs-xs);
         color: var(--text-secondary);
       }
 
@@ -1573,7 +1534,7 @@ function RelatoriosResponsiveStyles() {
       .pizza-legenda-top strong {
         flex-shrink: 0;
         color: var(--text);
-        font-size: 12px;
+        font-size: var(--fs-xs);
       }
 
       .pizza-dot {
@@ -1587,7 +1548,7 @@ function RelatoriosResponsiveStyles() {
         display: block;
         margin: 4px 0 0 17px;
         color: var(--text-subtle);
-        font-size: 10px;
+        font-size: var(--fs-2xs);
       }
 
       /* =============================================
@@ -1604,7 +1565,7 @@ function RelatoriosResponsiveStyles() {
         gap: 16px;
         padding: 10px 12px 0;
         box-sizing: border-box;
-        border-bottom: 1px solid #e5e7eb;
+        border-bottom: 1px solid var(--border);
       }
 
       .resultado-barra-coluna {
@@ -1621,7 +1582,7 @@ function RelatoriosResponsiveStyles() {
         display: block;
         min-height: 18px;
         margin-bottom: 6px;
-        font-size: 11px;
+        font-size: var(--fs-2xs);
         font-weight: 600;
         color: var(--text);
         text-align: center;
@@ -1653,7 +1614,7 @@ function RelatoriosResponsiveStyles() {
 
       .resultado-titulo {
         margin-top: 9px;
-        font-size: 12px;
+        font-size: var(--fs-xs);
         font-weight: 500;
         color: var(--text-secondary);
         text-align: center;
@@ -1662,7 +1623,7 @@ function RelatoriosResponsiveStyles() {
 
       .resultado-percentual {
         margin-top: 3px;
-        font-size: 10px;
+        font-size: var(--fs-2xs);
         color: var(--text-subtle);
         text-align: center;
         white-space: nowrap;
@@ -1727,11 +1688,11 @@ function RelatoriosResponsiveStyles() {
         }
 
         .resultado-valor {
-          font-size: 10px;
+          font-size: var(--fs-2xs);
         }
 
         .resultado-titulo {
-          font-size: 11px;
+          font-size: var(--fs-2xs);
         }
       }
 
@@ -1764,15 +1725,15 @@ function RelatoriosResponsiveStyles() {
         }
 
         .resultado-valor {
-          font-size: 9px;
+          font-size: var(--fs-2xs);
         }
 
         .resultado-titulo {
-          font-size: 10px;
+          font-size: var(--fs-2xs);
         }
 
         .resultado-percentual {
-          font-size: 9px;
+          font-size: var(--fs-2xs);
         }
       }
     `}</style>
@@ -1803,7 +1764,7 @@ function Indicador({
   return (
     <div
       style={{
-        background: "#fff",
+        background: "var(--surface)",
         border: "1px solid var(--border)",
         borderRadius: 12,
         padding: 18,
@@ -1822,7 +1783,7 @@ function Indicador({
           <p
             style={{
               margin: 0,
-              fontSize: 12,
+              fontSize: "var(--fs-xs)",
               color: "var(--text-muted)",
               fontWeight: 500,
             }}
@@ -1833,7 +1794,7 @@ function Indicador({
           <p
             style={{
               margin: "8px 0 0",
-              fontSize: 19,
+              fontSize: "var(--fs-xl)",
               color: "var(--text)",
               fontWeight: 600,
             }}
@@ -1869,7 +1830,7 @@ function Indicador({
         >
           <span
             style={{
-              fontSize: 11,
+              fontSize: "var(--fs-2xs)",
               fontWeight: 600,
               color: positivo ? "var(--primary)" : "var(--danger)",
             }}
@@ -1879,7 +1840,7 @@ function Indicador({
 
           <span
             style={{
-              fontSize: 10,
+              fontSize: "var(--fs-2xs)",
               color: "var(--text-subtle)",
             }}
           >
@@ -1913,14 +1874,14 @@ const cardHeaderStyle = {
 
 const cardTitleStyle = {
   margin: 0,
-  fontSize: 15,
+  fontSize: "var(--fs-md)",
   fontWeight: 600,
   color: "var(--text)",
 };
 
 const cardSubtitleStyle = {
   margin: "5px 0 0",
-  fontSize: 12,
+  fontSize: "var(--fs-xs)",
   color: "var(--text-muted)",
 };
 
@@ -1933,6 +1894,6 @@ const summaryBoxStyle = {
 
 const summaryLabelStyle = {
   margin: 0,
-  fontSize: 11,
+  fontSize: "var(--fs-2xs)",
   color: "var(--text-muted)",
 };

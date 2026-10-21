@@ -196,9 +196,9 @@ export const ModalProduto: React.FC<ModalProdutoProps> = ({
     padding: "0 12px",
     borderRadius: 10,
     border: "1px solid var(--border)",
-    background: "#fff",
+    background: "var(--surface)",
     color: "var(--text)",
-    fontSize: 13,
+    fontSize: "var(--fs-sm)",
     outline: "none",
     transition: "border-color 0.2s, box-shadow 0.2s",
   };
@@ -206,7 +206,7 @@ export const ModalProduto: React.FC<ModalProdutoProps> = ({
   const labelStyle: React.CSSProperties = {
     display: "block",
     marginBottom: 7,
-    fontSize: 12,
+    fontSize: "var(--fs-xs)",
     fontWeight: 500,
     color: "var(--text-secondary)",
   };
@@ -229,7 +229,7 @@ export const ModalProduto: React.FC<ModalProdutoProps> = ({
         style={{
           width: "100%",
           maxWidth: 500,
-          background: "#fff",
+          background: "var(--surface)",
           borderRadius: 14,
           overflow: "hidden",
           boxShadow: "var(--shadow-modal)",
@@ -249,7 +249,7 @@ export const ModalProduto: React.FC<ModalProdutoProps> = ({
             <h2
               style={{
                 margin: 0,
-                fontSize: 17,
+                fontSize: "var(--fs-xl)",
                 fontWeight: 600,
                 color: "var(--text)",
               }}
@@ -260,7 +260,7 @@ export const ModalProduto: React.FC<ModalProdutoProps> = ({
             <p
               style={{
                 margin: "4px 0 0",
-                fontSize: 12,
+                fontSize: "var(--fs-xs)",
                 color: "var(--text-subtle)",
               }}
             >
@@ -286,7 +286,7 @@ export const ModalProduto: React.FC<ModalProdutoProps> = ({
               justifyContent: "center",
             }}
           >
-            <FontAwesomeIcon icon={faTimes} style={{ fontSize: 14 }} />
+            <FontAwesomeIcon icon={faTimes} style={{ fontSize: "var(--fs-md)" }} />
           </button>
         </div>
 
@@ -348,7 +348,7 @@ export const ModalProduto: React.FC<ModalProdutoProps> = ({
                 <div
                   style={{
                     marginTop: 5,
-                    fontSize: 11,
+                    fontSize: "var(--fs-2xs)",
                     color: "var(--danger)",
                   }}
                 >
@@ -358,7 +358,7 @@ export const ModalProduto: React.FC<ModalProdutoProps> = ({
                 <div
                   style={{
                     marginTop: 5,
-                    fontSize: 10,
+                    fontSize: "var(--fs-2xs)",
                     color: "var(--text-subtle)",
                   }}
                 >
@@ -423,7 +423,7 @@ export const ModalProduto: React.FC<ModalProdutoProps> = ({
                     left: 12,
                     top: "50%",
                     transform: "translateY(-50%)",
-                    fontSize: 12,
+                    fontSize: "var(--fs-xs)",
                     color: "var(--text-subtle)",
                     pointerEvents: "none",
                   }}
@@ -478,10 +478,10 @@ export const ModalProduto: React.FC<ModalProdutoProps> = ({
               padding: "10px 16px",
               borderRadius: 10,
               border: "1px solid var(--border)",
-              background: "#fff",
+              background: "var(--surface)",
               color: "var(--text-secondary)",
               cursor: "pointer",
-              fontSize: 13,
+              fontSize: "var(--fs-sm)",
               fontWeight: 500,
               boxShadow: "var(--shadow-card)",
             }}
@@ -498,7 +498,7 @@ export const ModalProduto: React.FC<ModalProdutoProps> = ({
               background: "var(--primary)",
               color: "#fff",
               cursor: "pointer",
-              fontSize: 13,
+              fontSize: "var(--fs-sm)",
               fontWeight: 600,
             }}
           >

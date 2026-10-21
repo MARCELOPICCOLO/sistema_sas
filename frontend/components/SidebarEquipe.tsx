@@ -2,19 +2,16 @@
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faArrowLeft,
   faUsers,
   faPlus,
 } from "@fortawesome/free-solid-svg-icons";
 
 interface SidebarEquipeProps {
   onNovoColaborador: () => void;
-  onVoltarDashboard: () => void;
 }
 
 export function SidebarEquipe({
   onNovoColaborador,
-  onVoltarDashboard,
 }: SidebarEquipeProps) {
   return (
     <div
@@ -25,49 +22,11 @@ export function SidebarEquipe({
         padding: "24px 16px",
         display: "flex",
         flexDirection: "column",
-        height: "100vh",
+        height: "var(--page-h)",
         position: "sticky",
-        top: 0,
+        top: "var(--topbar-h)",
       }}
     >
-      {/* Botão Voltar ao início */}
-      <div
-        style={{
-          marginBottom: 20,
-        }}
-      >
-        <button
-          onClick={onVoltarDashboard}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            width: "100%",
-            padding: "9px 12px",
-            background: "var(--surface-2)",
-            border: "1px solid var(--border)",
-            borderRadius: 10,
-            cursor: "pointer",
-            transition: "all 0.2s",
-            color: "var(--text-muted)",
-            fontSize: 13,
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "var(--primary-soft)";
-            e.currentTarget.style.borderColor = "var(--primary-border)";
-            e.currentTarget.style.color = "var(--primary)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "var(--surface-2)";
-            e.currentTarget.style.borderColor = "var(--border)";
-            e.currentTarget.style.color = "var(--text-muted)";
-          }}
-        >
-          <FontAwesomeIcon icon={faArrowLeft} />
-          Voltar ao início
-        </button>
-      </div>
-
       {/* Logo / Título */}
       <div
         style={{
@@ -90,12 +49,12 @@ export function SidebarEquipe({
             color: "var(--primary)",
           }}
         >
-          <FontAwesomeIcon icon={faUsers} style={{ fontSize: 18 }} />
+          <FontAwesomeIcon icon={faUsers} style={{ fontSize: "var(--fs-xl)" }} />
         </div>
         <div>
           <div
             style={{
-              fontSize: 16,
+              fontSize: "var(--fs-lg)",
               fontWeight: 700,
               color: "var(--text)",
             }}
@@ -104,7 +63,7 @@ export function SidebarEquipe({
           </div>
           <div
             style={{
-              fontSize: 11,
+              fontSize: "var(--fs-2xs)",
               color: "var(--text-muted)",
             }}
           >
@@ -122,20 +81,20 @@ export function SidebarEquipe({
           gap: 12,
           width: "100%",
           padding: "12px 16px",
-          background: "var(--primary)",
+          background: "var(--primary-solid)",
           border: "none",
           borderRadius: 10,
           cursor: "pointer",
           color: "#fff",
-          fontSize: 14,
+          fontSize: "var(--fs-md)",
           fontWeight: 500,
           transition: "background 0.2s ease",
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = "var(--primary)";
+          e.currentTarget.style.background = "var(--primary-hover)";
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = "var(--primary)";
+          e.currentTarget.style.background = "var(--primary-solid)";
         }}
       >
         <FontAwesomeIcon icon={faPlus} />

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faBoxOpen,
   faEdit,
-  faTrash,
   faMinus,
   faPlus,
   faSave,
   faTimes,
+  faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 
 interface Product {
@@ -65,7 +66,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
           textAlign: "center",
           padding: "40px",
           color: "var(--text-muted)",
-          fontSize: 13,
+          fontSize: "var(--fs-sm)",
         }}
       >
         Carregando...
@@ -79,18 +80,18 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
         style={{
           textAlign: "center",
           padding: "40px",
-          background: "#fff",
+          background: "var(--surface)",
           border: "1px solid var(--border)",
           borderRadius: 10,
           color: "var(--text-muted)",
           boxShadow: "var(--shadow-card)",
         }}
       >
-        <div style={{ fontSize: 40, marginBottom: 12 }}>📦</div>
+        <div style={{ fontSize: "var(--fs-display)", marginBottom: 12 }}><FontAwesomeIcon icon={faBoxOpen} style={{ color: "var(--text-subtle)" }} /></div>
         <p
           style={{
             margin: 0,
-            fontSize: 13,
+            fontSize: "var(--fs-sm)",
           }}
         >
           Nenhum produto encontrado
@@ -176,7 +177,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
     >
       <div
         style={{
-          fontSize: 12,
+          fontSize: "var(--fs-xs)",
           color: "var(--warning-text)",
           textAlign: isMobile ? "center" : "left",
         }}
@@ -196,12 +197,12 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
           onClick={cancelarAlteracoes}
           style={{
             padding: "6px 12px",
-            background: "#fff",
+            background: "var(--surface)",
             color: "var(--text-muted)",
             border: "1px solid var(--border)",
             borderRadius: 8,
             cursor: "pointer",
-            fontSize: 12,
+            fontSize: "var(--fs-xs)",
             display: "flex",
             alignItems: "center",
             gap: 6,
@@ -220,7 +221,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
             border: "none",
             borderRadius: 8,
             cursor: "pointer",
-            fontSize: 12,
+            fontSize: "var(--fs-xs)",
             display: "flex",
             alignItems: "center",
             gap: 6,
@@ -247,7 +248,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
             overflowX: "auto",
             border: "1px solid var(--border)",
             borderRadius: 10,
-            background: "#fff",
+            background: "var(--surface)",
             boxShadow: "var(--shadow-card)",
           }}
         >
@@ -268,7 +269,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                   style={{
                     padding: "11px 14px",
                     textAlign: "left",
-                    fontSize: 12,
+                    fontSize: "var(--fs-xs)",
                     fontWeight: 600,
                     color: "var(--text-secondary)",
                   }}
@@ -280,7 +281,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                   style={{
                     padding: "11px 14px",
                     textAlign: "left",
-                    fontSize: 12,
+                    fontSize: "var(--fs-xs)",
                     fontWeight: 600,
                     color: "var(--text-secondary)",
                   }}
@@ -292,7 +293,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                   style={{
                     padding: "11px 14px",
                     textAlign: "left",
-                    fontSize: 12,
+                    fontSize: "var(--fs-xs)",
                     fontWeight: 600,
                     color: "var(--text-secondary)",
                   }}
@@ -304,7 +305,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                   style={{
                     padding: "11px 14px",
                     textAlign: "right",
-                    fontSize: 12,
+                    fontSize: "var(--fs-xs)",
                     fontWeight: 600,
                     color: "var(--text-secondary)",
                   }}
@@ -316,7 +317,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                   style={{
                     padding: "11px 14px",
                     textAlign: "center",
-                    fontSize: 12,
+                    fontSize: "var(--fs-xs)",
                     fontWeight: 600,
                     color: "var(--text-secondary)",
                   }}
@@ -328,7 +329,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                   style={{
                     padding: "11px 14px",
                     textAlign: "center",
-                    fontSize: 12,
+                    fontSize: "var(--fs-xs)",
                     fontWeight: 600,
                     color: "var(--text-secondary)",
                   }}
@@ -351,14 +352,14 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                     key={p.id}
                     style={{
                       borderBottom:
-                        i < produtos.length - 1 ? "1px solid #f0f0f0" : "none",
-                      background: temAlteracao ? "var(--warning-soft)" : "#fff",
+                        i < produtos.length - 1 ? "1px solid var(--border)" : "none",
+                      background: temAlteracao ? "var(--warning-soft)" : "var(--surface)",
                     }}
                   >
                     <td
                       style={{
                         padding: "11px 14px",
-                        fontSize: 12,
+                        fontSize: "var(--fs-xs)",
                         color: "var(--text-muted)",
                       }}
                     >
@@ -368,7 +369,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                     <td
                       style={{
                         padding: "11px 14px",
-                        fontSize: 13,
+                        fontSize: "var(--fs-sm)",
                         fontWeight: 500,
                         color: "var(--text)",
                       }}
@@ -379,7 +380,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                     <td
                       style={{
                         padding: "11px 14px",
-                        fontSize: 12,
+                        fontSize: "var(--fs-xs)",
                         color: "var(--text-muted)",
                       }}
                     >
@@ -390,7 +391,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                       style={{
                         padding: "11px 14px",
                         textAlign: "right",
-                        fontSize: 13,
+                        fontSize: "var(--fs-sm)",
                         fontWeight: 600,
                         color: "var(--primary)",
                       }}
@@ -421,7 +422,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                             height: 26,
                             borderRadius: 8,
                             border: "1px solid var(--border)",
-                            background: "#fff",
+                            background: "var(--surface)",
                             color: "var(--text-muted)",
                             cursor: "pointer",
                             display: "flex",
@@ -436,19 +437,19 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                           onMouseLeave={(e) => {
                             e.currentTarget.style.color = "var(--text-muted)";
                             e.currentTarget.style.borderColor = "var(--border)";
-                            e.currentTarget.style.background = "#fff";
+                            e.currentTarget.style.background = "var(--surface)";
                           }}
                         >
                           <FontAwesomeIcon
                             icon={faMinus}
-                            style={{ fontSize: 10 }}
+                            style={{ fontSize: "var(--fs-2xs)" }}
                           />
                         </button>
 
                         <span
                           style={{
                             fontWeight: 600,
-                            fontSize: 13,
+                            fontSize: "var(--fs-sm)",
                             minWidth: 32,
                             textAlign: "center",
                             color: temAlteracao ? "var(--warning)" : "var(--text)",
@@ -464,7 +465,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                             height: 26,
                             borderRadius: 8,
                             border: "1px solid var(--border)",
-                            background: "#fff",
+                            background: "var(--surface)",
                             color: "var(--text-muted)",
                             cursor: "pointer",
                             display: "flex",
@@ -479,12 +480,12 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                           onMouseLeave={(e) => {
                             e.currentTarget.style.color = "var(--text-muted)";
                             e.currentTarget.style.borderColor = "var(--border)";
-                            e.currentTarget.style.background = "#fff";
+                            e.currentTarget.style.background = "var(--surface)";
                           }}
                         >
                           <FontAwesomeIcon
                             icon={faPlus}
-                            style={{ fontSize: 10 }}
+                            style={{ fontSize: "var(--fs-2xs)" }}
                           />
                         </button>
                       </div>
@@ -492,7 +493,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                       {temAlteracao && (
                         <div
                           style={{
-                            fontSize: 9,
+                            fontSize: "var(--fs-2xs)",
                             color: "var(--warning)",
                             marginTop: 3,
                           }}
@@ -522,7 +523,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                             border: "none",
                             cursor: "pointer",
                             color: "var(--text-muted)",
-                            fontSize: 14,
+                            fontSize: "var(--fs-md)",
                             padding: 4,
                             transition: "all 0.2s",
                           }}
@@ -544,7 +545,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                             border: "none",
                             cursor: "pointer",
                             color: "var(--text-muted)",
-                            fontSize: 14,
+                            fontSize: "var(--fs-md)",
                             padding: 4,
                             transition: "all 0.2s",
                           }}
@@ -576,7 +577,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
             border: "1px solid var(--border)",
             borderRadius: 8,
             textAlign: "center",
-            fontSize: 11,
+            fontSize: "var(--fs-2xs)",
             color: "var(--text-muted)",
           }}
         >
@@ -610,7 +611,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
             <div
               key={p.id}
               style={{
-                background: temAlteracao ? "var(--warning-soft)" : "#fff",
+                background: temAlteracao ? "var(--warning-soft)" : "var(--surface)",
                 borderRadius: 10,
                 padding: 12,
                 border: "1px solid var(--border)",
@@ -629,7 +630,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                   <div
                     style={{
                       fontWeight: 600,
-                      fontSize: 13,
+                      fontSize: "var(--fs-sm)",
                       color: "var(--text)",
                     }}
                   >
@@ -638,7 +639,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
 
                   <div
                     style={{
-                      fontSize: 11,
+                      fontSize: "var(--fs-2xs)",
                       color: "var(--text-muted)",
                       marginTop: 2,
                     }}
@@ -650,7 +651,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                 <div
                   style={{
                     fontWeight: 600,
-                    fontSize: 13,
+                    fontSize: "var(--fs-sm)",
                     color: "var(--primary)",
                     whiteSpace: "nowrap",
                   }}
@@ -661,7 +662,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
 
               <div
                 style={{
-                  fontSize: 11,
+                  fontSize: "var(--fs-2xs)",
                   color: "var(--text-muted)",
                   marginBottom: 10,
                 }}
@@ -680,7 +681,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
               >
                 <span
                   style={{
-                    fontSize: 12,
+                    fontSize: "var(--fs-xs)",
                     color: "var(--text-secondary)",
                   }}
                 >
@@ -701,7 +702,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                       height: 28,
                       borderRadius: 8,
                       border: "1px solid var(--border)",
-                      background: "#fff",
+                      background: "var(--surface)",
                       color: "var(--text-muted)",
                       cursor: "pointer",
                       display: "flex",
@@ -709,13 +710,13 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                       justifyContent: "center",
                     }}
                   >
-                    <FontAwesomeIcon icon={faMinus} style={{ fontSize: 10 }} />
+                    <FontAwesomeIcon icon={faMinus} style={{ fontSize: "var(--fs-2xs)" }} />
                   </button>
 
                   <span
                     style={{
                       fontWeight: 600,
-                      fontSize: 13,
+                      fontSize: "var(--fs-sm)",
                       minWidth: 28,
                       textAlign: "center",
                       color: temAlteracao ? "var(--warning)" : "var(--text)",
@@ -731,7 +732,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                       height: 28,
                       borderRadius: 8,
                       border: "1px solid var(--border)",
-                      background: "#fff",
+                      background: "var(--surface)",
                       color: "var(--text-muted)",
                       cursor: "pointer",
                       display: "flex",
@@ -739,7 +740,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                       justifyContent: "center",
                     }}
                   >
-                    <FontAwesomeIcon icon={faPlus} style={{ fontSize: 10 }} />
+                    <FontAwesomeIcon icon={faPlus} style={{ fontSize: "var(--fs-2xs)" }} />
                   </button>
                 </div>
               </div>
@@ -747,7 +748,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
               {temAlteracao && (
                 <div
                   style={{
-                    fontSize: 10,
+                    fontSize: "var(--fs-2xs)",
                     color: "var(--warning)",
                     marginTop: 5,
                     textAlign: "right",
@@ -775,7 +776,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                     borderRadius: 8,
                     cursor: "pointer",
                     color: "var(--text-muted)",
-                    fontSize: 13,
+                    fontSize: "var(--fs-sm)",
                     width: 30,
                     height: 30,
                   }}
@@ -792,7 +793,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
                     borderRadius: 8,
                     cursor: "pointer",
                     color: "var(--text-muted)",
-                    fontSize: 13,
+                    fontSize: "var(--fs-sm)",
                     width: 30,
                     height: 30,
                   }}
@@ -815,7 +816,7 @@ export const TabelaProdutos: React.FC<TabelaProdutosProps> = ({
           border: "1px solid var(--border)",
           borderRadius: 8,
           textAlign: "center",
-          fontSize: 11,
+          fontSize: "var(--fs-2xs)",
           color: "var(--text-muted)",
         }}
       >
