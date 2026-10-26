@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Expense;
 use App\Models\Order;
 use App\Services\CurrentCompany;
+use App\Services\SalesImport;
+use App\Services\SalesImportTemplate;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -250,6 +252,100 @@ class OrderController extends Controller
             'total_sales'  => (float) (clone $query)->sum('total'),
             'total_orders' => $query->count(),
         ]);
+    }
+
+    /**
+     * Download do modelo de planilha (.xls) para importação de vendas.
+     */
+    public function importTemplate(SalesImportTemplate $template)
+    {
+        $conteudo = $template->gerar();
+
+        return response($conteudo, 200, [
+            'Content-Type'        => 'application/vnd.ms-excel',
+            'Content-Disposition' => 'attachment; filename="modelo-importacao-vendas.xls"',
+            'Content-Length'      => (string) strlen($conteudo),
+        ]);
+    }
+
+    /**
+     * Importa vendas de uma planilha (.xls, .xlsx ou .csv) como vendas fechadas.
+     *
+     * Com "dry_run" só valida e devolve a prévia linha a linha. Sem ele, grava
+     * numa transação apenas as linhas válidas e informa as que foram ignoradas.
+     */
+    public function import(Request $request)
+    {
+        $data = $request->validate([
+            'file'                   => 'required|file|max:2048|extensions:xls,xlsx,csv,txt',
+            'default_payment_method' => ['nullable', Rule::in(Order::PAYMENT_METHODS)],
+            'dry_run'                => 'nullable|boolean',
+        ]);
+
+        $importador = new SalesImport($data['default_payment_method'] ?? null);
+
+        try {
+            $linhas = $importador->analisar($data['file']);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'message' => 'Não foi possível ler a planilha. Verifique se o arquivo não está corrompido.',
+            ], 422);
+        }
+
+        $validas = array_values(array_filter($linhas, fn ($l) => !$l['errors']));
+        $resumo = [
+            'total'   => count($linhas),
+            'valid'   => count($validas),
+            'invalid' => count($linhas) - count($validas),
+        ];
+
+        if ($request->boolean('dry_run')) {
+            return response()->json(['summary' => $resumo, 'rows' => $linhas]);
+        }
+
+        if (!$validas) {
+            return response()->json([
+                'message' => 'Nenhuma linha válida para importar.',
+                'summary' => $resumo,
+                'rows'    => $linhas,
+            ], 422);
+        }
+
+        $companyId = CurrentCompany::id();
+
+        DB::transaction(function () use ($validas, $companyId) {
+            // Trava a numeração para não colidir com vendas abertas ao mesmo tempo.
+            $numero = (int) Order::ofCompany($companyId)->lockForUpdate()->max('command_number');
+
+            foreach ($validas as $linha) {
+                $pendente = $linha['payment_method'] === 'pendente';
+
+                Order::create([
+                    'partner_company_id' => $companyId,
+                    'command_number'     => ++$numero,
+                    'order_date'         => $linha['date'],
+                    'customer_name'      => $linha['customer_name'],
+                    'status'             => $pendente ? Order::STATUS_PENDENTE : Order::STATUS_FECHADO,
+                    'total'              => $linha['amount'],
+                    'payment_method'     => $linha['payment_method'],
+                    'closed_at'          => $this->closingMoment($linha['date']),
+                ]);
+            }
+        });
+
+        return response()->json([
+            'message'  => "{$resumo['valid']} venda(s) importada(s).",
+            'imported' => $resumo['valid'],
+            'summary'  => $resumo,
+            'skipped'  => array_values(array_map(
+                fn ($l) => ['line' => $l['line'], 'errors' => $l['errors']],
+                array_filter($linhas, fn ($l) => (bool) $l['errors']),
+            )),
+        ], 201);
     }
 
     /**

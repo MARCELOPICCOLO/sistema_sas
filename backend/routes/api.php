@@ -92,7 +92,10 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
 
         Route::middleware('tela:caixa')->group(function () {
             Route::post('/expenses', [ExpenseController::class, 'store']);
-            Route::post('/expenses/import-csv', [ExpenseController::class, 'importCsv']);
+            Route::get('/expenses/import-template', [ExpenseController::class, 'importTemplate']);
+            Route::post('/expenses/import', [ExpenseController::class, 'import']);
+            Route::get('/orders/import-template', [OrderController::class, 'importTemplate']);
+            Route::post('/orders/import', [OrderController::class, 'import']);
             Route::get('/expenses/{id}', [ExpenseController::class, 'show'])->whereNumber('id');
             Route::put('/expenses/{id}', [ExpenseController::class, 'update'])->whereNumber('id');
             Route::delete('/expenses/{id}', [ExpenseController::class, 'destroy'])->whereNumber('id');
@@ -132,6 +135,7 @@ Route::middleware(['auth:api', 'throttle:api'])->group(function () {
     Route::middleware('master')->prefix('admin')->group(function () {
         Route::apiResource('partner-companies', PartnerCompanyController::class)
             ->parameters(['partner-companies' => 'id']);
+        Route::patch('partner-companies/{id}/status', [PartnerCompanyController::class, 'toggleStatus'])->whereNumber('id');
         Route::apiResource('partner-company-users', PartnerCompanyUserController::class)
             ->parameters(['partner-company-users' => 'id']);
         Route::apiResource('telas', TelaController::class);

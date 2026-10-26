@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import {
@@ -13,7 +13,7 @@ import {
 
 import api from "../api/axios";
 import type { SessionUser } from "../auth/session";
-import { MODULOS } from "../modules";
+import { modulosDoUsuario } from "../modules";
 import "./Dashboard.css";
 
 interface DashboardProps {
@@ -36,7 +36,6 @@ interface Stat {
   label: string;
   valor: string;
   icon: IconDefinition;
-  cor: string;
   negativo?: boolean;
 }
 
@@ -66,7 +65,7 @@ const saudacao = () => {
 
 export default function Dashboard({ user, setTela }: DashboardProps) {
   const permitidos = useMemo(() => new Set(user.telas.map((t) => t.slug)), [user.telas]);
-  const modulos = MODULOS.filter((m) => permitidos.has(m.slug));
+  const modulos = modulosDoUsuario(user);
 
   const podeVerCaixa = permitidos.has("caixa");
   const podeVerVendas = permitidos.has("vendas");
@@ -147,19 +146,16 @@ export default function Dashboard({ user, setTela }: DashboardProps) {
         label: "Entradas hoje",
         valor: moeda(hoje.entradas),
         icon: faArrowUp,
-        cor: "var(--c-green)",
       },
       {
         label: "Saídas hoje",
         valor: moeda(hoje.saidas),
         icon: faArrowDown,
-        cor: "var(--c-red)",
       },
       {
         label: "Saldo do dia",
         valor: moeda(hoje.saldo),
         icon: faScaleBalanced,
-        cor: "var(--c-blue)",
         negativo: hoje.saldo < 0,
       },
     );
@@ -169,7 +165,6 @@ export default function Dashboard({ user, setTela }: DashboardProps) {
       label: "Pedidos abertos",
       valor: String(pedidos.filter((o) => o.status === "aberto").length),
       icon: faReceipt,
-      cor: "var(--c-violet)",
     });
   }
 
@@ -178,56 +173,49 @@ export default function Dashboard({ user, setTela }: DashboardProps) {
   return (
     <div className="dash">
       <main className="dash-content">
-        <section className="dash-banner">
-          <header className="dash-header">
-            <span className="dash-header__date">
-              <FontAwesomeIcon icon={faCalendarDay} /> {dataExtenso}
-            </span>
-            <h1>
-              {saudacao()}, {primeiroNome}!
-            </h1>
-            <p>
-              {nomeEmpresa ? `Bem-vindo ao painel de ${nomeEmpresa}. ` : ""}
-              Veja como está o seu negócio hoje.
-            </p>
-          </header>
+        <header className="dash-page-head">
+          <h1>Painel</h1>
+          <p>
+            {saudacao()}, {primeiroNome}! <span aria-hidden>·</span>{" "}
+            <FontAwesomeIcon icon={faCalendarDay} /> {dataExtenso}
+            {nomeEmpresa ? ` · ${nomeEmpresa}` : ""}
+          </p>
+        </header>
 
-          {temResumo && (
-            <section className="dash-stats" aria-label="Resumo de hoje" aria-busy={carregandoResumo}>
+        {temResumo && (
+          <section className="dash-section" aria-label="Resumo de hoje" aria-busy={carregandoResumo}>
+            <h2 className="dash-section__title">Resumo de hoje</h2>
+            <p className="dash-section__desc">Movimento do caixa e dos pedidos do dia</p>
+
+            <div className="dash-stats">
               {carregandoResumo
                 ? Array.from({ length: qtdSkeletons }, (_, i) => (
-                    <div key={i} className="dash-stat is-loading" aria-hidden>
-                      <span className="dash-skeleton dash-skeleton--label" />
-                      <span className="dash-skeleton dash-skeleton--value" />
+                    <div key={i} className="dash-tile is-loading" aria-hidden>
+                      <span className="dash-tile__icon" />
+                      <span className="dash-tile__text">
+                        <span className="dash-skeleton dash-skeleton--label" />
+                        <span className="dash-skeleton dash-skeleton--value" />
+                      </span>
                     </div>
                   ))
                 : stats.map((s) => (
-                    <div
-                      key={s.label}
-                      className="dash-stat"
-                      style={{ "--stat": s.cor } as CSSProperties}
-                    >
-                      <div className="dash-stat__head">
-                        <span className="dash-stat__icon">
-                          <FontAwesomeIcon icon={s.icon} />
-                        </span>
-                        <span className="dash-stat__label">{s.label}</span>
-                      </div>
-                      <strong className={`dash-stat__value${s.negativo ? " is-negative" : ""}`}>
-                        {s.valor}
-                      </strong>
+                    <div key={s.label} className="dash-tile">
+                      <span className="dash-tile__icon">
+                        <FontAwesomeIcon icon={s.icon} />
+                      </span>
+                      <span className="dash-tile__text">
+                        <small>{s.label}</small>
+                        <strong className={s.negativo ? "is-negative" : ""}>{s.valor}</strong>
+                      </span>
                     </div>
                   ))}
-            </section>
-          )}
-        </section>
+            </div>
+          </section>
+        )}
 
-        <section>
-          <div className="dash-section-title">
-            <h2>Módulos</h2>
-            <span className="dash-pill">{modulos.length} disponíveis</span>
-          </div>
-          <hr className="dash-divider" />
+        <section className="dash-section">
+          <h2 className="dash-section__title">Módulos</h2>
+          <p className="dash-section__desc">Áreas do sistema liberadas para você</p>
 
           {modulos.length === 0 ? (
             <div className="dash-empty">
@@ -240,24 +228,15 @@ export default function Dashboard({ user, setTela }: DashboardProps) {
           ) : (
             <div className="dash-grid">
               {modulos.map((m) => (
-                <button
-                  key={m.slug}
-                  className="dash-card"
-                  style={{ "--accent": m.cor } as CSSProperties}
-                  onClick={() => setTela(m.slug)}
-                >
-                  <span className="dash-card__header">
-                    <span className="dash-card__icon">
-                      <FontAwesomeIcon icon={m.icon} />
-                    </span>
-                    <span className="dash-card__title">{m.titulo}</span>
-                    <span className="dash-card__go" aria-hidden>
-                      <FontAwesomeIcon icon={faArrowRight} />
-                    </span>
+                <button key={m.slug} className="dash-tile is-link" onClick={() => setTela(m.slug)}>
+                  <span className="dash-tile__icon">
+                    <FontAwesomeIcon icon={m.icon} />
                   </span>
-                  <span className="dash-card__body">
-                    <span className="dash-card__desc">{m.descricao}</span>
+                  <span className="dash-tile__text">
+                    <strong className="dash-tile__title">{m.titulo}</strong>
+                    <small>{m.descricao}</small>
                   </span>
+                  <FontAwesomeIcon icon={faArrowRight} className="dash-tile__go" aria-hidden />
                 </button>
               ))}
             </div>

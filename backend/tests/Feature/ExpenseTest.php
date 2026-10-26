@@ -50,7 +50,7 @@ class ExpenseTest extends TestCase
         $this->deleteJson("/api/expense-categories/{$category['id']}")->assertOk();
     }
 
-    public function test_csv_import(): void
+    public function test_csv_import_with_default_category(): void
     {
         $company = $this->createCompany();
         $this->actingAsApi($this->createUser($company, 'USER', ['caixa']));
@@ -60,10 +60,10 @@ class ExpenseTest extends TestCase
         $csv = "Data;Descrição;Valor\n10/05/2026;Gás;1.234,56\n31/02/2026;Inválida;10,00\n11/05/2026;Água;80,00\n";
         $file = UploadedFile::fake()->createWithContent('gastos.csv', $csv);
 
-        $this->post('/api/expenses/import-csv', ['file' => $file, 'expense_category_id' => $category['id']])
-            ->assertOk()
+        $this->post('/api/expenses/import', ['file' => $file, 'default_category_id' => $category['id']], ['Accept' => 'application/json'])
+            ->assertCreated()
             ->assertJsonPath('imported', 2)
-            ->assertJsonCount(1, 'errors');
+            ->assertJsonPath('skipped.0.line', 3);
 
         $this->getJson('/api/expenses/summary?date=2026-05-10')->assertJsonPath('total_expenses', 1234.56);
     }

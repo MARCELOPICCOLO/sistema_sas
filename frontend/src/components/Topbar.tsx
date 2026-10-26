@@ -8,11 +8,11 @@ import {
   faRightFromBracket,
   faSun,
 } from "@fortawesome/free-solid-svg-icons";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import { ROLE_LABEL, type SessionUser } from "../auth/session";
-import { APP_ICON, APP_NAME } from "../brand";
-import { MODULOS } from "../modules";
+import { APP_ICON, APP_NAME, APP_TAGLINE } from "../brand";
+import { modulosDoUsuario } from "../modules";
 import { aplicarTema, temaInicial, type Tema } from "../theme";
 
 interface TopbarProps {
@@ -28,10 +28,13 @@ const iniciais = (nome: string) =>
     .map((p) => p[0]?.toUpperCase())
     .join("");
 
-/** Barra superior: página atual, busca de módulos, tema e menu do usuário. */
+/**
+ * Barra superior branca com a marca à esquerda (e a empresa do usuário),
+ * busca de módulos e tema. O usuário e o "Sair" ficam na barra lateral;
+ * no celular, onde ela some, o menu do usuário aparece aqui.
+ */
 export default function Topbar({ user, onLogout }: TopbarProps) {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
 
   const [tema, setTema] = useState<Tema>(temaInicial);
   const [busca, setBusca] = useState("");
@@ -42,9 +45,7 @@ export default function Topbar({ user, onLogout }: TopbarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const permitidos = useMemo(() => new Set(user.telas.map((t) => t.slug)), [user.telas]);
-  const modulos = MODULOS.filter((m) => permitidos.has(m.slug));
-  const atual = MODULOS.find((m) => m.path === pathname);
+  const modulos = useMemo(() => modulosDoUsuario(user), [user]);
 
   const resultados = modulos.filter((m) =>
     `${m.titulo} ${m.descricao}`.toLowerCase().includes(busca.trim().toLowerCase()),
@@ -92,14 +93,25 @@ export default function Topbar({ user, onLogout }: TopbarProps) {
   return (
     <header className="topbar">
       <div className="topbar__left">
-        <button className="topbar__logo" onClick={() => navigate("/")} aria-label="Início">
-          <FontAwesomeIcon icon={APP_ICON} />
+        <button className="topbar__brand" onClick={() => navigate("/")} aria-label={`${APP_NAME} — início`}>
+          <span className="topbar__logo">
+            <FontAwesomeIcon icon={APP_ICON} />
+          </span>
+          <span className="topbar__brand-text">
+            <strong>{APP_NAME}</strong>
+            <small>{APP_TAGLINE}</small>
+          </span>
         </button>
-        <nav className="topbar__crumbs" aria-label="Você está em">
-          <button onClick={() => navigate("/")}>{APP_NAME}</button>
-          <span aria-hidden>/</span>
-          <strong>{atual?.titulo ?? "Início"}</strong>
-        </nav>
+
+        {empresa && (
+          <>
+            <span className="topbar__divider" aria-hidden />
+            <span className="topbar__company" title={empresa}>
+              <FontAwesomeIcon icon={faBuilding} />
+              <span>{empresa}</span>
+            </span>
+          </>
+        )}
       </div>
 
       <div className="topbar__search">
@@ -171,13 +183,6 @@ export default function Topbar({ user, onLogout }: TopbarProps) {
           <FontAwesomeIcon icon={tema === "dark" ? faSun : faMoon} />
         </button>
 
-        {empresa && (
-          <span className="topbar__company" title={empresa}>
-            <FontAwesomeIcon icon={faBuilding} />
-            <span>{empresa}</span>
-          </span>
-        )}
-
         <div className="topbar__user" ref={menuRef}>
           <button
             className="topbar__user-btn"
@@ -188,7 +193,7 @@ export default function Topbar({ user, onLogout }: TopbarProps) {
             <span className="topbar__avatar">{iniciais(nome)}</span>
             <span className="topbar__user-info">
               <strong>{nome}</strong>
-              <small>{user.role ? ROLE_LABEL[user.role] : "Usuário"}</small>
+              <small>{user.is_master ? "Master da plataforma" : user.role ? ROLE_LABEL[user.role] : "Usuário"}</small>
             </span>
             <FontAwesomeIcon icon={faChevronDown} className="topbar__chevron" />
           </button>

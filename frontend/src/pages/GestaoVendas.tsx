@@ -605,7 +605,7 @@ export default function GestaoComandas({
               border: "1px solid var(--accent)",
               background: "var(--accent)",
               color: "#fff",
-              boxShadow: "0 6px 16px -6px rgba(245, 158, 11, 0.7)",
+              boxShadow: "0 4px 12px -6px rgba(15, 23, 42, 0.45)",
               cursor: "pointer",
               fontSize: "var(--fs-sm)",
               fontWeight: 600,

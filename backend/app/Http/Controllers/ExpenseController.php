@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Expense;
 use App\Services\CurrentCompany;
+use App\Services\ExpenseImport;
+use App\Services\ExpenseImportTemplate;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -143,78 +145,93 @@ class ExpenseController extends Controller
     }
 
     /**
-     * Importa gastos de um CSV (separado por ";") com colunas Data;Descrição;Valor.
+     * Download do modelo de planilha (.xls) para importação de gastos.
      */
-    public function importCsv(Request $request)
+    public function importTemplate(ExpenseImportTemplate $template)
+    {
+        $conteudo = $template->gerar(CurrentCompany::id());
+
+        return response($conteudo, 200, [
+            'Content-Type'        => 'application/vnd.ms-excel',
+            'Content-Disposition' => 'attachment; filename="modelo-importacao-gastos.xls"',
+            'Content-Length'      => (string) strlen($conteudo),
+        ]);
+    }
+
+    /**
+     * Importa gastos de uma planilha (.xls, .xlsx ou .csv).
+     *
+     * Com "dry_run" só valida e devolve a prévia linha a linha. Sem ele, grava
+     * numa transação apenas as linhas válidas e informa as que foram ignoradas.
+     */
+    public function import(Request $request)
     {
         $data = $request->validate([
-            'file'                => 'required|file|mimes:csv,txt|max:2048',
-            'expense_category_id' => ['required', ...$this->companyCategoryRule()],
+            'file'                => 'required|file|max:2048|extensions:xls,xlsx,csv,txt',
+            'default_category_id' => ['nullable', ...$this->companyCategoryRule()],
+            'dry_run'             => 'nullable|boolean',
         ]);
 
-        $handle = fopen($data['file']->getPathname(), 'r');
-        $header = array_map(fn ($h) => trim(preg_replace('/^\xEF\xBB\xBF/', '', (string) $h)), fgetcsv($handle, 0, ';') ?: []);
-
-        $imported = 0;
-        $errors = [];
-        $line = 1;
-
-        DB::beginTransaction();
+        $companyId = CurrentCompany::id();
+        $importador = new ExpenseImport($companyId, $data['default_category_id'] ?? null);
 
         try {
-            while (($row = fgetcsv($handle, 0, ';')) !== false) {
-                $line++;
-
-                if (count($row) !== count($header)) {
-                    $errors[] = "Linha {$line}: número de colunas inválido.";
-                    continue;
-                }
-
-                $values = array_combine($header, $row);
-
-                try {
-                    $rawDate = trim($values['Data'] ?? '');
-                    $parsed = Carbon::createFromFormat('!d/m/Y', $rawDate);
-
-                    // Rejeita datas que "transbordam" (ex.: 31/02 viraria 03/03).
-                    if (!$parsed || $parsed->format('d/m/Y') !== $rawDate) {
-                        throw new \InvalidArgumentException('data inválida');
-                    }
-
-                    $date = $parsed->toDateString();
-                    $amount = (float) str_replace(['.', ','], ['', '.'], trim($values['Valor'] ?? ''));
-
-                    if ($amount <= 0) {
-                        throw new \InvalidArgumentException('valor inválido');
-                    }
-
-                    Expense::create([
-                        'partner_company_id'  => CurrentCompany::id(),
-                        'description'         => mb_substr(trim($values['Descrição'] ?? $values['Descricao'] ?? 'Gasto importado'), 0, 255),
-                        'amount'              => $amount,
-                        'expense_date'        => $date,
-                        'expense_category_id' => $data['expense_category_id'],
-                    ]);
-
-                    $imported++;
-                } catch (\Throwable $e) {
-                    $errors[] = "Linha {$line}: dados inválidos.";
-                }
-            }
-
-            DB::commit();
+            $linhas = $importador->analisar($data['file']);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         } catch (\Throwable $e) {
-            DB::rollBack();
-            throw $e;
-        } finally {
-            fclose($handle);
+            report($e);
+
+            return response()->json([
+                'message' => 'Não foi possível ler a planilha. Verifique se o arquivo não está corrompido.',
+            ], 422);
         }
 
+        $validas = array_values(array_filter($linhas, fn ($l) => !$l['errors']));
+        $resumo = [
+            'total'   => count($linhas),
+            'valid'   => count($validas),
+            'invalid' => count($linhas) - count($validas),
+        ];
+
+        if ($request->boolean('dry_run')) {
+            return response()->json(['summary' => $resumo, 'rows' => $linhas]);
+        }
+
+        if (!$validas) {
+            return response()->json([
+                'message' => 'Nenhuma linha válida para importar.',
+                'summary' => $resumo,
+                'rows'    => $linhas,
+            ], 422);
+        }
+
+        DB::transaction(function () use ($validas, $companyId) {
+            $agora = now();
+
+            foreach (array_chunk($validas, 200) as $lote) {
+                Expense::insert(array_map(fn ($l) => [
+                    'partner_company_id'  => $companyId,
+                    'description'         => $l['description'],
+                    'amount'              => $l['amount'],
+                    'expense_date'        => $l['date'],
+                    'expense_category_id' => $l['category_id'],
+                    'notes'               => 'Importado de planilha',
+                    'created_at'          => $agora,
+                    'updated_at'          => $agora,
+                ], $lote));
+            }
+        });
+
         return response()->json([
-            'message'  => 'Importação concluída',
-            'imported' => $imported,
-            'errors'   => $errors,
-        ]);
+            'message'  => "{$resumo['valid']} gasto(s) importado(s).",
+            'imported' => $resumo['valid'],
+            'summary'  => $resumo,
+            'skipped'  => array_values(array_map(
+                fn ($l) => ['line' => $l['line'], 'errors' => $l['errors']],
+                array_filter($linhas, fn ($l) => (bool) $l['errors']),
+            )),
+        ], 201);
     }
 
     private function byCategory($query)

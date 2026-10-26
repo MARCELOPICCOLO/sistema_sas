@@ -1,69 +1,110 @@
+import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faChevronLeft,
+  faChevronRight,
   faHouse,
   faRightFromBracket,
 } from "@fortawesome/free-solid-svg-icons";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
-import type { SessionUser } from "../auth/session";
-import { APP_ICON, APP_NAME } from "../brand";
-import { MODULOS } from "../modules";
+import { ROLE_LABEL, type SessionUser } from "../auth/session";
+import { modulosDoUsuario } from "../modules";
 
 interface NavRailProps {
   user: SessionUser;
   onLogout: () => void;
 }
 
-/** Barra lateral fixa para alternar entre os módulos liberados ao usuário. */
+const CHAVE = "rail-expandida";
+
+const iniciais = (nome: string) =>
+  nome
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase())
+    .join("");
+
+const lerPreferencia = () => {
+  try {
+    return localStorage.getItem(CHAVE) === "1";
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Barra lateral dos módulos: ícones em "blocos" claros sobre a cor da marca.
+ * A aba na borda expande a barra para mostrar o nome de cada módulo.
+ */
 export default function NavRail({ user, onLogout }: NavRailProps) {
-  const navigate = useNavigate();
-  const permitidos = new Set(user.telas.map((t) => t.slug));
+  const [expandida, setExpandida] = useState(lerPreferencia);
+
+  const nome = user.full_name || user.username;
+  const papel = user.is_master ? "Master da plataforma" : user.role ? ROLE_LABEL[user.role] : "Usuário";
+
+  const alternar = () =>
+    setExpandida((atual) => {
+      try {
+        localStorage.setItem(CHAVE, atual ? "0" : "1");
+      } catch {
+        // Sem persistência: vale só nesta sessão.
+      }
+      return !atual;
+    });
+
+  const itens = [
+    { chave: "inicio", path: "/", titulo: "Início", icon: faHouse, end: true },
+    ...modulosDoUsuario(user).map((m) => ({ chave: m.slug, path: m.path, titulo: m.titulo, icon: m.icon, end: false })),
+  ];
 
   return (
-    <aside className="rail" aria-label="Navegação principal">
-      <button
-        className="rail__logo"
-        onClick={() => navigate("/")}
-        aria-label={APP_NAME}
-        title={APP_NAME}
-      >
-        <FontAwesomeIcon icon={APP_ICON} />
-      </button>
-
+    <aside className={`rail${expandida ? " is-expanded" : ""}`} aria-label="Navegação principal">
       <nav className="rail__nav">
-        <NavLink
-          to="/"
-          end
-          className={({ isActive }) => `rail__item${isActive ? " is-active" : ""}`}
-          data-label="Início"
-          aria-label="Início"
-        >
-          <FontAwesomeIcon icon={faHouse} />
-        </NavLink>
-
-        {MODULOS.filter((m) => permitidos.has(m.slug)).map((m) => (
+        {itens.map((item) => (
           <NavLink
-            key={m.slug}
-            to={m.path}
+            key={item.chave}
+            to={item.path}
+            end={item.end}
             className={({ isActive }) => `rail__item${isActive ? " is-active" : ""}`}
-            data-label={m.titulo}
-            aria-label={m.titulo}
+            data-label={item.titulo}
+            aria-label={item.titulo}
           >
-            <FontAwesomeIcon icon={m.icon} />
+            <span className="rail__tile">
+              <FontAwesomeIcon icon={item.icon} />
+            </span>
+            <span className="rail__label">{item.titulo}</span>
           </NavLink>
         ))}
       </nav>
 
       <div className="rail__footer">
-        <button
-          className="rail__item is-logout"
-          onClick={onLogout}
-          data-label="Sair"
-          aria-label="Sair"
-        >
-          <FontAwesomeIcon icon={faRightFromBracket} />
+        <div className="rail__user" title={`${nome} — ${papel}`}>
+          <span className="rail__avatar">{iniciais(nome)}</span>
+          <span className="rail__label">
+            <strong>{nome}</strong>
+            <small>{papel}</small>
+          </span>
+        </div>
+
+        <button className="rail__item is-logout" onClick={onLogout} data-label="Sair" aria-label="Sair">
+          <span className="rail__tile is-plain">
+            <FontAwesomeIcon icon={faRightFromBracket} />
+          </span>
+          <span className="rail__label">Sair</span>
         </button>
       </div>
+
+      <button
+        className="rail__toggle"
+        onClick={alternar}
+        aria-label={expandida ? "Recolher menu" : "Expandir menu"}
+        aria-expanded={expandida}
+        title={expandida ? "Recolher menu" : "Expandir menu"}
+      >
+        <FontAwesomeIcon icon={expandida ? faChevronLeft : faChevronRight} />
+      </button>
     </aside>
   );
 }

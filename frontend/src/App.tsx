@@ -13,7 +13,7 @@ import api, {
   getToken,
 } from "./api/axios";
 import { fetchSession, type SessionUser } from "./auth/session";
-import { MODULOS, pathDoModulo, type ModuloSlug } from "./modules";
+import { MODULO_EMPRESAS, MODULOS, pathDoModulo, type ModuloSlug } from "./modules";
 
 type PaginaModulo = ComponentType;
 
@@ -23,6 +23,7 @@ const Caixa = lazy(() => import("./pages/Caixa"));
 const GestaoVendas = lazy(() => import("./pages/GestaoVendas"));
 const GerenciamentoEquipe = lazy(() => import("./pages/GerenciamentoEquipe"));
 const GestaoRelatorios = lazy(() => import("./pages/GestaoRelatorios"));
+const Empresas = lazy(() => import("./pages/Empresas"));
 
 const PAGINAS: Record<ModuloSlug, PaginaModulo> = {
   produtos: Produtos,
@@ -148,7 +149,7 @@ export default function App() {
       />
 
       {MODULOS.map(({ slug, path }) => {
-        const Pagina = PAGINAS[slug];
+        const Pagina = PAGINAS[slug as ModuloSlug];
 
         return (
           <Route
@@ -172,6 +173,26 @@ export default function App() {
           />
         );
       })}
+
+      {/* Cadastro de empresas: só o operador master da plataforma */}
+      <Route
+        path={MODULO_EMPRESAS.path}
+        element={
+          user.is_master ? (
+            <div className="shell">
+              <NavRail user={user} onLogout={handleLogout} />
+              <div className="shell-content module-page">
+                <Topbar user={user} onLogout={handleLogout} />
+                <Suspense fallback={<TelaCarregando />}>
+                  <Empresas />
+                </Suspense>
+              </div>
+            </div>
+          ) : (
+            <AcessoNegado onVoltar={() => navigate("/")} />
+          )
+        }
+      />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

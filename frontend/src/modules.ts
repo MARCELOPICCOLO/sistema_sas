@@ -1,5 +1,6 @@
 import type { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import {
+  faBuilding,
   faBoxes,
   faCashRegister,
   faChartLine,
@@ -15,11 +16,13 @@ export type ModuloSlug =
   | "gestao_equipe";
 
 export interface Modulo {
-  slug: ModuloSlug;
+  slug: ModuloSlug | "empresas";
   path: string;
   titulo: string;
   descricao: string;
   icon: IconDefinition;
+  /** Cor do módulo (variável CSS), usada no ícone e nos destaques. */
+  cor: string;
 }
 
 /**
@@ -69,5 +72,25 @@ export const MODULOS: Modulo[] = [
   },
 ];
 
+/**
+ * Cadastro de empresas: exclusivo do operador master da plataforma.
+ * Não faz parte das "telas" atribuíveis a usuários das empresas.
+ */
+export const MODULO_EMPRESAS: Modulo = {
+  slug: "empresas",
+  path: "/empresas",
+  titulo: "Empresas",
+  descricao: "Cadastro das empresas que usam o sistema.",
+  icon: faBuilding,
+  cor: "var(--c-blue)",
+};
+
+/** Módulos que o usuário pode abrir, na ordem do menu. */
+export function modulosDoUsuario(user: { telas: { slug: string }[]; is_master: boolean }): Modulo[] {
+  const permitidos = new Set(user.telas.map((t) => t.slug));
+  const modulos = MODULOS.filter((m) => permitidos.has(m.slug));
+  return user.is_master ? [...modulos, MODULO_EMPRESAS] : modulos;
+}
+
 export const pathDoModulo = (slug: string): string =>
-  MODULOS.find((m) => m.slug === slug)?.path ?? "/";
+  [...MODULOS, MODULO_EMPRESAS].find((m) => m.slug === slug)?.path ?? "/";
