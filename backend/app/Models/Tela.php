@@ -16,6 +16,10 @@ class Tela extends Model
         'ativo',
     ];
 
+    protected $casts = [
+        'ativo' => 'boolean',
+    ];
+
     public function usuarios(): BelongsToMany
     {
         return $this->belongsToMany(

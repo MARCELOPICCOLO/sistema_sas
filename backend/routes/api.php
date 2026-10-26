@@ -1,37 +1,27 @@
 <?php
-// routes/api.php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\OrderController;
-use App\Http\Controllers\TableController;
-use App\Http\Controllers\ExpenseController;
-use App\Http\Controllers\ExpenseCategoryController;
-use App\Http\Controllers\PartnerCompanyController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\PartnerCompanyUserController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ExpenseCategoryController;
+use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\OrderItemController;
+use App\Http\Controllers\PartnerCompanyController;
+use App\Http\Controllers\PartnerCompanyUserController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\TelaController;
+use App\Http\Controllers\UserController;
 
 /*
 |--------------------------------------------------------------------------
-| Rotas públicas
+| Autenticação
 |--------------------------------------------------------------------------
 */
 
-Route::prefix('auth')->group(function () {
-    Route::post('/login', [AuthController::class, 'login']);
-});
+Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:login');
 
-/*
-|--------------------------------------------------------------------------
-| Rotas protegidas por JWT
-|--------------------------------------------------------------------------
-*/
-
-Route::middleware('auth:api')->group(function () {
+Route::middleware(['auth:api', 'throttle:api'])->group(function () {
 
     Route::prefix('auth')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
@@ -39,106 +29,115 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
     });
 
-    // Rotas para produtos
-    Route::prefix('products')->group(function () {
-        Route::get('/', [ProductController::class, 'index']);           // Listar
-        Route::get('/code/{code}', [ProductController::class, 'findByCode']); // Buscar por código
-        Route::post('/', [ProductController::class, 'store']);          // Criar
-        Route::get('/{id}', [ProductController::class, 'show']);        // Mostrar
-        Route::put('/{id}', [ProductController::class, 'update']);      // Atualizar
-        Route::delete('/{id}', [ProductController::class, 'destroy']);  // Deletar
-        Route::patch('/{id}/stock', [ProductController::class, 'updateStock']); // Atualizar estoque
+    /*
+    |--------------------------------------------------------------------------
+    | Rotas da empresa atual
+    |--------------------------------------------------------------------------
+    | Todas exigem usuário ativo vinculado a uma empresa ativa ("company")
+    | e acesso à tela (módulo) correspondente ("tela:<slug>").
+    | Os dados são sempre filtrados pela empresa do usuário autenticado.
+    */
+
+    Route::middleware('company')->group(function () {
+
+        // ========== PRODUTOS E CATEGORIAS ==========
+        // Leitura também liberada para quem lança vendas.
+        Route::middleware('tela:produtos,vendas')->group(function () {
+            Route::get('/products', [ProductController::class, 'index']);
+            Route::get('/products/code/{code}', [ProductController::class, 'findByCode']);
+            Route::get('/products/{id}', [ProductController::class, 'show'])->whereNumber('id');
+            Route::get('/categories', [CategoryController::class, 'index']);
+            Route::get('/categories/{id}', [CategoryController::class, 'show'])->whereNumber('id');
+        });
+
+        Route::middleware('tela:produtos')->group(function () {
+            Route::post('/products', [ProductController::class, 'store']);
+            Route::post('/products/bulk-stock', [ProductController::class, 'bulkUpdateStock']);
+            Route::put('/products/{id}', [ProductController::class, 'update'])->whereNumber('id');
+            Route::patch('/products/{id}/stock', [ProductController::class, 'updateStock'])->whereNumber('id');
+            Route::delete('/products/{id}', [ProductController::class, 'destroy'])->whereNumber('id');
+
+            Route::post('/categories', [CategoryController::class, 'store']);
+            Route::put('/categories/{id}', [CategoryController::class, 'update'])->whereNumber('id');
+            Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->whereNumber('id');
+        });
+
+        // ========== VENDAS (COMANDAS) ==========
+        Route::middleware('tela:vendas')->group(function () {
+            Route::get('/orders/by-date/{date}', [OrderController::class, 'byDate']);
+            Route::get('/orders/{id}', [OrderController::class, 'show'])->whereNumber('id');
+            Route::put('/orders/{id}', [OrderController::class, 'update'])->whereNumber('id');
+            Route::post('/orders/{id}/close', [OrderController::class, 'close'])->whereNumber('id');
+            Route::delete('/orders/{id}', [OrderController::class, 'destroy'])->whereNumber('id');
+
+            Route::post('/order-items/order/{id}/item', [OrderItemController::class, 'store'])->whereNumber('id');
+            Route::get('/order-items/{id}/items', [OrderItemController::class, 'getItems'])->whereNumber('id');
+            Route::put('/order-items/{id}', [OrderItemController::class, 'updateItem'])->whereNumber('id');
+            Route::delete('/order-items/{id}', [OrderItemController::class, 'destroy'])->whereNumber('id');
+        });
+
+        // Criação de comandas: vendas (PDV) e caixa (importação de vendas).
+        Route::post('/orders', [OrderController::class, 'store'])->middleware('tela:vendas,caixa');
+
+        // ========== CAIXA ==========
+        Route::middleware('tela:caixa,gestao_relatorio')->group(function () {
+            Route::get('/orders', [OrderController::class, 'index']);
+            Route::post('/orders/summary', [OrderController::class, 'salesSummary']);
+            Route::get('/orders/daily-summary', [OrderController::class, 'dailySummary']);
+            Route::get('/expenses', [ExpenseController::class, 'index']);
+            Route::get('/expenses/summary', [ExpenseController::class, 'summary']);
+            Route::get('/expenses/monthly-summary', [ExpenseController::class, 'monthlySummary']);
+            Route::get('/expense-categories', [ExpenseCategoryController::class, 'index']);
+        });
+
+        Route::middleware('tela:caixa')->group(function () {
+            Route::post('/expenses', [ExpenseController::class, 'store']);
+            Route::get('/expenses/import-template', [ExpenseController::class, 'importTemplate']);
+            Route::post('/expenses/import', [ExpenseController::class, 'import']);
+            Route::get('/orders/import-template', [OrderController::class, 'importTemplate']);
+            Route::post('/orders/import', [OrderController::class, 'import']);
+            Route::get('/expenses/{id}', [ExpenseController::class, 'show'])->whereNumber('id');
+            Route::put('/expenses/{id}', [ExpenseController::class, 'update'])->whereNumber('id');
+            Route::delete('/expenses/{id}', [ExpenseController::class, 'destroy'])->whereNumber('id');
+
+            Route::post('/expense-categories', [ExpenseCategoryController::class, 'store']);
+            Route::get('/expense-categories/{id}', [ExpenseCategoryController::class, 'show'])->whereNumber('id');
+            Route::put('/expense-categories/{id}', [ExpenseCategoryController::class, 'update'])->whereNumber('id');
+            Route::delete('/expense-categories/{id}', [ExpenseCategoryController::class, 'destroy'])->whereNumber('id');
+        });
+
+        // ========== RELATÓRIOS ==========
+        Route::middleware('tela:gestao_relatorio')->group(function () {
+            Route::get('/orders/reports/entries', [OrderController::class, 'reportEntries']);
+            Route::get('/order-items/products-summary', [OrderItemController::class, 'productsSummary']);
+            Route::get('/order-items/products-summary/filtered', [OrderItemController::class, 'productsSummaryWithFilters']);
+        });
+
+        // ========== EQUIPE ==========
+        Route::middleware('tela:gestao_equipe')->group(function () {
+            Route::get('/users', [UserController::class, 'index']);
+            Route::post('/users', [UserController::class, 'store']);
+            Route::get('/users/{id}', [UserController::class, 'show'])->whereNumber('id');
+            Route::put('/users/{id}', [UserController::class, 'update'])->whereNumber('id');
+            Route::delete('/users/{id}', [UserController::class, 'destroy'])->whereNumber('id');
+            Route::patch('/partner-company-users/{id}/deactivate', [UserController::class, 'toggleStatus'])->whereNumber('id');
+
+            Route::get('/telas', [TelaController::class, 'ativas']);
+        });
     });
 
-    // ========== CATEGORIAS ==========
-    Route::apiResource('categories', CategoryController::class);
+    /*
+    |--------------------------------------------------------------------------
+    | Administração da plataforma (somente master)
+    |--------------------------------------------------------------------------
+    */
 
-    // ========== MESAS ==========
-    // API Resource já cria: index, store, show, update, destroy
-    Route::apiResource('tables', TableController::class);
-    // Rota adicional para listar comandas de uma mesa específica
-    Route::get('/tables/{tableId}/orders', [OrderController::class, 'getByTable']);
-
-    // ========== COMANDAS (ORDERS) ==========
-    Route::prefix('orders')->group(function () {
-
-        Route::post('/summary', [OrderController::class, 'salesSummary']);
-
-        // Resumo diário do caixa
-        Route::get('/daily-summary', [OrderController::class, 'dailySummary']);
-
-        // Transações de um dia específico
-        Route::get('/by-date/{date}', [OrderController::class, 'byDate']);
-
-        // Relatório de entradas por ano
-        Route::get('/reports/entries', [OrderController::class, 'reportEntries']);
-        Route::put('/{id}', [OrderController::class, 'update']);
-
-        Route::get('/', [OrderController::class, 'index']);
-        Route::get('/{id}', [OrderController::class, 'show']);
-        Route::post('/', [OrderController::class, 'store']);
-        Route::delete('/{id}', [OrderController::class, 'destroy']);
-        Route::post('/{id}/close', [OrderController::class, 'close']);
-    });
-
-    // ========== ORDER ITEMS ==========
-    Route::prefix('order-items/')->group(function () {
-        Route::put('/{id}', [OrderItemController::class, 'updateItem']);
-        Route::delete('/{id}', [OrderItemController::class, 'destroy']);
-        Route::post('order/{id}/item', [OrderItemController::class, 'store']);
-        Route::get('/{id}/items', [OrderItemController::class, 'getItems']);
-        Route::get('/products-summary', [OrderItemController::class, 'productsSummary']);
-        Route::get('/products-summary/filtered', [OrderItemController::class, 'productsSummaryWithFilters']);
-    });
-
-    // ========== GASTOS (EXPENSES) ==========
-    Route::prefix('expenses')->group(function () {
-        Route::get('/', [ExpenseController::class, 'index']);           // Listar gastos
-        Route::get('/summary', [ExpenseController::class, 'summary']);  // Resumo do dia
-        Route::get('/monthly-summary', [ExpenseController::class, 'monthlySummary']); // Resumo do mês
-        Route::post('/', [ExpenseController::class, 'store']);          // Criar gasto
-        Route::get('/{id}', [ExpenseController::class, 'show']);        // Mostrar gasto
-        Route::put('/{id}', [ExpenseController::class, 'update']);      // Atualizar gasto
-        Route::delete('/{id}', [ExpenseController::class, 'destroy']);  // Deletar gasto
-        Route::post('/import-csv', [ExpenseController::class, 'importCsv']); // Importar gasto
-    });
-
-
-    Route::prefix('expense-categories')->group(function () {
-        Route::get('/', [ExpenseCategoryController::class, 'index']);
-        Route::post('/', [ExpenseCategoryController::class, 'store']);
-        Route::get('/{id}', [ExpenseCategoryController::class, 'show']);
-        Route::put('/{id}', [ExpenseCategoryController::class, 'update']);
-        Route::delete('/{id}', [ExpenseCategoryController::class, 'destroy']);
-        Route::post('/products/bulk-stock', [ProductController::class, 'bulkUpdateStock']);
-    });
-
-    // ========== EMPRESAS PARCEIRAS ==========
-    Route::prefix('partner-companies')->group(function () {
-        Route::get('/', [PartnerCompanyController::class, 'index']);         // Listar
-        Route::post('/', [PartnerCompanyController::class, 'store']);        // Cadastrar
-        Route::get('/{id}', [PartnerCompanyController::class, 'show']);      // Buscar por ID
-        Route::put('/{id}', [PartnerCompanyController::class, 'update']);    // Atualizar
-        Route::delete('/{id}', [PartnerCompanyController::class, 'destroy']); // Excluir
-    });
-
-    Route::prefix('users')->group(function () {
-        Route::get('/', [UserController::class, 'index']);
-        Route::post('/', [UserController::class, 'store']);
-        Route::get('{id}', [UserController::class, 'show']);
-        Route::put('{id}', [UserController::class, 'update']);
-        Route::delete('{id}', [UserController::class, 'destroy']);
-    });
-
-    Route::prefix('partner-company-users')->group(function () {
-        Route::get('/', [PartnerCompanyUserController::class, 'index']);
-        Route::post('/', [PartnerCompanyUserController::class, 'store']);
-        Route::get('{id}', [PartnerCompanyUserController::class, 'show']);
-        Route::put('{id}', [PartnerCompanyUserController::class, 'update']);
-        Route::patch('{id}/deactivate', [PartnerCompanyUserController::class, 'deactivate']);
-    });
-
-    Route::prefix('telas')->group(function () {
-        Route::get('/', [TelaController::class, 'index']);
+    Route::middleware('master')->prefix('admin')->group(function () {
+        Route::apiResource('partner-companies', PartnerCompanyController::class)
+            ->parameters(['partner-companies' => 'id']);
+        Route::patch('partner-companies/{id}/status', [PartnerCompanyController::class, 'toggleStatus'])->whereNumber('id');
+        Route::apiResource('partner-company-users', PartnerCompanyUserController::class)
+            ->parameters(['partner-company-users' => 'id']);
+        Route::apiResource('telas', TelaController::class);
     });
 });

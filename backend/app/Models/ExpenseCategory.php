@@ -1,5 +1,4 @@
 <?php
-// app/Models/ExpenseCategory.php
 
 namespace App\Models;
 
@@ -14,17 +13,12 @@ class ExpenseCategory extends Model
         'name',
         'icon',
         'color',
-        'is_active'
+        'is_active',
     ];
 
     protected $casts = [
-        'is_active' => 'boolean'
+        'is_active' => 'boolean',
     ];
-
-    public function restaurant()
-    {
-        return $this->belongsTo(Restaurant::class);
-    }
 
     public function expenses()
     {

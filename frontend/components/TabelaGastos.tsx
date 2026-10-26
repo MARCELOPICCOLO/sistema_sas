@@ -86,13 +86,14 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
     return (
       <div
         style={{
-          background: "#ffffff",
-          border: "1px solid #e5e7eb",
-          borderRadius: 10,
+          background: "var(--surface)",
+          border: "1px solid var(--border)",
+          borderRadius: 12,
           padding: "40px",
           textAlign: "center",
-          color: "#6b7280",
-          fontSize: 13,
+          color: "var(--text-muted)",
+          fontSize: "var(--fs-sm)",
+          boxShadow: "var(--shadow-card)",
         }}
       >
         <FontAwesomeIcon
@@ -119,9 +120,10 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
         style={{
           textAlign: "center",
           padding: "48px 20px",
-          background: "#ffffff",
-          borderRadius: 10,
-          border: "1px solid #e5e7eb",
+          background: "var(--surface)",
+          borderRadius: 12,
+          border: "1px solid var(--border)",
+          boxShadow: "var(--shadow-card)",
         }}
       >
         <div
@@ -129,13 +131,13 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
             width: 48,
             height: 48,
             margin: "0 auto 14px",
-            borderRadius: 10,
-            background: "#f3f4f6",
+            borderRadius: 12,
+            background: "var(--surface-3)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#9ca3af",
-            fontSize: 20,
+            color: "var(--text-subtle)",
+            fontSize: "var(--fs-2xl)",
           }}
         >
           —
@@ -143,8 +145,8 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
 
         <p
           style={{
-            fontSize: 14,
-            color: "#6b7280",
+            fontSize: "var(--fs-md)",
+            color: "var(--text-muted)",
             margin: 0,
           }}
         >
@@ -186,7 +188,7 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
            * usamos o resumo para mostrar o valor da entrada.
            */
           const totalEntradasDia =
-            totalEntradasPorData[data] ?? Number(resumo.total_entradas) ?? 0;
+            totalEntradasPorData[data] ?? (Number(resumo.total_entradas) || 0);
 
           const totalSaidasDia = totalSaidasPorData[data] ?? 0;
 
@@ -208,10 +210,11 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
             <div
               key={data}
               style={{
-                background: "#ffffff",
-                borderRadius: 10,
-                border: "1px solid #e5e7eb",
+                background: "var(--surface)",
+                borderRadius: 12,
+                border: "1px solid var(--border)",
                 overflow: "hidden",
+                boxShadow: "var(--shadow-card)",
               }}
             >
               {/* =====================================================
@@ -221,7 +224,7 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
               <div
                 onClick={() => toggleDia(data)}
                 style={{
-                  background: estaExpandido ? "#f9fafb" : "#ffffff",
+                  background: estaExpandido ? "var(--surface-2)" : "var(--surface)",
                   padding: "14px 18px",
                   cursor: "pointer",
 
@@ -232,17 +235,17 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                   flexWrap: "wrap",
                   gap: 12,
 
-                  borderBottom: estaExpandido ? "1px solid #e5e7eb" : "none",
+                  borderBottom: estaExpandido ? "1px solid var(--border)" : "none",
 
                   transition: "background 0.15s ease",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "#f9fafb";
+                  e.currentTarget.style.background = "var(--surface-2)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = estaExpandido
-                    ? "#f9fafb"
-                    : "#ffffff";
+                    ? "var(--surface-2)"
+                    : "var(--surface)";
                 }}
               >
                 {/* =================================================
@@ -259,17 +262,17 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                   <FontAwesomeIcon
                     icon={estaExpandido ? faChevronDown : faChevronRight}
                     style={{
-                      fontSize: 11,
-                      color: "#9ca3af",
+                      fontSize: "var(--fs-2xs)",
+                      color: "var(--text-subtle)",
                       width: 12,
                     }}
                   />
 
                   <span
                     style={{
-                      fontSize: 14,
+                      fontSize: "var(--fs-md)",
                       fontWeight: 600,
-                      color: "#1f2937",
+                      color: "var(--text)",
                     }}
                   >
                     {formatDate(data)}
@@ -277,11 +280,11 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
 
                   <span
                     style={{
-                      fontSize: 11,
-                      color: "#6b7280",
-                      background: "#f3f4f6",
+                      fontSize: "var(--fs-2xs)",
+                      color: "var(--text-muted)",
+                      background: "var(--surface-3)",
                       padding: "3px 8px",
-                      borderRadius: 6,
+                      borderRadius: 8,
                     }}
                   >
                     {quantidade} {quantidade === 1 ? "item" : "itens"}
@@ -292,8 +295,8 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                       icon={faSpinner}
                       spin
                       style={{
-                        fontSize: 11,
-                        color: "#9ca3af",
+                        fontSize: "var(--fs-2xs)",
+                        color: "var(--text-subtle)",
                       }}
                     />
                   )}
@@ -315,15 +318,15 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
 
                   <div
                     style={{
-                      fontSize: 12,
-                      color: "#6b7280",
+                      fontSize: "var(--fs-xs)",
+                      color: "var(--text-muted)",
                     }}
                   >
                     Entradas{" "}
                     <span
                       style={{
                         fontWeight: 600,
-                        color: "#059669",
+                        color: "var(--primary)",
                       }}
                     >
                       {formatCurrency(totalEntradasDia)}
@@ -334,15 +337,15 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
 
                   <div
                     style={{
-                      fontSize: 12,
-                      color: "#6b7280",
+                      fontSize: "var(--fs-xs)",
+                      color: "var(--text-muted)",
                     }}
                   >
                     Saídas{" "}
                     <span
                       style={{
                         fontWeight: 600,
-                        color: "#374151",
+                        color: "var(--text-secondary)",
                       }}
                     >
                       {formatCurrency(totalSaidasDia)}
@@ -353,15 +356,15 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
 
                   <div
                     style={{
-                      fontSize: 12,
-                      color: "#6b7280",
+                      fontSize: "var(--fs-xs)",
+                      color: "var(--text-muted)",
                     }}
                   >
                     Saldo{" "}
                     <span
                       style={{
                         fontWeight: 600,
-                        color: saldoDia >= 0 ? "#059669" : "#374151",
+                        color: saldoDia >= 0 ? "var(--primary)" : "var(--text-secondary)",
                       }}
                     >
                       {formatCurrency(saldoDia)}
@@ -381,8 +384,8 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                       style={{
                         padding: "32px",
                         textAlign: "center",
-                        color: "#6b7280",
-                        fontSize: 13,
+                        color: "var(--text-muted)",
+                        fontSize: "var(--fs-sm)",
                       }}
                     >
                       <FontAwesomeIcon
@@ -399,8 +402,8 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                       style={{
                         padding: "28px",
                         textAlign: "center",
-                        color: "#9ca3af",
-                        fontSize: 13,
+                        color: "var(--text-subtle)",
+                        fontSize: "var(--fs-sm)",
                       }}
                     >
                       Nenhuma transação detalhada encontrada.
@@ -415,23 +418,23 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                         style={{
                           width: "100%",
                           borderCollapse: "collapse",
-                          fontSize: 13,
+                          fontSize: "var(--fs-sm)",
                         }}
                       >
                         <thead>
                           <tr
                             style={{
-                              background: "#f9fafb",
-                              borderBottom: "1px solid #e5e7eb",
+                              background: "var(--surface-2)",
+                              borderBottom: "1px solid var(--border)",
                             }}
                           >
                             <th
                               style={{
                                 padding: "11px 16px",
                                 textAlign: "left",
-                                fontSize: 11,
+                                fontSize: "var(--fs-2xs)",
                                 fontWeight: 600,
-                                color: "#6b7280",
+                                color: "var(--text-muted)",
                                 textTransform: "uppercase",
                                 letterSpacing: "0.02em",
                               }}
@@ -443,9 +446,9 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                               style={{
                                 padding: "11px 16px",
                                 textAlign: "left",
-                                fontSize: 11,
+                                fontSize: "var(--fs-2xs)",
                                 fontWeight: 600,
-                                color: "#6b7280",
+                                color: "var(--text-muted)",
                                 textTransform: "uppercase",
                                 letterSpacing: "0.02em",
                               }}
@@ -457,9 +460,9 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                               style={{
                                 padding: "11px 16px",
                                 textAlign: "left",
-                                fontSize: 11,
+                                fontSize: "var(--fs-2xs)",
                                 fontWeight: 600,
-                                color: "#6b7280",
+                                color: "var(--text-muted)",
                                 textTransform: "uppercase",
                                 letterSpacing: "0.02em",
                               }}
@@ -471,9 +474,9 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                               style={{
                                 padding: "11px 16px",
                                 textAlign: "right",
-                                fontSize: 11,
+                                fontSize: "var(--fs-2xs)",
                                 fontWeight: 600,
-                                color: "#6b7280",
+                                color: "var(--text-muted)",
                                 textTransform: "uppercase",
                                 letterSpacing: "0.02em",
                               }}
@@ -485,9 +488,9 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                               style={{
                                 padding: "11px 16px",
                                 textAlign: "center",
-                                fontSize: 11,
+                                fontSize: "var(--fs-2xs)",
                                 fontWeight: 600,
-                                color: "#6b7280",
+                                color: "var(--text-muted)",
                                 textTransform: "uppercase",
                                 letterSpacing: "0.02em",
                               }}
@@ -505,16 +508,16 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                                 style={{
                                   borderBottom:
                                     index < transacoesDoDia.length - 1
-                                      ? "1px solid #f0f1f3"
+                                      ? "1px solid var(--surface-3)"
                                       : "none",
 
-                                  background: "#ffffff",
+                                  background: "var(--surface)",
                                 }}
                                 onMouseEnter={(e) => {
-                                  e.currentTarget.style.background = "#fafafa";
+                                  e.currentTarget.style.background = "var(--surface-2)";
                                 }}
                                 onMouseLeave={(e) => {
-                                  e.currentTarget.style.background = "#ffffff";
+                                  e.currentTarget.style.background = "var(--surface)";
                                 }}
                               >
                                 {/* DESCRIÇÃO */}
@@ -522,8 +525,8 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                                 <td
                                   style={{
                                     padding: "13px 16px",
-                                    fontSize: 13,
-                                    color: "#1f2937",
+                                    fontSize: "var(--fs-sm)",
+                                    color: "var(--text)",
                                     fontWeight: 400,
                                   }}
                                   title={t.description}
@@ -543,8 +546,8 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                                   {t.type === "entrada" ? (
                                     <span
                                       style={{
-                                        fontSize: 12,
-                                        color: "#6b7280",
+                                        fontSize: "var(--fs-xs)",
+                                        color: "var(--text-muted)",
                                       }}
                                     >
                                       PDV
@@ -552,8 +555,8 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                                   ) : t.category ? (
                                     <span
                                       style={{
-                                        fontSize: 12,
-                                        color: "#4b5563",
+                                        fontSize: "var(--fs-xs)",
+                                        color: "var(--text-secondary)",
                                       }}
                                     >
                                       {t.category.name}
@@ -561,8 +564,8 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                                   ) : (
                                     <span
                                       style={{
-                                        fontSize: 12,
-                                        color: "#9ca3af",
+                                        fontSize: "var(--fs-xs)",
+                                        color: "var(--text-subtle)",
                                       }}
                                     >
                                       Sem categoria
@@ -579,11 +582,11 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                                 >
                                   <span
                                     style={{
-                                      fontSize: 12,
+                                      fontSize: "var(--fs-xs)",
                                       color:
                                         t.type === "entrada"
-                                          ? "#059669"
-                                          : "#6b7280",
+                                          ? "var(--primary)"
+                                          : "var(--text-muted)",
                                       fontWeight: 500,
                                     }}
                                   >
@@ -597,12 +600,12 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                                   style={{
                                     padding: "13px 16px",
                                     textAlign: "right",
-                                    fontSize: 13,
+                                    fontSize: "var(--fs-sm)",
                                     fontWeight: 600,
                                     color:
                                       t.type === "entrada"
-                                        ? "#059669"
-                                        : "#374151",
+                                        ? "var(--primary)"
+                                        : "var(--text-secondary)",
                                   }}
                                 >
                                   {formatCurrency(t.amount)}
@@ -635,29 +638,29 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                                           justifyContent: "center",
                                           background: "transparent",
                                           border: "1px solid transparent",
-                                          borderRadius: 6,
+                                          borderRadius: 8,
                                           cursor: "pointer",
-                                          color: "#9ca3af",
+                                          color: "var(--text-subtle)",
                                           transition: "all 0.15s ease",
                                         }}
                                         onMouseEnter={(e) => {
                                           e.currentTarget.style.background =
-                                            "#f3f4f6";
+                                            "var(--surface-3)";
                                           e.currentTarget.style.color =
-                                            "#374151";
+                                            "var(--text-secondary)";
                                         }}
                                         onMouseLeave={(e) => {
                                           e.currentTarget.style.background =
                                             "transparent";
                                           e.currentTarget.style.color =
-                                            "#9ca3af";
+                                            "var(--text-subtle)";
                                         }}
                                         title="Editar"
                                       >
                                         <FontAwesomeIcon
                                           icon={faEdit}
                                           style={{
-                                            fontSize: 13,
+                                            fontSize: "var(--fs-sm)",
                                           }}
                                         />
                                       </button>
@@ -680,29 +683,29 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                                           justifyContent: "center",
                                           background: "transparent",
                                           border: "1px solid transparent",
-                                          borderRadius: 6,
+                                          borderRadius: 8,
                                           cursor: "pointer",
-                                          color: "#9ca3af",
+                                          color: "var(--text-subtle)",
                                           transition: "all 0.15s ease",
                                         }}
                                         onMouseEnter={(e) => {
                                           e.currentTarget.style.background =
-                                            "#fef2f2";
+                                            "var(--danger-soft)";
                                           e.currentTarget.style.color =
-                                            "#dc2626";
+                                            "var(--danger)";
                                         }}
                                         onMouseLeave={(e) => {
                                           e.currentTarget.style.background =
                                             "transparent";
                                           e.currentTarget.style.color =
-                                            "#9ca3af";
+                                            "var(--text-subtle)";
                                         }}
                                         title="Remover"
                                       >
                                         <FontAwesomeIcon
                                           icon={faTrash}
                                           style={{
-                                            fontSize: 13,
+                                            fontSize: "var(--fs-sm)",
                                           }}
                                         />
                                       </button>
@@ -711,8 +714,8 @@ export const TabelaGastos: React.FC<TabelaGastosProps> = ({
                                     {t.type === "entrada" && (
                                       <span
                                         style={{
-                                          fontSize: 11,
-                                          color: "#9ca3af",
+                                          fontSize: "var(--fs-2xs)",
+                                          color: "var(--text-subtle)",
                                         }}
                                       >
                                         PDV

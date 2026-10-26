@@ -10,6 +10,7 @@ import {
   faCreditCard,
   faCheck,
 } from "@fortawesome/free-solid-svg-icons";
+import { notify, confirmar } from "../src/feedback";
 
 interface VendaItem {
   id: number;
@@ -119,7 +120,7 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
 
   const handleConfirm = () => {
     if (!formaPagamento) {
-      alert("Selecione uma forma de pagamento");
+      notify("Selecione uma forma de pagamento");
       return;
     }
 
@@ -127,7 +128,7 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
       const recebido = parseFloat(valorRecebido) || 0;
 
       if (recebido < total) {
-        alert(`Valor insuficiente. Total da venda: ${formatCurrency(total)}`);
+        notify(`Valor insuficiente. Total da venda: ${formatCurrency(total)}`);
         return;
       }
 
@@ -139,8 +140,8 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
     resetEstados();
   };
 
-  const handleComandaNaoPaga = () => {
-    if (window.confirm("Confirmar que esta comanda não será paga agora?")) {
+  const handleComandaNaoPaga = async () => {
+    if (await confirmar("Confirmar que este pedido não será pago agora?")) {
       onConfirm("pendente", undefined, true);
       resetEstados();
     }
@@ -161,7 +162,7 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(15, 23, 42, 0.55)",
+        background: "var(--overlay)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -176,10 +177,10 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
           maxWidth: 430,
           maxHeight: "90vh",
           overflowY: "auto",
-          background: "#fff",
+          background: "var(--surface)",
           borderRadius: 14,
-          boxShadow: "0 20px 50px rgba(0,0,0,0.18)",
-          color: "#111827",
+          boxShadow: "var(--shadow-modal)",
+          color: "var(--text)",
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -190,7 +191,7 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
         <div
           style={{
             padding: "18px 20px",
-            borderBottom: "1px solid #f1f5f9",
+            borderBottom: "1px solid var(--surface-3)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -200,9 +201,9 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
             <h2
               style={{
                 margin: 0,
-                fontSize: 17,
+                fontSize: "var(--fs-xl)",
                 fontWeight: 600,
-                color: "#111827",
+                color: "var(--text)",
               }}
             >
               Finalizar venda
@@ -211,8 +212,8 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
             <p
               style={{
                 margin: "4px 0 0",
-                fontSize: 12,
-                color: "#6b7280",
+                fontSize: "var(--fs-xs)",
+                color: "var(--text-muted)",
               }}
             >
               Venda #{venda.id} • {venda.customer_name}
@@ -225,10 +226,10 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
             style={{
               width: 32,
               height: 32,
-              borderRadius: 7,
+              borderRadius: 8,
               border: "none",
-              background: "#f9fafb",
-              color: "#6b7280",
+              background: "var(--surface-2)",
+              color: "var(--text-muted)",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
@@ -236,15 +237,15 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
               transition: "all 0.15s",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#f3f4f6";
-              e.currentTarget.style.color = "#374151";
+              e.currentTarget.style.background = "var(--surface-3)";
+              e.currentTarget.style.color = "var(--text-secondary)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = "#f9fafb";
-              e.currentTarget.style.color = "#6b7280";
+              e.currentTarget.style.background = "var(--surface-2)";
+              e.currentTarget.style.color = "var(--text-muted)";
             }}
           >
-            <FontAwesomeIcon icon={faTimes} style={{ fontSize: 13 }} />
+            <FontAwesomeIcon icon={faTimes} style={{ fontSize: "var(--fs-sm)" }} />
           </button>
         </div>
 
@@ -261,9 +262,9 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
 
           <div
             style={{
-              background: "#f8fafc",
-              border: "1px solid #eef2f7",
-              borderRadius: 10,
+              background: "var(--surface-2)",
+              border: "1px solid var(--surface-3)",
+              borderRadius: 12,
               padding: "14px 16px",
               marginBottom: 18,
               display: "flex",
@@ -273,8 +274,8 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
           >
             <span
               style={{
-                fontSize: 12,
-                color: "#6b7280",
+                fontSize: "var(--fs-xs)",
+                color: "var(--text-muted)",
                 fontWeight: 500,
               }}
             >
@@ -283,8 +284,8 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
 
             <strong
               style={{
-                fontSize: 21,
-                color: "#059669",
+                fontSize: "var(--fs-2xl)",
+                color: "var(--primary)",
                 fontWeight: 700,
               }}
             >
@@ -299,9 +300,9 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
               style={{
                 display: "block",
                 marginBottom: 9,
-                fontSize: 12,
+                fontSize: "var(--fs-xs)",
                 fontWeight: 600,
-                color: "#374151",
+                color: "var(--text-secondary)",
               }}
             >
               Forma de pagamento
@@ -325,12 +326,12 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
                     style={{
                       minHeight: 48,
                       padding: "9px 11px",
-                      borderRadius: 8,
+                      borderRadius: 10,
                       border: selecionado
-                        ? "1px solid #10b981"
-                        : "1px solid #e5e7eb",
-                      background: selecionado ? "#ecfdf5" : "#fff",
-                      color: selecionado ? "#047857" : "#374151",
+                        ? "1px solid var(--primary)"
+                        : "1px solid var(--border)",
+                      background: selecionado ? "var(--primary-soft)" : "var(--surface)",
+                      color: selecionado ? "var(--primary-hover)" : "var(--text-secondary)",
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
@@ -339,12 +340,12 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
                     }}
                     onMouseEnter={(e) => {
                       if (!selecionado) {
-                        e.currentTarget.style.background = "#f9fafb";
+                        e.currentTarget.style.background = "var(--surface-2)";
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (!selecionado) {
-                        e.currentTarget.style.background = "#fff";
+                        e.currentTarget.style.background = "var(--surface)";
                       }
                     }}
                   >
@@ -353,15 +354,15 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
                         display: "flex",
                         alignItems: "center",
                         gap: 8,
-                        fontSize: 12,
+                        fontSize: "var(--fs-xs)",
                         fontWeight: selecionado ? 600 : 500,
                       }}
                     >
                       <FontAwesomeIcon
                         icon={opcao.icon}
                         style={{
-                          fontSize: 13,
-                          color: selecionado ? "#059669" : "#9ca3af",
+                          fontSize: "var(--fs-sm)",
+                          color: selecionado ? "var(--primary)" : "var(--text-subtle)",
                         }}
                       />
 
@@ -372,8 +373,8 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
                       <FontAwesomeIcon
                         icon={faCheck}
                         style={{
-                          fontSize: 11,
-                          color: "#059669",
+                          fontSize: "var(--fs-2xs)",
+                          color: "var(--primary)",
                         }}
                       />
                     )}
@@ -390,18 +391,18 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
               style={{
                 marginBottom: 18,
                 padding: 14,
-                background: "#fafafa",
-                border: "1px solid #eef2f7",
-                borderRadius: 9,
+                background: "var(--surface-2)",
+                border: "1px solid var(--surface-3)",
+                borderRadius: 12,
               }}
             >
               <label
                 style={{
                   display: "block",
                   marginBottom: 7,
-                  fontSize: 12,
+                  fontSize: "var(--fs-xs)",
                   fontWeight: 600,
-                  color: "#374151",
+                  color: "var(--text-secondary)",
                 }}
               >
                 Valor recebido
@@ -418,8 +419,8 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
                     left: 11,
                     top: "50%",
                     transform: "translateY(-50%)",
-                    fontSize: 12,
-                    color: "#6b7280",
+                    fontSize: "var(--fs-xs)",
+                    color: "var(--text-muted)",
                     pointerEvents: "none",
                   }}
                 >
@@ -438,20 +439,20 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
                     width: "100%",
                     boxSizing: "border-box",
                     padding: "10px 12px 10px 34px",
-                    borderRadius: 7,
-                    border: "1px solid #d1d5db",
-                    background: "#fff",
-                    color: "#111827",
-                    fontSize: 13,
+                    borderRadius: 8,
+                    border: "1px solid var(--border-strong)",
+                    background: "var(--surface)",
+                    color: "var(--text)",
+                    fontSize: "var(--fs-sm)",
                     outline: "none",
                   }}
                   onFocus={(e) => {
-                    e.currentTarget.style.borderColor = "#10b981";
+                    e.currentTarget.style.borderColor = "var(--primary)";
                     e.currentTarget.style.boxShadow =
-                      "0 0 0 2px rgba(16,185,129,0.1)";
+                      "0 0 0 3px var(--primary-ring)";
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.borderColor = "#d1d5db";
+                    e.currentTarget.style.borderColor = "var(--border-strong)";
                     e.currentTarget.style.boxShadow = "none";
                   }}
                 />
@@ -465,14 +466,14 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
                     justifyContent: "space-between",
                     alignItems: "center",
                     padding: "9px 11px",
-                    background: "#ecfdf5",
-                    borderRadius: 7,
-                    color: "#047857",
+                    background: "var(--primary-soft)",
+                    borderRadius: 8,
+                    color: "var(--primary-hover)",
                   }}
                 >
                   <span
                     style={{
-                      fontSize: 11,
+                      fontSize: "var(--fs-2xs)",
                       fontWeight: 500,
                     }}
                   >
@@ -481,7 +482,7 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
 
                   <strong
                     style={{
-                      fontSize: 13,
+                      fontSize: "var(--fs-sm)",
                     }}
                   >
                     {formatCurrency(troco)}
@@ -494,10 +495,10 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
                   style={{
                     marginTop: 9,
                     padding: "8px 10px",
-                    background: "#fef2f2",
-                    borderRadius: 7,
-                    color: "#b91c1c",
-                    fontSize: 11,
+                    background: "var(--danger-soft)",
+                    borderRadius: 8,
+                    color: "var(--danger-hover)",
+                    fontSize: "var(--fs-2xs)",
                   }}
                 >
                   Valor insuficiente. Faltam{" "}
@@ -518,12 +519,12 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
               width: "100%",
               padding: "9px 12px",
               marginBottom: 18,
-              borderRadius: 7,
-              border: "1px solid #e5e7eb",
-              background: "#fff",
-              color: "#6b7280",
+              borderRadius: 8,
+              border: "1px solid var(--border)",
+              background: "var(--surface)",
+              color: "var(--text-muted)",
               cursor: "pointer",
-              fontSize: 11,
+              fontSize: "var(--fs-2xs)",
               fontWeight: 500,
               display: "flex",
               alignItems: "center",
@@ -532,18 +533,18 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
               transition: "all 0.15s",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#f9fafb";
-              e.currentTarget.style.color = "#374151";
-              e.currentTarget.style.borderColor = "#d1d5db";
+              e.currentTarget.style.background = "var(--surface-2)";
+              e.currentTarget.style.color = "var(--text-secondary)";
+              e.currentTarget.style.borderColor = "var(--border-strong)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = "#fff";
-              e.currentTarget.style.color = "#6b7280";
-              e.currentTarget.style.borderColor = "#e5e7eb";
+              e.currentTarget.style.background = "var(--surface)";
+              e.currentTarget.style.color = "var(--text-muted)";
+              e.currentTarget.style.borderColor = "var(--border)";
             }}
           >
-            <FontAwesomeIcon icon={faClock} style={{ fontSize: 11 }} />
-            Marcar comanda como não paga
+            <FontAwesomeIcon icon={faClock} style={{ fontSize: "var(--fs-2xs)" }} />
+            Marcar pedido como não pago
           </button>
         </div>
 
@@ -554,7 +555,7 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
         <div
           style={{
             padding: "14px 20px",
-            borderTop: "1px solid #f1f5f9",
+            borderTop: "1px solid var(--surface-3)",
             display: "flex",
             gap: 9,
           }}
@@ -565,12 +566,12 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
             style={{
               flex: 1,
               padding: "10px 14px",
-              borderRadius: 7,
-              border: "1px solid #e5e7eb",
-              background: "#fff",
-              color: "#374151",
+              borderRadius: 8,
+              border: "1px solid var(--border)",
+              background: "var(--surface)",
+              color: "var(--text-secondary)",
               cursor: "pointer",
-              fontSize: 12,
+              fontSize: "var(--fs-xs)",
               fontWeight: 500,
             }}
           >
@@ -584,23 +585,23 @@ export const ModalFinalizarVenda: React.FC<ModalFinalizarVendaProps> = ({
             style={{
               flex: 1.5,
               padding: "10px 14px",
-              borderRadius: 7,
+              borderRadius: 8,
               border: "none",
-              background: pagamentoValido ? "#10b981" : "#e5e7eb",
-              color: pagamentoValido ? "#fff" : "#9ca3af",
+              background: pagamentoValido ? "var(--primary)" : "var(--border)",
+              color: pagamentoValido ? "#fff" : "var(--text-subtle)",
               cursor: pagamentoValido ? "pointer" : "not-allowed",
-              fontSize: 12,
+              fontSize: "var(--fs-xs)",
               fontWeight: 600,
               transition: "all 0.15s",
             }}
             onMouseEnter={(e) => {
               if (pagamentoValido) {
-                e.currentTarget.style.background = "#059669";
+                e.currentTarget.style.background = "var(--primary)";
               }
             }}
             onMouseLeave={(e) => {
               if (pagamentoValido) {
-                e.currentTarget.style.background = "#10b981";
+                e.currentTarget.style.background = "var(--primary)";
               }
             }}
           >

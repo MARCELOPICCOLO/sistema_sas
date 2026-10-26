@@ -1,43 +1,51 @@
-FROM php:8.2-fpm
+FROM php:8.3-fpm-alpine
 
-WORKDIR /var/www
-
-RUN apt-get update && apt-get install -y \
+RUN apk add --no-cache \
+    bash \
     git \
-    unzip \
-    libzip-dev \
+    curl \
     libpng-dev \
-    libjpeg62-turbo-dev \
-    libfreetype6-dev \
-    libonig-dev \
+    libzip-dev \
+    oniguruma-dev \
     libxml2-dev \
-    && rm -rf /var/lib/apt/lists/*
+    zip \
+    unzip \
+    mysql-client
 
-RUN docker-php-ext-configure gd \
-    --with-freetype \
-    --with-jpeg \
-    && docker-php-ext-install \
+RUN docker-php-ext-install \
+    pdo \
     pdo_mysql \
     mbstring \
     exif \
     pcntl \
     bcmath \
     gd \
-    zip
+    zip \
+    opcache
+
+# OPcache: evita recompilar o framework a cada requisição.
+# validate_timestamps=1 mantém as alterações do volume montado visíveis na hora.
+RUN { \
+    echo 'opcache.enable=1'; \
+    echo 'opcache.memory_consumption=256'; \
+    echo 'opcache.interned_strings_buffer=16'; \
+    echo 'opcache.max_accelerated_files=20000'; \
+    echo 'opcache.validate_timestamps=1'; \
+    echo 'opcache.revalidate_freq=0'; \
+    } > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-COPY backend/ .
+WORKDIR /var/www
 
-RUN composer install \
-    --no-interaction \
-    --prefer-dist \
-    --optimize-autoloader
+COPY . .
 
-RUN chown -R www-data:www-data /var/www \
-    && chmod -R 775 /var/www/storage \
-    && chmod -R 775 /var/www/bootstrap/cache
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh \
+    && chmod +x /usr/local/bin/docker-entrypoint.sh \
+    && chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
 EXPOSE 9000
 
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["php-fpm"]

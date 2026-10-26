@@ -2,21 +2,22 @@
 import { useState, useEffect, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faSearch,
-  faArrowLeft,
-  faPlus,
-  faTimes,
+  faBars,
   faBoxes,
-  faTag,
   faEdit,
+  faPlus,
+  faSearch,
+  faTag,
+  faTimes,
   faTrash,
-  faChartLine,
 } from "@fortawesome/free-solid-svg-icons";
 import { TabelaProdutos } from "../../components/TabelaProdutos";
 import { ModalProduto } from "../../components/ModalProduto";
 import { ModalCategorias } from "../../components/ModalCategorias";
 
 import api from "../api/axios";
+import ModuleSidebar from "../components/ModuleSidebar";
+import { notify, confirmar } from "../feedback";
 const API_URL = import.meta.env.VITE_API_URL;
 
 interface Product {
@@ -48,11 +49,7 @@ interface Category {
   restaurant_id: number;
 }
 
-interface ProdutosProps {
-  setTela: (tela: string) => void;
-}
-
-export default function Produtos({ setTela }: ProdutosProps) {
+export default function Produtos() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [produtos, setProdutos] = useState<Product[]>([]);
@@ -170,18 +167,18 @@ export default function Produtos({ setTela }: ProdutosProps) {
     setLoading(false);
 
     if (sucesso > 0) {
-      alert(
+      notify(
         `✅ ${sucesso} produto(s) atualizado(s) com sucesso!${erros > 0 ? `\n❌ ${erros} erro(s)` : ""}`,
       );
       fetchProdutos();
     } else if (erros > 0) {
-      alert("❌ Erro ao atualizar os produtos. Tente novamente.");
+      notify("❌ Erro ao atualizar os produtos. Tente novamente.");
     }
   };
 
   const salvarProduto = async () => {
     if (!formData.name || !formData.category_id) {
-      alert("Preencha nome e categoria");
+      notify("Preencha nome e categoria");
       return;
     }
 
@@ -214,21 +211,21 @@ export default function Produtos({ setTela }: ProdutosProps) {
 
       fetchProdutos();
 
-      alert(editando ? "Produto atualizado!" : "Produto adicionado!");
+      notify(editando ? "Produto atualizado!" : "Produto adicionado!");
     } catch (error: any) {
       console.error("Erro ao salvar produto:", error);
 
       if (error.response) {
-        alert(error.response.data.message || "Erro ao salvar produto");
+        notify(error.response.data.message || "Erro ao salvar produto");
       } else {
-        alert("Erro ao conectar com o servidor");
+        notify("Erro ao conectar com o servidor");
       }
     }
   };
 
   const adicionarCategoria = async () => {
     if (!novaCategoria.name.trim()) {
-      alert("Digite o nome da categoria");
+      notify("Digite o nome da categoria");
       return;
     }
 
@@ -249,7 +246,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
 
       if (!response.ok) {
         const error = await response.json();
-        alert(error.message || "Erro ao criar categoria");
+        notify(error.message || "Erro ao criar categoria");
         return;
       }
 
@@ -257,10 +254,10 @@ export default function Produtos({ setTela }: ProdutosProps) {
       setShowModalCategoria(false);
       setNovaCategoria({ name: "" });
 
-      alert("Categoria adicionada com sucesso!");
+      notify("Categoria adicionada com sucesso!");
     } catch (error) {
       console.error("Erro ao adicionar categoria:", error);
-      alert("Erro ao conectar com o servidor");
+      notify("Erro ao conectar com o servidor");
     }
   };
 
@@ -268,7 +265,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
     if (!editandoCategoria) return;
 
     if (!editandoCategoria.name.trim()) {
-      alert("Digite o nome da categoria");
+      notify("Digite o nome da categoria");
       return;
     }
 
@@ -292,17 +289,17 @@ export default function Produtos({ setTela }: ProdutosProps) {
 
       if (!response.ok) {
         const error = await response.json();
-        alert(error.message || "Erro ao editar categoria");
+        notify(error.message || "Erro ao editar categoria");
         return;
       }
 
       await fetchCategorias();
       setEditandoCategoria(null);
 
-      alert("Categoria atualizada com sucesso!");
+      notify("Categoria atualizada com sucesso!");
     } catch (error) {
       console.error("Erro ao editar categoria:", error);
-      alert("Erro ao conectar com o servidor");
+      notify("Erro ao conectar com o servidor");
     }
   };
 
@@ -311,13 +308,13 @@ export default function Produtos({ setTela }: ProdutosProps) {
 
     if (temProdutos) {
       if (
-        !confirm(
+        !(await confirmar(
           `A categoria "${name}" possui produtos associados. Excluir mesmo assim?`,
-        )
+        ))
       )
         return;
     } else {
-      if (!confirm(`Tem certeza que deseja excluir a categoria "${name}"?`))
+      if (!(await confirmar(`Tem certeza que deseja excluir a categoria "${name}"?`)))
         return;
     }
 
@@ -335,7 +332,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
 
       if (!response.ok) {
         const error = await response.json();
-        alert(error.message || "Erro ao excluir categoria");
+        notify(error.message || "Erro ao excluir categoria");
         return;
       }
 
@@ -345,15 +342,15 @@ export default function Produtos({ setTela }: ProdutosProps) {
         setCategoriaFiltro(null);
       }
 
-      alert("Categoria excluída com sucesso!");
+      notify("Categoria excluída com sucesso!");
     } catch (error) {
       console.error("Erro ao excluir categoria:", error);
-      alert("Erro ao conectar com o servidor");
+      notify("Erro ao conectar com o servidor");
     }
   };
 
   const removerProduto = async (id: number, name: string) => {
-    if (!confirm(`Tem certeza que deseja excluir "${name}"?`)) return;
+    if (!(await confirmar(`Tem certeza que deseja excluir "${name}"?`))) return;
 
     const token = localStorage.getItem("auth_token");
 
@@ -369,15 +366,15 @@ export default function Produtos({ setTela }: ProdutosProps) {
 
       if (!response.ok) {
         const error = await response.json();
-        alert(error.message || "Erro ao excluir produto");
+        notify(error.message || "Erro ao excluir produto");
         return;
       }
 
       await fetchProdutos();
-      alert("Produto excluído com sucesso!");
+      notify("Produto excluído com sucesso!");
     } catch (error) {
       console.error("Erro ao excluir produto:", error);
-      alert("Erro ao conectar com o servidor");
+      notify("Erro ao conectar com o servidor");
     }
   };
 
@@ -402,267 +399,40 @@ export default function Produtos({ setTela }: ProdutosProps) {
     return produto.category?.id === categoriaFiltro;
   });
 
-  // Sidebar para Desktop - NOVO VISUAL CLEAN
+  // Menu lateral (desktop), encolhível
   const SidebarProdutos = () => (
-    <div
-      style={{
-        background: "#ffffff",
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        overflowY: "auto",
-        borderRight: "1px solid #e5e7eb",
-      }}
-    >
-      {/* Botão Voltar */}
-      <div
-        style={{
-          padding: "16px 20px",
-          borderBottom: "1px solid #f1f5f9",
-        }}
-      >
-        <button
-          onClick={() => setTela && setTela("dashboard")}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            width: "100%",
-            padding: "9px 12px",
-            background: "#f8fafc",
-            border: "1px solid #e5e7eb",
-            borderRadius: 8,
-            cursor: "pointer",
-            color: "#6b7280",
-            fontSize: 13,
-            transition: "all 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "#ecfdf5";
-            e.currentTarget.style.borderColor = "#a7f3d0";
-            e.currentTarget.style.color = "#059669";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "#f8fafc";
-            e.currentTarget.style.borderColor = "#e5e7eb";
-            e.currentTarget.style.color = "#6b7280";
-          }}
-        >
-          <FontAwesomeIcon icon={faArrowLeft} />
-          Voltar ao Dashboard
-        </button>
-      </div>
-
-      {/* Cabeçalho */}
-      <div
-        style={{
-          padding: "24px 20px",
-          borderBottom: "1px solid #f1f5f9",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div
-            style={{
-              width: 42,
-              height: 42,
-              background: "#ecfdf5",
-              borderRadius: 10,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <FontAwesomeIcon
-              icon={faBoxes}
-              style={{ fontSize: 19, color: "#059669" }}
-            />
-          </div>
-
-          <div>
-            <h2
-              style={{
-                margin: 0,
-                fontSize: 17,
-                fontWeight: 600,
-                color: "#111827",
-              }}
-            >
-              Produtos
-            </h2>
-
-            <p
-              style={{
-                margin: "3px 0 0",
-                fontSize: 12,
-                color: "#6b7280",
-              }}
-            >
-              Gerenciamento de estoque
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Menu */}
-      <div style={{ padding: "20px", flex: 1 }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <button
-            onClick={() => {
-              setEditando(null);
-              setFormData({
-                name: "",
-                product_code: "",
-                price: 0,
-                quantity: 0,
-                category_id: 0,
-              });
-              setShowModal(true);
-            }}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              width: "100%",
-              padding: "11px 12px",
-              background: "transparent",
-              border: "none",
-              borderRadius: 8,
-              cursor: "pointer",
-              color: "#374151",
-              transition: "all 0.2s",
-              textAlign: "left",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#f8fafc";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent";
-            }}
-          >
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                background: "#f3f4f6",
-                borderRadius: 8,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <FontAwesomeIcon
-                icon={faPlus}
-                style={{ fontSize: 13, color: "#6b7280" }}
-              />
-            </div>
-
-            <div style={{ flex: 1 }}>
-              <div
-                style={{
-                  fontSize: 13,
-                  fontWeight: 500,
-                  color: "#374151",
-                }}
-              >
-                Novo Produto
-              </div>
-
-              <div
-                style={{
-                  fontSize: 11,
-                  color: "#9ca3af",
-                  marginTop: 2,
-                }}
-              >
-                Adicionar ao catálogo
-              </div>
-            </div>
-          </button>
-
-          <button
-            onClick={() => setShowModalCategoria(true)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              width: "100%",
-              padding: "11px 12px",
-              background: "transparent",
-              border: "none",
-              borderRadius: 8,
-              cursor: "pointer",
-              color: "#374151",
-              transition: "all 0.2s",
-              textAlign: "left",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#f8fafc";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent";
-            }}
-          >
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                background: "#f3f4f6",
-                borderRadius: 8,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <FontAwesomeIcon
-                icon={faTag}
-                style={{ fontSize: 13, color: "#6b7280" }}
-              />
-            </div>
-
-            <div style={{ flex: 1 }}>
-              <div
-                style={{
-                  fontSize: 13,
-                  fontWeight: 500,
-                  color: "#374151",
-                }}
-              >
-                Categorias
-              </div>
-
-              <div
-                style={{
-                  fontSize: 11,
-                  color: "#9ca3af",
-                  marginTop: 2,
-                }}
-              >
-                Gerenciar categorias
-              </div>
-            </div>
-          </button>
-        </div>
-      </div>
-
-      {/* Rodapé */}
-      <div
-        style={{
-          padding: "16px 20px",
-          borderTop: "1px solid #f1f5f9",
-          background: "#fafafa",
-        }}
-      >
-        <div
-          style={{
-            fontSize: 12,
-            color: "#9ca3af",
-            textAlign: "center",
-          }}
-        >
-          Total: {produtos.length} produtos
-        </div>
-      </div>
-    </div>
+    <ModuleSidebar
+      icon={faBoxes}
+      title="Produtos"
+      subtitle="Gerenciamento de estoque"
+      items={[
+        {
+          id: "novo",
+          icon: faPlus,
+          label: "Novo Produto",
+          description: "Adicionar ao catálogo",
+          onClick: () => {
+            setEditando(null);
+            setFormData({
+              name: "",
+              product_code: "",
+              price: 0,
+              quantity: 0,
+              category_id: 0,
+            });
+            setShowModal(true);
+          },
+        },
+        {
+          id: "categorias",
+          icon: faTag,
+          label: "Categorias",
+          description: "Gerenciar categorias",
+          onClick: () => setShowModalCategoria(true),
+        },
+      ]}
+      footer={`Total: ${produtos.length} produtos`}
+    />
   );
 
   // Desktop
@@ -672,27 +442,28 @@ export default function Produtos({ setTela }: ProdutosProps) {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "260px 1fr",
+            gridTemplateColumns: "auto 1fr",
             height: "100%",
-            background: "#f8fafc",
+            background: "var(--surface-2)",
           }}
         >
-          <SidebarProdutos />
+          {SidebarProdutos()}
 
           <div
             style={{
               padding: "24px",
               overflowY: "auto",
-              height: "100vh",
+              height: "var(--page-h)",
             }}
           >
             <div
               style={{
-                background: "#ffffff",
+                background: "var(--surface)",
                 padding: "18px 20px",
-                borderRadius: 10,
+                borderRadius: 12,
                 marginBottom: 20,
-                border: "1px solid #e5e7eb",
+                border: "1px solid var(--border)",
+                boxShadow: "var(--shadow-card)",
               }}
             >
               <div
@@ -708,9 +479,9 @@ export default function Produtos({ setTela }: ProdutosProps) {
                   <h2
                     style={{
                       margin: 0,
-                      fontSize: 18,
+                      fontSize: "var(--fs-xl)",
                       fontWeight: 600,
-                      color: "#111827",
+                      color: "var(--text)",
                     }}
                   >
                     Lista de Produtos
@@ -719,8 +490,8 @@ export default function Produtos({ setTela }: ProdutosProps) {
                   <p
                     style={{
                       margin: "4px 0 0",
-                      fontSize: 13,
-                      color: "#6b7280",
+                      fontSize: "var(--fs-sm)",
+                      color: "var(--text-muted)",
                     }}
                   >
                     Gerencie seus produtos e níveis de estoque
@@ -736,8 +507,8 @@ export default function Produtos({ setTela }: ProdutosProps) {
                         left: 11,
                         top: "50%",
                         transform: "translateY(-50%)",
-                        fontSize: 12,
-                        color: "#9ca3af",
+                        fontSize: "var(--fs-xs)",
+                        color: "var(--text-subtle)",
                       }}
                     />
 
@@ -748,13 +519,14 @@ export default function Produtos({ setTela }: ProdutosProps) {
                       onChange={(e) => setSearchTerm(e.target.value)}
                       style={{
                         padding: "9px 12px 9px 32px",
-                        borderRadius: 8,
-                        border: "1px solid #e5e7eb",
-                        fontSize: 13,
+                        borderRadius: 10,
+                        border: "1px solid var(--border)",
+                        fontSize: "var(--fs-sm)",
                         width: 220,
                         outline: "none",
-                        background: "#ffffff",
-                        color: "#111827",
+                        background: "var(--surface)",
+                        color: "var(--text)",
+                        boxShadow: "var(--shadow-card)",
                       }}
                     />
                   </div>
@@ -768,13 +540,14 @@ export default function Produtos({ setTela }: ProdutosProps) {
                     style={{
                       width: 190,
                       padding: "9px 12px",
-                      borderRadius: 8,
-                      border: "1px solid #e5e7eb",
-                      background: "#fff",
-                      color: "#374151",
-                      fontSize: 13,
+                      borderRadius: 10,
+                      border: "1px solid var(--border)",
+                      background: "var(--surface)",
+                      color: "var(--text-secondary)",
+                      fontSize: "var(--fs-sm)",
                       cursor: "pointer",
                       outline: "none",
+                      boxShadow: "var(--shadow-card)",
                     }}
                   >
                     <option value="">Todas categorias</option>
@@ -834,19 +607,19 @@ export default function Produtos({ setTela }: ProdutosProps) {
   return (
     <div
       style={{
-        background: "#f8fafc",
-        minHeight: "100vh",
+        background: "var(--bg)",
+        minHeight: "var(--page-h)",
       }}
     >
       {/* Header Mobile */}
       <div
         style={{
           padding: "16px",
-          background: "#ffffff",
+          background: "var(--surface)",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          borderBottom: "1px solid #e5e7eb",
+          borderBottom: "1px solid var(--border)",
         }}
       >
         <div
@@ -860,8 +633,8 @@ export default function Produtos({ setTela }: ProdutosProps) {
             style={{
               width: 36,
               height: 36,
-              borderRadius: 9,
-              background: "#ecfdf5",
+              borderRadius: 12,
+              background: "var(--primary-soft)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -870,8 +643,8 @@ export default function Produtos({ setTela }: ProdutosProps) {
             <FontAwesomeIcon
               icon={faBoxes}
               style={{
-                fontSize: 17,
-                color: "#059669",
+                fontSize: "var(--fs-xl)",
+                color: "var(--primary)",
               }}
             />
           </div>
@@ -879,9 +652,9 @@ export default function Produtos({ setTela }: ProdutosProps) {
           <h1
             style={{
               margin: 0,
-              fontSize: 18,
+              fontSize: "var(--fs-xl)",
               fontWeight: 600,
-              color: "#111827",
+              color: "var(--text)",
             }}
           >
             Produtos
@@ -891,38 +664,15 @@ export default function Produtos({ setTela }: ProdutosProps) {
         <button
           onClick={() => setShowMobileMenu(true)}
           style={{
-            background: "#f8fafc",
-            border: "1px solid #e5e7eb",
-            borderRadius: 8,
+            background: "var(--surface-2)",
+            border: "1px solid var(--border)",
+            borderRadius: 10,
             padding: "8px 11px",
             cursor: "pointer",
-            color: "#374151",
+            color: "var(--text-secondary)",
           }}
         >
-          <span style={{ fontSize: 16 }}>☰</span>
-        </button>
-      </div>
-
-      {/* Voltar */}
-      <div style={{ padding: "12px 16px" }}>
-        <button
-          onClick={() => setTela && setTela("dashboard")}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            width: "100%",
-            padding: "10px 14px",
-            background: "#ffffff",
-            border: "1px solid #e5e7eb",
-            borderRadius: 8,
-            cursor: "pointer",
-            color: "#374151",
-            fontSize: 13,
-          }}
-        >
-          <FontAwesomeIcon icon={faArrowLeft} />
-          Voltar ao Dashboard
+          <FontAwesomeIcon icon={faBars} style={{ fontSize: "var(--fs-lg)" }} />
         </button>
       </div>
 
@@ -943,13 +693,14 @@ export default function Produtos({ setTela }: ProdutosProps) {
           />
 
           <div
+            className="sidebar-dark"
             style={{
               position: "fixed",
               top: 0,
               left: 0,
               bottom: 0,
               width: "280px",
-              background: "#ffffff",
+              background: "var(--surface)",
               zIndex: 1001,
               padding: "20px",
               overflowY: "auto",
@@ -966,13 +717,13 @@ export default function Produtos({ setTela }: ProdutosProps) {
               <button
                 onClick={() => setShowMobileMenu(false)}
                 style={{
-                  background: "#f8fafc",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: 8,
+                  background: "var(--surface-2)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 10,
                   width: 34,
                   height: 34,
                   cursor: "pointer",
-                  color: "#6b7280",
+                  color: "var(--text-muted)",
                 }}
               >
                 <FontAwesomeIcon icon={faTimes} />
@@ -1000,14 +751,14 @@ export default function Produtos({ setTela }: ProdutosProps) {
                 padding: "12px",
                 background: "transparent",
                 border: "none",
-                borderRadius: 8,
+                borderRadius: 10,
                 cursor: "pointer",
-                color: "#374151",
+                color: "var(--text-secondary)",
                 marginBottom: 6,
                 textAlign: "left",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#f8fafc";
+                e.currentTarget.style.background = "var(--surface-2)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "transparent";
@@ -1017,8 +768,8 @@ export default function Produtos({ setTela }: ProdutosProps) {
                 style={{
                   width: 32,
                   height: 32,
-                  background: "#ecfdf5",
-                  borderRadius: 8,
+                  background: "var(--primary-soft)",
+                  borderRadius: 10,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -1027,15 +778,15 @@ export default function Produtos({ setTela }: ProdutosProps) {
                 <FontAwesomeIcon
                   icon={faPlus}
                   style={{
-                    fontSize: 13,
-                    color: "#059669",
+                    fontSize: "var(--fs-sm)",
+                    color: "var(--primary)",
                   }}
                 />
               </div>
 
               <span
                 style={{
-                  fontSize: 13,
+                  fontSize: "var(--fs-sm)",
                   fontWeight: 500,
                 }}
               >
@@ -1056,13 +807,13 @@ export default function Produtos({ setTela }: ProdutosProps) {
                 padding: "12px",
                 background: "transparent",
                 border: "none",
-                borderRadius: 8,
+                borderRadius: 10,
                 cursor: "pointer",
-                color: "#374151",
+                color: "var(--text-secondary)",
                 textAlign: "left",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#f8fafc";
+                e.currentTarget.style.background = "var(--surface-2)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "transparent";
@@ -1072,8 +823,8 @@ export default function Produtos({ setTela }: ProdutosProps) {
                 style={{
                   width: 32,
                   height: 32,
-                  background: "#f3f4f6",
-                  borderRadius: 8,
+                  background: "var(--surface-3)",
+                  borderRadius: 10,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -1082,15 +833,15 @@ export default function Produtos({ setTela }: ProdutosProps) {
                 <FontAwesomeIcon
                   icon={faTag}
                   style={{
-                    fontSize: 13,
-                    color: "#6b7280",
+                    fontSize: "var(--fs-sm)",
+                    color: "var(--text-muted)",
                   }}
                 />
               </div>
 
               <span
                 style={{
-                  fontSize: 13,
+                  fontSize: "var(--fs-sm)",
                   fontWeight: 500,
                 }}
               >
@@ -1105,11 +856,12 @@ export default function Produtos({ setTela }: ProdutosProps) {
       <div style={{ padding: "16px" }}>
         <div
           style={{
-            background: "#ffffff",
-            borderRadius: 10,
+            background: "var(--surface)",
+            borderRadius: 12,
             padding: "12px",
             marginBottom: 16,
-            border: "1px solid #e5e7eb",
+            border: "1px solid var(--border)",
+            boxShadow: "var(--shadow-card)",
           }}
         >
           <div
@@ -1125,8 +877,8 @@ export default function Produtos({ setTela }: ProdutosProps) {
                 left: 12,
                 top: "50%",
                 transform: "translateY(-50%)",
-                fontSize: 13,
-                color: "#9ca3af",
+                fontSize: "var(--fs-sm)",
+                color: "var(--text-subtle)",
               }}
             />
 
@@ -1138,12 +890,13 @@ export default function Produtos({ setTela }: ProdutosProps) {
               style={{
                 width: "100%",
                 padding: "10px 12px 10px 36px",
-                borderRadius: 8,
-                border: "1px solid #e5e7eb",
-                fontSize: 14,
+                borderRadius: 10,
+                border: "1px solid var(--border)",
+                fontSize: "var(--fs-md)",
                 outline: "none",
-                color: "#111827",
-                background: "#ffffff",
+                color: "var(--text)",
+                background: "var(--surface)",
+                boxShadow: "var(--shadow-card)",
               }}
             />
           </div>
@@ -1158,13 +911,14 @@ export default function Produtos({ setTela }: ProdutosProps) {
             style={{
               width: "100%",
               padding: "10px 12px",
-              borderRadius: 8,
-              border: "1px solid #e5e7eb",
-              background: "#fff",
-              color: "#374151",
-              fontSize: 14,
+              borderRadius: 10,
+              border: "1px solid var(--border)",
+              background: "var(--surface)",
+              color: "var(--text-secondary)",
+              fontSize: "var(--fs-md)",
               cursor: "pointer",
               outline: "none",
+              boxShadow: "var(--shadow-card)",
             }}
           >
             <option value="">Todas categorias</option>
@@ -1183,8 +937,8 @@ export default function Produtos({ setTela }: ProdutosProps) {
               style={{
                 textAlign: "center",
                 padding: "40px",
-                color: "#6b7280",
-                fontSize: 13,
+                color: "var(--text-muted)",
+                fontSize: "var(--fs-sm)",
               }}
             >
               Carregando...
@@ -1194,11 +948,12 @@ export default function Produtos({ setTela }: ProdutosProps) {
               <div
                 key={produto.id}
                 style={{
-                  background: "#ffffff",
-                  borderRadius: 10,
+                  background: "var(--surface)",
+                  borderRadius: 12,
                   padding: "14px",
                   marginBottom: 8,
-                  border: "1px solid #e5e7eb",
+                  border: "1px solid var(--border)",
+                  boxShadow: "var(--shadow-card)",
                 }}
               >
                 <div
@@ -1212,8 +967,8 @@ export default function Produtos({ setTela }: ProdutosProps) {
                     <div
                       style={{
                         fontWeight: 600,
-                        fontSize: 14,
-                        color: "#111827",
+                        fontSize: "var(--fs-md)",
+                        color: "var(--text)",
                       }}
                     >
                       {produto.name}
@@ -1221,8 +976,8 @@ export default function Produtos({ setTela }: ProdutosProps) {
 
                     <div
                       style={{
-                        fontSize: 11,
-                        color: "#6b7280",
+                        fontSize: "var(--fs-2xs)",
+                        color: "var(--text-muted)",
                         marginTop: 3,
                       }}
                     >
@@ -1231,8 +986,8 @@ export default function Produtos({ setTela }: ProdutosProps) {
 
                     <div
                       style={{
-                        fontSize: 12,
-                        color: "#9ca3af",
+                        fontSize: "var(--fs-xs)",
+                        color: "var(--text-subtle)",
                         marginTop: 2,
                       }}
                     >
@@ -1244,8 +999,8 @@ export default function Produtos({ setTela }: ProdutosProps) {
                     <div
                       style={{
                         fontWeight: 700,
-                        fontSize: 14,
-                        color: "#059669",
+                        fontSize: "var(--fs-md)",
+                        color: "var(--primary)",
                       }}
                     >
                       {formatCurrency(produto.price)}
@@ -1253,8 +1008,8 @@ export default function Produtos({ setTela }: ProdutosProps) {
 
                     <div
                       style={{
-                        fontSize: 12,
-                        color: "#374151",
+                        fontSize: "var(--fs-xs)",
+                        color: "var(--text-secondary)",
                         marginTop: 2,
                       }}
                     >
@@ -1269,7 +1024,7 @@ export default function Produtos({ setTela }: ProdutosProps) {
                     gap: 8,
                     marginTop: 8,
                     paddingTop: 8,
-                    borderTop: "1px solid #f1f5f9",
+                    borderTop: "1px solid var(--surface-3)",
                   }}
                 >
                   <button
@@ -1277,11 +1032,11 @@ export default function Produtos({ setTela }: ProdutosProps) {
                     style={{
                       flex: 1,
                       padding: "7px",
-                      borderRadius: 7,
-                      border: "1px solid #a7f3d0",
-                      background: "#ecfdf5",
-                      color: "#047857",
-                      fontSize: 12,
+                      borderRadius: 8,
+                      border: "1px solid var(--primary-border)",
+                      background: "var(--primary-soft)",
+                      color: "var(--primary-hover)",
+                      fontSize: "var(--fs-xs)",
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
@@ -1298,11 +1053,11 @@ export default function Produtos({ setTela }: ProdutosProps) {
                     style={{
                       flex: 1,
                       padding: "7px",
-                      borderRadius: 7,
-                      border: "1px solid #fecaca",
-                      background: "#fffafa",
-                      color: "#dc2626",
-                      fontSize: 12,
+                      borderRadius: 8,
+                      border: "1px solid var(--danger-border)",
+                      background: "var(--surface-2)",
+                      color: "var(--danger)",
+                      fontSize: "var(--fs-xs)",
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",

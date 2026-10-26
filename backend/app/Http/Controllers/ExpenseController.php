@@ -1,322 +1,245 @@
 <?php
-// app/Http/Controllers/ExpenseController.php
 
 namespace App\Http\Controllers;
 
 use App\Models\Expense;
-use App\Models\ExpenseCategory;
 use App\Services\CurrentCompany;
+use App\Services\ExpenseImport;
+use App\Services\ExpenseImportTemplate;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class ExpenseController extends Controller
 {
+    private function findExpense($id): Expense
+    {
+        return Expense::where('partner_company_id', CurrentCompany::id())->findOrFail($id);
+    }
+
+    private function companyCategoryRule(): array
+    {
+        return [
+            'integer',
+            Rule::exists('expense_categories', 'id')->where('partner_company_id', CurrentCompany::id()),
+        ];
+    }
+
     public function index(Request $request)
     {
-        try {
-            $companyId = CurrentCompany::id();
+        $data = $request->validate([
+            'start_date'          => 'nullable|date',
+            'end_date'            => 'nullable|date|after_or_equal:start_date',
+            'expense_category_id' => 'nullable|integer',
+        ]);
 
+        $query = Expense::where('partner_company_id', CurrentCompany::id())->with('category');
 
-            if (!$companyId) {
-                return response()->json([
-                    'message' => 'Empresa não identificada.'
-                ], 403);
-            }
-
-
-            $data = $request->validate([
-                'start_date' => 'nullable|date',
-                'end_date' => 'nullable|date|after_or_equal:start_date',
-                'expense_category_id' => 'nullable|integer',
-            ]);
-
-            $query = Expense::where('partner_company_id', $companyId)
-                ->with('category');
-
-            if (!empty($data['start_date'])) {
-                $query->whereDate('expense_date', '>=', $data['start_date']);
-            }
-
-            if (!empty($data['end_date'])) {
-                $query->whereDate('expense_date', '<=', $data['end_date']);
-            }
-
-            if (!empty($data['expense_category_id'])) {
-                $query->where(
-                    'expense_category_id',
-                    $data['expense_category_id']
-                );
-            }
-
-            $expenses = $query
-                ->orderBy('expense_date', 'desc')
-                ->orderBy('created_at', 'desc')
-                ->get();
-
-            return response()->json($expenses);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-
-            return response()->json([
-                'message' => 'Erro de validação',
-                'errors' => $e->errors()
-            ], 422);
-        } catch (\Exception $e) {
-
-            return response()->json([
-                'message' => 'Erro ao buscar gastos',
-                'error' => $e->getMessage()
-            ], 500);
+        if (!empty($data['start_date'])) {
+            $query->where('expense_date', '>=', Carbon::parse($data['start_date'])->toDateString());
         }
+
+        if (!empty($data['end_date'])) {
+            $query->where('expense_date', '<=', Carbon::parse($data['end_date'])->toDateString());
+        }
+
+        if (!empty($data['expense_category_id'])) {
+            $query->where('expense_category_id', $data['expense_category_id']);
+        }
+
+        return response()->json(
+            $query->orderByDesc('expense_date')->orderByDesc('created_at')->get()
+        );
     }
+
     public function store(Request $request)
     {
-        try {
-            $companyId = CurrentCompany::id();
+        $data = $request->validate([
+            'description'         => 'required|string|max:255',
+            'amount'              => 'required|numeric|min:0.01|max:99999999',
+            'expense_date'        => 'required|date',
+            'expense_category_id' => ['required', ...$this->companyCategoryRule()],
+            'notes'               => 'nullable|string|max:2000',
+        ]);
 
-            $data = $request->validate([
-                'description' => 'required|string|max:255',
-                'amount' => 'required|numeric|min:0.01',
-                'expense_date' => 'required|date',
-                'expense_category_id' => 'required|integer',
-                'notes' => 'nullable|string',
-            ]);
+        $expense = Expense::create([
+            ...$data,
+            'partner_company_id' => CurrentCompany::id(),
+        ]);
 
-            $category = ExpenseCategory::where(
-                'id',
-                $data['expense_category_id']
-            )
-                ->where('partner_company_id', $companyId)
-                ->first();
-
-            if (!$category) {
-                return response()->json([
-                    'message' => 'Categoria não encontrada ou não pertence à empresa atual'
-                ], 404);
-            }
-
-            $expense = Expense::create([
-                'partner_company_id' => $companyId,
-                'description' => $data['description'],
-                'amount' => $data['amount'],
-                'expense_date' => $data['expense_date'],
-                'expense_category_id' => $data['expense_category_id'],
-                'notes' => $data['notes'] ?? null,
-            ]);
-
-            $expense->load('category');
-
-            return response()->json([
-                'message' => 'Gasto lançado com sucesso',
-                'expense' => $expense
-            ], 201);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-
-            return response()->json([
-                'message' => 'Erro de validação',
-                'errors' => $e->errors()
-            ], 422);
-        } catch (\Exception $e) {
-
-            return response()->json([
-                'message' => 'Erro ao criar gasto',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json([
+            'message' => 'Gasto lançado com sucesso',
+            'expense' => $expense->load('category'),
+        ], 201);
     }
+
     public function show($id)
     {
-        try {
-            $expense = Expense::with('category')->findOrFail($id);
-            return response()->json($expense);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Gasto não encontrado'
-            ], 404);
-        }
+        return response()->json($this->findExpense($id)->load('category'));
     }
+
     public function update(Request $request, $id)
     {
-        try {
-            $expense = Expense::findOrFail($id);
+        $expense = $this->findExpense($id);
 
-            $data = $request->validate([
-                'description' => 'sometimes|string|max:255',
-                'amount' => 'sometimes|numeric|min:0.01',
-                'expense_date' => 'sometimes|date',
-                'category_id' => 'sometimes|exists:expense_categories,id', // Mudado de category para category_id
-                'notes' => 'nullable|string',
-            ]);
+        $data = $request->validate([
+            'description'         => 'sometimes|string|max:255',
+            'amount'              => 'sometimes|numeric|min:0.01|max:99999999',
+            'expense_date'        => 'sometimes|date',
+            'expense_category_id' => ['sometimes', ...$this->companyCategoryRule()],
+            'notes'               => 'nullable|string|max:2000',
+        ]);
 
-            $expense->update($data);
-            $expense->load('category');
+        $expense->update($data);
 
-            return response()->json([
-                'message' => 'Gasto atualizado com sucesso',
-                'expense' => $expense
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Erro ao atualizar gasto',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json([
+            'message' => 'Gasto atualizado com sucesso',
+            'expense' => $expense->load('category'),
+        ]);
     }
+
     public function destroy($id)
     {
-        try {
-            $expense = Expense::findOrFail($id);
-            $expense->delete();
+        $this->findExpense($id)->delete();
 
-            return response()->json([
-                'message' => 'Gasto removido com sucesso'
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Erro ao remover gasto',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json(['message' => 'Gasto removido com sucesso']);
     }
 
     public function summary(Request $request)
     {
-        try {
+        $data = $request->validate([
+            'date' => 'required|date',
+        ]);
 
-            $companyId = CurrentCompany::id();
+        $query = Expense::where('partner_company_id', CurrentCompany::id())
+            ->where('expense_date', Carbon::parse($data['date'])->toDateString());
 
-            if (!$companyId) {
-                return response()->json([
-                    'message' => 'Empresa não identificada.'
-                ], 403);
-            }
-
-            $request->validate([
-                'date' => 'required|date',
-            ]);
-
-            $totalExpenses = Expense::where('partner_company_id', $companyId)
-                ->whereDate('expense_date', $request->date)
-                ->sum('amount');
-
-            $expensesByCategory = Expense::where('partner_company_id', $companyId)
-                ->whereDate('expense_date', $request->date)
-                ->with('category')
-                ->select('category_id', DB::raw('SUM(amount) as total'))
-                ->groupBy('category_id')
-                ->get();
-
-            return response()->json([
-                'date' => $request->date,
-                'total_expenses' => $totalExpenses,
-                'expenses_by_category' => $expensesByCategory,
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Erro ao buscar resumo',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json([
+            'date'                 => $data['date'],
+            'total_expenses'       => round((float) (clone $query)->sum('amount'), 2),
+            'expenses_by_category' => $this->byCategory($query),
+        ]);
     }
 
     public function monthlySummary(Request $request)
     {
-        try {
+        $data = $request->validate([
+            'year'  => 'required|integer|min:2000|max:2100',
+            'month' => 'required|integer|min:1|max:12',
+        ]);
 
-            $companyId = CurrentCompany::id();
+        $start = Carbon::create((int) $data['year'], (int) $data['month'], 1)->startOfMonth();
 
-            if (!$companyId) {
-                return response()->json([
-                    'message' => 'Empresa não identificada.'
-                ], 403);
-            }
+        $query = Expense::where('partner_company_id', CurrentCompany::id())
+            ->whereBetween('expense_date', [$start->toDateString(), $start->copy()->endOfMonth()->toDateString()]);
 
-            $request->validate([
-                'year' => 'required|integer|min:2020|max:2030',
-                'month' => 'required|integer|min:1|max:12',
-            ]);
+        $byCategory = $this->byCategory($query);
 
-            $startDate = date("{$request->year}-{$request->month}-01");
-            $endDate = date("{$request->year}-{$request->month}-t");
-
-            $expenses = Expense::where('partner_company_id', $companyId)
-                ->whereBetween('expense_date', [$startDate, $endDate])
-                ->with('category')
-                ->select('category_id', DB::raw('SUM(amount) as total'))
-                ->groupBy('category_id')
-                ->get();
-
-            $total = $expenses->sum('total');
-
-            return response()->json([
-                'year' => $request->year,
-                'month' => $request->month,
-                'total_expenses' => $total,
-                'expenses_by_category' => $expenses,
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Erro ao buscar resumo mensal',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json([
+            'year'                 => (int) $data['year'],
+            'month'                => (int) $data['month'],
+            'total_expenses'       => round((float) $byCategory->sum('total'), 2),
+            'expenses_by_category' => $byCategory,
+        ]);
     }
 
-    public function importCsv(Request $request)
+    /**
+     * Download do modelo de planilha (.xls) para importação de gastos.
+     */
+    public function importTemplate(ExpenseImportTemplate $template)
     {
+        $conteudo = $template->gerar(CurrentCompany::id());
+
+        return response($conteudo, 200, [
+            'Content-Type'        => 'application/vnd.ms-excel',
+            'Content-Disposition' => 'attachment; filename="modelo-importacao-gastos.xls"',
+            'Content-Length'      => (string) strlen($conteudo),
+        ]);
+    }
+
+    /**
+     * Importa gastos de uma planilha (.xls, .xlsx ou .csv).
+     *
+     * Com "dry_run" só valida e devolve a prévia linha a linha. Sem ele, grava
+     * numa transação apenas as linhas válidas e informa as que foram ignoradas.
+     */
+    public function import(Request $request)
+    {
+        $data = $request->validate([
+            'file'                => 'required|file|max:2048|extensions:xls,xlsx,csv,txt',
+            'default_category_id' => ['nullable', ...$this->companyCategoryRule()],
+            'dry_run'             => 'nullable|boolean',
+        ]);
+
+        $companyId = CurrentCompany::id();
+        $importador = new ExpenseImport($companyId, $data['default_category_id'] ?? null);
+
         try {
-            $request->validate([
-                'restaurant_id' => 'required|exists:restaurants,id',
-                'file' => 'required|file|mimes:csv,txt',
-                'category_id' => 'required|exists:expense_categories,id',
-            ]);
-
-            $file = $request->file('file');
-            $handle = fopen($file->getPathname(), 'r');
-
-            // Ler cabeçalho
-            $header = fgetcsv($handle, 0, ';');
-
-            $imported = 0;
-            $errors = [];
-
-            while (($row = fgetcsv($handle, 0, ';')) !== false) {
-                try {
-                    $data = array_combine($header, $row);
-
-                    // Converter data de DD/MM/YYYY para YYYY-MM-DD
-                    $dateParts = explode('/', $data['Data']);
-                    $formattedDate = "{$dateParts[2]}-{$dateParts[1]}-{$dateParts[0]}";
-
-                    // Converter valor (substituir vírgula por ponto)
-                    $amount = str_replace(',', '.', $data['Valor']);
-
-                    Expense::create([
-                        'restaurant_id' => $request->restaurant_id,
-                        'description' => $data['Descrição'],
-                        'amount' => (float) $amount,
-                        'expense_date' => $formattedDate,
-                        'category_id' => $request->category_id,
-                        'notes' => null,
-                    ]);
-
-                    $imported++;
-                } catch (\Exception $e) {
-                    $errors[] = "Erro na linha " . ($imported + 2) . ": " . $e->getMessage();
-                }
-            }
-
-            fclose($handle);
+            $linhas = $importador->analisar($data['file']);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        } catch (\Throwable $e) {
+            report($e);
 
             return response()->json([
-                'message' => "Importação concluída",
-                'imported' => $imported,
-                'errors' => $errors
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Erro na importação',
-                'error' => $e->getMessage()
-            ], 500);
+                'message' => 'Não foi possível ler a planilha. Verifique se o arquivo não está corrompido.',
+            ], 422);
         }
+
+        $validas = array_values(array_filter($linhas, fn ($l) => !$l['errors']));
+        $resumo = [
+            'total'   => count($linhas),
+            'valid'   => count($validas),
+            'invalid' => count($linhas) - count($validas),
+        ];
+
+        if ($request->boolean('dry_run')) {
+            return response()->json(['summary' => $resumo, 'rows' => $linhas]);
+        }
+
+        if (!$validas) {
+            return response()->json([
+                'message' => 'Nenhuma linha válida para importar.',
+                'summary' => $resumo,
+                'rows'    => $linhas,
+            ], 422);
+        }
+
+        DB::transaction(function () use ($validas, $companyId) {
+            $agora = now();
+
+            foreach (array_chunk($validas, 200) as $lote) {
+                Expense::insert(array_map(fn ($l) => [
+                    'partner_company_id'  => $companyId,
+                    'description'         => $l['description'],
+                    'amount'              => $l['amount'],
+                    'expense_date'        => $l['date'],
+                    'expense_category_id' => $l['category_id'],
+                    'notes'               => 'Importado de planilha',
+                    'created_at'          => $agora,
+                    'updated_at'          => $agora,
+                ], $lote));
+            }
+        });
+
+        return response()->json([
+            'message'  => "{$resumo['valid']} gasto(s) importado(s).",
+            'imported' => $resumo['valid'],
+            'summary'  => $resumo,
+            'skipped'  => array_values(array_map(
+                fn ($l) => ['line' => $l['line'], 'errors' => $l['errors']],
+                array_filter($linhas, fn ($l) => (bool) $l['errors']),
+            )),
+        ], 201);
+    }
+
+    private function byCategory($query)
+    {
+        return (clone $query)
+            ->select('expense_category_id', DB::raw('SUM(amount) as total'))
+            ->groupBy('expense_category_id')
+            ->with('category')
+            ->get();
     }
 }

@@ -3,7 +3,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faArrowLeft,
   faChartLine,
   faArrowTrendUp,
   faArrowTrendDown,
@@ -19,10 +18,6 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 const API_URL = import.meta.env.VITE_API_URL;
-
-interface GestaoRelatoriosProps {
-  setTela: (tela: string) => void;
-}
 
 interface Entrada {
   id: number;
@@ -70,7 +65,7 @@ interface ProdutoVendido {
   value: number;
 }
 
-export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
+export default function GestaoRelatorios() {
   const [entradas, setEntradas] = useState<Entrada[]>([]);
   const [loadingEntradas, setLoadingEntradas] = useState(true);
   const [erroEntradas, setErroEntradas] = useState("");
@@ -393,48 +388,14 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
     <div
       className="relatorios-page"
       style={{
-        height: "100vh",
-        background: "#f8fafc",
+        height: "var(--page-h)",
+        background: "var(--bg)",
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
       }}
     >
       <RelatoriosResponsiveStyles />
-
-      {/* Botão Voltar ao Dashboard */}
-      <div
-        style={{
-          padding: "10px 20px",
-          background: "#f8fafc",
-          borderBottom: "1px solid #e5e7eb",
-          flexShrink: 0,
-        }}
-      >
-        <button
-          onClick={() => setTela("dashboard")}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            background: "transparent",
-            border: "none",
-            color: "#6b7280",
-            cursor: "pointer",
-            padding: "4px 0",
-            fontSize: 12,
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = "#111827";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = "#6b7280";
-          }}
-        >
-          <FontAwesomeIcon icon={faArrowLeft} size="sm" />
-          Voltar ao Dashboard
-        </button>
-      </div>
 
       {/* Conteúdo */}
       <div
@@ -443,7 +404,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
           flex: 1,
           overflowY: "auto",
           padding: "24px",
-          background: "#f8fafc",
+          background: "var(--surface-2)",
         }}
       >
         <div
@@ -468,9 +429,9 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
               <h1
                 style={{
                   margin: 0,
-                  fontSize: 22,
+                  fontSize: "var(--fs-3xl)",
                   fontWeight: 600,
-                  color: "#111827",
+                  color: "var(--text)",
                 }}
               >
                 Gestão de Relatórios
@@ -479,8 +440,8 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
               <p
                 style={{
                   margin: "6px 0 0",
-                  fontSize: 13,
-                  color: "#6b7280",
+                  fontSize: "var(--fs-sm)",
+                  color: "var(--text-muted)",
                 }}
               >
                 Acompanhe os principais indicadores financeiros da empresa.
@@ -494,16 +455,16 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                 alignItems: "center",
                 gap: 8,
                 padding: "6px 12px",
-                border: "1px solid #e5e7eb",
-                borderRadius: 7,
-                background: "#ffffff",
+                border: "1px solid var(--border)",
+                borderRadius: 8,
+                background: "var(--surface)",
               }}
             >
               <FontAwesomeIcon
                 icon={faCalendarDays}
                 style={{
-                  color: "#6b7280",
-                  fontSize: 13,
+                  color: "var(--text-muted)",
+                  fontSize: "var(--fs-sm)",
                 }}
               />
 
@@ -513,16 +474,16 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                   background: "transparent",
                   border: "none",
                   cursor: "pointer",
-                  color: "#6b7280",
+                  color: "var(--text-muted)",
                   padding: "4px 6px",
-                  borderRadius: 4,
+                  borderRadius: 6,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   transition: "all 0.2s",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "#f3f4f6";
+                  e.currentTarget.style.background = "var(--surface-3)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = "transparent";
@@ -541,9 +502,9 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                   width: 70,
                   border: "none",
                   outline: "none",
-                  background: "#ffffff",
-                  color: "#374151",
-                  fontSize: 14,
+                  background: "var(--surface)",
+                  color: "var(--text-secondary)",
+                  fontSize: "var(--fs-md)",
                   fontWeight: 600,
                   textAlign: "center",
                   padding: "4px 0",
@@ -557,16 +518,16 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                   background: "transparent",
                   border: "none",
                   cursor: "pointer",
-                  color: "#6b7280",
+                  color: "var(--text-muted)",
                   padding: "4px 6px",
-                  borderRadius: 4,
+                  borderRadius: 6,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   transition: "all 0.2s",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "#f3f4f6";
+                  e.currentTarget.style.background = "var(--surface-3)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = "transparent";
@@ -583,11 +544,11 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
               style={{
                 marginBottom: 20,
                 padding: "12px 14px",
-                borderRadius: 8,
-                border: "1px solid #fecaca",
-                background: "#fef2f2",
-                color: "#b91c1c",
-                fontSize: 13,
+                borderRadius: 10,
+                border: "1px solid var(--danger-border)",
+                background: "var(--danger-soft)",
+                color: "var(--danger-hover)",
+                fontSize: "var(--fs-sm)",
               }}
             >
               {erroEntradas}
@@ -599,11 +560,11 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
               style={{
                 marginBottom: 20,
                 padding: "12px 14px",
-                borderRadius: 8,
-                border: "1px solid #fecaca",
-                background: "#fef2f2",
-                color: "#b91c1c",
-                fontSize: 13,
+                borderRadius: 10,
+                border: "1px solid var(--danger-border)",
+                background: "var(--danger-soft)",
+                color: "var(--danger-hover)",
+                fontSize: "var(--fs-sm)",
               }}
             >
               {erroDespesas}
@@ -615,11 +576,11 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
               style={{
                 marginBottom: 20,
                 padding: "12px 14px",
-                borderRadius: 8,
-                border: "1px solid #fecaca",
-                background: "#fef2f2",
-                color: "#b91c1c",
-                fontSize: 13,
+                borderRadius: 10,
+                border: "1px solid var(--danger-border)",
+                background: "var(--danger-soft)",
+                color: "var(--danger-hover)",
+                fontSize: "var(--fs-sm)",
               }}
             >
               {erroProdutos}
@@ -646,8 +607,8 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
               variacao=""
               positivo
               icon={faWallet}
-              iconBackground="#ecfdf5"
-              iconColor="#059669"
+              iconBackground="var(--primary-soft)"
+              iconColor="var(--primary)"
             />
 
             <Indicador
@@ -658,8 +619,8 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
               variacao=""
               positivo={false}
               icon={faArrowTrendDown}
-              iconBackground="#fef2f2"
-              iconColor="#dc2626"
+              iconBackground="var(--danger-soft)"
+              iconColor="var(--danger)"
             />
 
             <Indicador
@@ -668,8 +629,8 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
               variacao=""
               positivo={lucroAtual >= 0}
               icon={faArrowTrendUp}
-              iconBackground="#ecfdf5"
-              iconColor="#059669"
+              iconBackground="var(--primary-soft)"
+              iconColor="var(--primary)"
             />
 
             <Indicador
@@ -680,8 +641,8 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
               variacao=""
               positivo
               icon={faReceipt}
-              iconBackground="#eff6ff"
-              iconColor="#2563eb"
+              iconBackground="var(--info-soft)"
+              iconColor="var(--info)"
             />
 
             <Indicador
@@ -690,7 +651,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
               variacao=""
               positivo={margem >= 0}
               icon={faPercent}
-              iconBackground="#f5f3ff"
+              iconBackground="var(--primary-soft)"
               iconColor="#7c3aed"
             />
           </div>
@@ -721,8 +682,8 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                     display: "flex",
                     alignItems: "center",
                     gap: 6,
-                    fontSize: 11,
-                    color: "#059669",
+                    fontSize: "var(--fs-2xs)",
+                    color: "var(--primary)",
                   }}
                 >
                   <span
@@ -730,7 +691,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                       width: 7,
                       height: 7,
                       borderRadius: "50%",
-                      background: "#059669",
+                      background: "var(--primary)",
                     }}
                   />
                   Faturamento
@@ -744,7 +705,7 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                   alignItems: "flex-end",
                   gap: 14,
                   padding: "0 8px",
-                  borderBottom: "1px solid #e5e7eb",
+                  borderBottom: "1px solid var(--border)",
                 }}
               >
                 {loadingEntradas ? (
@@ -755,8 +716,8 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      color: "#9ca3af",
-                      fontSize: 13,
+                      color: "var(--text-subtle)",
+                      fontSize: "var(--fs-sm)",
                     }}
                   >
                     Carregando faturamento...
@@ -769,8 +730,8 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      color: "#9ca3af",
-                      fontSize: 13,
+                      color: "var(--text-subtle)",
+                      fontSize: "var(--fs-sm)",
                     }}
                   >
                     Nenhuma entrada encontrada em {anoSelecionado}.
@@ -797,8 +758,8 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                       >
                         <span
                           style={{
-                            fontSize: 10,
-                            color: "#6b7280",
+                            fontSize: "var(--fs-2xs)",
+                            color: "var(--text-muted)",
                             whiteSpace: "nowrap",
                           }}
                         >
@@ -814,15 +775,15 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                             maxWidth: 50,
                             height: `${altura}%`,
                             minHeight: 10,
-                            background: "#059669",
+                            background: "var(--primary)",
                             borderRadius: "5px 5px 0 0",
                           }}
                         />
 
                         <span
                           style={{
-                            fontSize: 11,
-                            color: "#6b7280",
+                            fontSize: "var(--fs-2xs)",
+                            color: "var(--text-muted)",
                             paddingBottom: 8,
                           }}
                         >
@@ -854,8 +815,8 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                       alignItems: "center",
                       justifyContent: "center",
                       minHeight: 250,
-                      color: "#9ca3af",
-                      fontSize: 13,
+                      color: "var(--text-subtle)",
+                      fontSize: "var(--fs-sm)",
                     }}
                   >
                     Carregando produtos...
@@ -867,8 +828,8 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                       alignItems: "center",
                       justifyContent: "center",
                       minHeight: 250,
-                      color: "#9ca3af",
-                      fontSize: 13,
+                      color: "var(--text-subtle)",
+                      fontSize: "var(--fs-sm)",
                       textAlign: "center",
                     }}
                   >
@@ -912,8 +873,8 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                       alignItems: "center",
                       justifyContent: "center",
                       minHeight: 250,
-                      color: "#9ca3af",
-                      fontSize: 13,
+                      color: "var(--text-subtle)",
+                      fontSize: "var(--fs-sm)",
                     }}
                   >
                     Carregando despesas...
@@ -925,8 +886,8 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                       alignItems: "center",
                       justifyContent: "center",
                       minHeight: 250,
-                      color: "#9ca3af",
-                      fontSize: 13,
+                      color: "var(--text-subtle)",
+                      fontSize: "var(--fs-sm)",
                     }}
                   >
                     Nenhuma despesa encontrada em {anoSelecionado}.
@@ -965,8 +926,8 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                 <FontAwesomeIcon
                   icon={faChartLine}
                   style={{
-                    color: "#6b7280",
-                    fontSize: 15,
+                    color: "var(--text-muted)",
+                    fontSize: "var(--fs-md)",
                   }}
                 />
               </div>
@@ -994,9 +955,9 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                   <p
                     style={{
                       margin: "5px 0 0",
-                      fontSize: 17,
+                      fontSize: "var(--fs-xl)",
                       fontWeight: 600,
-                      color: lucroAtual >= 0 ? "#059669" : "#dc2626",
+                      color: lucroAtual >= 0 ? "var(--primary)" : "var(--danger)",
                     }}
                   >
                     {formatarMoeda(lucroAtual)}
@@ -1009,9 +970,9 @@ export default function GestaoRelatorios({ setTela }: GestaoRelatoriosProps) {
                   <p
                     style={{
                       margin: "5px 0 0",
-                      fontSize: 17,
+                      fontSize: "var(--fs-xl)",
                       fontWeight: 600,
-                      color: "#111827",
+                      color: "var(--text)",
                     }}
                   >
                     {margem.toFixed(1).replace(".", ",")}%
@@ -1044,28 +1005,31 @@ function ProdutosRanking({
 
   const produtosClassificados = data.map((item) => {
     const percentual = total > 0 ? (item.value / total) * 100 : 0;
+    // Curva ABC: a classe é definida pelo acumulado ANTES do item,
+    // assim o produto que sozinho passa de 80% continua sendo classe A.
+    const acumuladoAnterior = acumulado;
     acumulado += percentual;
 
-    let classificacao = "C";
-    let icon = faMedal;
-    let cor = "#94a3b8";
-    let bgCor = "#f1f5f9";
+    let classificacao: string;
+    let icon: typeof faMedal;
+    let cor: string;
+    let bgCor: string;
 
-    if (acumulado <= 80) {
+    if (acumuladoAnterior < 80) {
       classificacao = "A";
       icon = faCrown;
-      cor = "#059669";
-      bgCor = "#ecfdf5";
-    } else if (acumulado <= 95) {
+      cor = "var(--primary)";
+      bgCor = "var(--primary-soft)";
+    } else if (acumuladoAnterior < 95) {
       classificacao = "B";
       icon = faTrophy;
-      cor = "#2563eb";
-      bgCor = "#eff6ff";
+      cor = "var(--info)";
+      bgCor = "var(--info-soft)";
     } else {
       classificacao = "C";
       icon = faMedal;
-      cor = "#94a3b8";
-      bgCor = "#f1f5f9";
+      cor = "var(--text-subtle)";
+      bgCor = "var(--surface-3)";
     }
 
     return {
@@ -1131,15 +1095,15 @@ function ProdutosRanking({
       {/* Legenda da Curva ABC */}
       <div className="ranking-legenda">
         <div className="legenda-item">
-          <span className="legenda-cor" style={{ background: "#059669" }} />
+          <span className="legenda-cor" style={{ background: "var(--primary)" }} />
           <span className="legenda-texto">Classe A (80% do faturamento)</span>
         </div>
         <div className="legenda-item">
-          <span className="legenda-cor" style={{ background: "#2563eb" }} />
+          <span className="legenda-cor" style={{ background: "var(--info)" }} />
           <span className="legenda-texto">Classe B (15% do faturamento)</span>
         </div>
         <div className="legenda-item">
-          <span className="legenda-cor" style={{ background: "#94a3b8" }} />
+          <span className="legenda-cor" style={{ background: "var(--text-subtle)" }} />
           <span className="legenda-texto">Classe C (5% do faturamento)</span>
         </div>
       </div>
@@ -1163,12 +1127,12 @@ function ProdutosRanking({
         }
 
         .ranking-barras::-webkit-scrollbar-track {
-          background: #f1f5f9;
+          background: var(--surface-3);
           border-radius: 4px;
         }
 
         .ranking-barras::-webkit-scrollbar-thumb {
-          background: #cbd5e1;
+          background: var(--border-strong);
           border-radius: 4px;
         }
 
@@ -1182,7 +1146,7 @@ function ProdutosRanking({
         }
 
         .ranking-item:hover {
-          background: #f8fafc;
+          background: var(--surface-2);
         }
 
         .ranking-posicao {
@@ -1193,15 +1157,15 @@ function ProdutosRanking({
         }
 
         .ranking-numero {
-          font-size: 11px;
+          font-size: var(--fs-2xs);
           font-weight: 600;
-          color: #94a3b8;
+          color: var(--text-subtle);
           min-width: 20px;
           text-align: center;
         }
 
         .ranking-classificacao {
-          font-size: 10px;
+          font-size: var(--fs-2xs);
           font-weight: 700;
           padding: 1px 6px;
           border-radius: 4px;
@@ -1215,8 +1179,8 @@ function ProdutosRanking({
         }
 
         .ranking-nome {
-          font-size: 12px;
-          color: #374151;
+          font-size: var(--fs-xs);
+          color: var(--text-secondary);
           font-weight: 500;
           white-space: nowrap;
           overflow: hidden;
@@ -1227,7 +1191,7 @@ function ProdutosRanking({
         .ranking-barra-container {
           width: 100%;
           height: 6px;
-          background: #f1f5f9;
+          background: var(--surface-3);
           border-radius: 4px;
           overflow: hidden;
         }
@@ -1248,23 +1212,23 @@ function ProdutosRanking({
         }
 
         .ranking-quantidade {
-          font-size: 11px;
-          color: #94a3b8;
+          font-size: var(--fs-2xs);
+          color: var(--text-subtle);
           min-width: 40px;
           text-align: right;
         }
 
         .ranking-valor {
-          font-size: 12px;
+          font-size: var(--fs-xs);
           font-weight: 600;
-          color: #111827;
+          color: var(--text);
           min-width: 80px;
           text-align: right;
         }
 
         .ranking-percentual {
-          font-size: 11px;
-          color: #94a3b8;
+          font-size: var(--fs-2xs);
+          color: var(--text-subtle);
           min-width: 45px;
           text-align: right;
         }
@@ -1275,7 +1239,7 @@ function ProdutosRanking({
           gap: 20px;
           margin-top: 16px;
           padding-top: 12px;
-          border-top: 1px solid #e5e7eb;
+          border-top: 1px solid var(--border);
           flex-wrap: wrap;
         }
 
@@ -1292,8 +1256,8 @@ function ProdutosRanking({
         }
 
         .legenda-texto {
-          font-size: 11px;
-          color: #6b7280;
+          font-size: var(--fs-2xs);
+          color: var(--text-muted);
         }
 
         @media (max-width: 700px) {
@@ -1354,7 +1318,7 @@ function PieChart({
       ? `conic-gradient(${segmentos
           .map((item) => `${item.cor} ${item.inicio}% ${item.fim}%`)
           .join(", ")})`
-      : "#e5e7eb";
+      : "var(--border)";
 
   return (
     <div className="pizza-chart">
@@ -1408,17 +1372,17 @@ function ResultadoFinanceiro({
     {
       titulo: "Faturamento",
       valor: faturamento,
-      cor: "#059669",
+      cor: "var(--primary)",
     },
     {
       titulo: "Despesas",
       valor: despesas,
-      cor: "#dc2626",
+      cor: "var(--danger)",
     },
     {
       titulo: "Lucro",
       valor: lucro,
-      cor: lucro >= 0 ? "#2563eb" : "#dc2626",
+      cor: lucro >= 0 ? "var(--info)" : "var(--danger)",
     },
   ];
 
@@ -1507,7 +1471,7 @@ function RelatoriosResponsiveStyles() {
         width: 94px;
         height: 94px;
         border-radius: 50%;
-        background: #ffffff;
+        background: var(--surface);
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -1518,14 +1482,14 @@ function RelatoriosResponsiveStyles() {
       }
 
       .pizza-center span {
-        color: #9ca3af;
-        font-size: 10px;
+        color: var(--text-subtle);
+        font-size: var(--fs-2xs);
         margin-bottom: 4px;
       }
 
       .pizza-center strong {
-        color: #111827;
-        font-size: 12px;
+        color: var(--text);
+        font-size: var(--fs-xs);
         font-weight: 600;
         max-width: 82px;
         overflow: hidden;
@@ -1550,8 +1514,8 @@ function RelatoriosResponsiveStyles() {
         align-items: center;
         justify-content: space-between;
         gap: 10px;
-        font-size: 12px;
-        color: #374151;
+        font-size: var(--fs-xs);
+        color: var(--text-secondary);
       }
 
       .pizza-legenda-nome {
@@ -1569,8 +1533,8 @@ function RelatoriosResponsiveStyles() {
 
       .pizza-legenda-top strong {
         flex-shrink: 0;
-        color: #111827;
-        font-size: 12px;
+        color: var(--text);
+        font-size: var(--fs-xs);
       }
 
       .pizza-dot {
@@ -1583,8 +1547,8 @@ function RelatoriosResponsiveStyles() {
       .pizza-legenda-valor {
         display: block;
         margin: 4px 0 0 17px;
-        color: #9ca3af;
-        font-size: 10px;
+        color: var(--text-subtle);
+        font-size: var(--fs-2xs);
       }
 
       /* =============================================
@@ -1601,7 +1565,7 @@ function RelatoriosResponsiveStyles() {
         gap: 16px;
         padding: 10px 12px 0;
         box-sizing: border-box;
-        border-bottom: 1px solid #e5e7eb;
+        border-bottom: 1px solid var(--border);
       }
 
       .resultado-barra-coluna {
@@ -1618,9 +1582,9 @@ function RelatoriosResponsiveStyles() {
         display: block;
         min-height: 18px;
         margin-bottom: 6px;
-        font-size: 11px;
+        font-size: var(--fs-2xs);
         font-weight: 600;
-        color: #111827;
+        color: var(--text);
         text-align: center;
         white-space: nowrap;
       }
@@ -1650,17 +1614,17 @@ function RelatoriosResponsiveStyles() {
 
       .resultado-titulo {
         margin-top: 9px;
-        font-size: 12px;
+        font-size: var(--fs-xs);
         font-weight: 500;
-        color: #374151;
+        color: var(--text-secondary);
         text-align: center;
         white-space: nowrap;
       }
 
       .resultado-percentual {
         margin-top: 3px;
-        font-size: 10px;
-        color: #9ca3af;
+        font-size: var(--fs-2xs);
+        color: var(--text-subtle);
         text-align: center;
         white-space: nowrap;
       }
@@ -1724,11 +1688,11 @@ function RelatoriosResponsiveStyles() {
         }
 
         .resultado-valor {
-          font-size: 10px;
+          font-size: var(--fs-2xs);
         }
 
         .resultado-titulo {
-          font-size: 11px;
+          font-size: var(--fs-2xs);
         }
       }
 
@@ -1761,15 +1725,15 @@ function RelatoriosResponsiveStyles() {
         }
 
         .resultado-valor {
-          font-size: 9px;
+          font-size: var(--fs-2xs);
         }
 
         .resultado-titulo {
-          font-size: 10px;
+          font-size: var(--fs-2xs);
         }
 
         .resultado-percentual {
-          font-size: 9px;
+          font-size: var(--fs-2xs);
         }
       }
     `}</style>
@@ -1800,9 +1764,9 @@ function Indicador({
   return (
     <div
       style={{
-        background: "#fff",
-        border: "1px solid #e5e7eb",
-        borderRadius: 10,
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        borderRadius: 12,
         padding: 18,
         boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
       }}
@@ -1819,8 +1783,8 @@ function Indicador({
           <p
             style={{
               margin: 0,
-              fontSize: 12,
-              color: "#6b7280",
+              fontSize: "var(--fs-xs)",
+              color: "var(--text-muted)",
               fontWeight: 500,
             }}
           >
@@ -1830,8 +1794,8 @@ function Indicador({
           <p
             style={{
               margin: "8px 0 0",
-              fontSize: 19,
-              color: "#111827",
+              fontSize: "var(--fs-xl)",
+              color: "var(--text)",
               fontWeight: 600,
             }}
           >
@@ -1846,7 +1810,7 @@ function Indicador({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            borderRadius: 8,
+            borderRadius: 10,
             background: iconBackground,
             color: iconColor,
           }}
@@ -1866,9 +1830,9 @@ function Indicador({
         >
           <span
             style={{
-              fontSize: 11,
+              fontSize: "var(--fs-2xs)",
               fontWeight: 600,
-              color: positivo ? "#059669" : "#dc2626",
+              color: positivo ? "var(--primary)" : "var(--danger)",
             }}
           >
             {variacao}
@@ -1876,8 +1840,8 @@ function Indicador({
 
           <span
             style={{
-              fontSize: 10,
-              color: "#9ca3af",
+              fontSize: "var(--fs-2xs)",
+              color: "var(--text-subtle)",
             }}
           >
             vs. período anterior
@@ -1893,9 +1857,9 @@ function Indicador({
 // =====================================================
 
 const cardStyle = {
-  background: "#ffffff",
-  border: "1px solid #e5e7eb",
-  borderRadius: 10,
+  background: "var(--surface)",
+  border: "1px solid var(--border)",
+  borderRadius: 12,
   padding: 22,
   boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
 };
@@ -1910,26 +1874,26 @@ const cardHeaderStyle = {
 
 const cardTitleStyle = {
   margin: 0,
-  fontSize: 15,
+  fontSize: "var(--fs-md)",
   fontWeight: 600,
-  color: "#111827",
+  color: "var(--text)",
 };
 
 const cardSubtitleStyle = {
   margin: "5px 0 0",
-  fontSize: 12,
-  color: "#6b7280",
+  fontSize: "var(--fs-xs)",
+  color: "var(--text-muted)",
 };
 
 const summaryBoxStyle = {
-  background: "#f8fafc",
-  border: "1px solid #e5e7eb",
-  borderRadius: 8,
+  background: "var(--surface-2)",
+  border: "1px solid var(--border)",
+  borderRadius: 10,
   padding: 14,
 };
 
 const summaryLabelStyle = {
   margin: 0,
-  fontSize: 11,
-  color: "#6b7280",
+  fontSize: "var(--fs-2xs)",
+  color: "var(--text-muted)",
 };

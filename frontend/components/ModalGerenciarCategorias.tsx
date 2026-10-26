@@ -1,3 +1,5 @@
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPen, faTrash } from "@fortawesome/free-solid-svg-icons";
 import React from "react";
 
 interface ExpenseCategory {
@@ -49,7 +51,7 @@ export const ModalGerenciarCategorias: React.FC<
         left: 0,
         right: 0,
         bottom: 0,
-        background: "rgba(0,0,0,0.5)",
+        background: "var(--overlay)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -62,8 +64,8 @@ export const ModalGerenciarCategorias: React.FC<
     >
       <div
         style={{
-          background: "#fff",
-          borderRadius: 12,
+          background: "var(--surface)",
+          borderRadius: 14,
           padding: 24,
           width: "90%",
           maxWidth: 550,
@@ -80,17 +82,17 @@ export const ModalGerenciarCategorias: React.FC<
             marginBottom: 20,
           }}
         >
-          <h2 style={{ margin: 0, fontSize: 20 }}>Gerenciar Categorias</h2>
+          <h2 style={{ margin: 0, fontSize: "var(--fs-2xl)" }}>Gerenciar Categorias</h2>
           <button
             onClick={() => setShowModalCategoria(true)}
             style={{
               padding: "6px 12px",
-              background: "#10b981",
+              background: "var(--primary)",
               color: "#fff",
               border: "none",
-              borderRadius: 6,
+              borderRadius: 8,
               cursor: "pointer",
-              fontSize: 12,
+              fontSize: "var(--fs-xs)",
             }}
           >
             + Nova Categoria
@@ -106,9 +108,9 @@ export const ModalGerenciarCategorias: React.FC<
                 alignItems: "center",
                 justifyContent: "space-between",
                 padding: "12px 16px",
-                background: "#f9fafb",
-                borderRadius: 8,
-                border: "1px solid #e5e7eb",
+                background: "var(--surface-2)",
+                borderRadius: 10,
+                border: "1px solid var(--border)",
               }}
             >
               {editandoCategoria?.id === cat.id ? (
@@ -132,8 +134,8 @@ export const ModalGerenciarCategorias: React.FC<
                     }
                     style={{
                       padding: "6px 10px",
-                      borderRadius: 6,
-                      border: "1px solid #e5e7eb",
+                      borderRadius: 8,
+                      border: "1px solid var(--border)",
                       flex: 1,
                     }}
                     autoFocus
@@ -150,8 +152,8 @@ export const ModalGerenciarCategorias: React.FC<
                     style={{
                       width: 50,
                       height: 36,
-                      borderRadius: 6,
-                      border: "1px solid #e5e7eb",
+                      borderRadius: 8,
+                      border: "1px solid var(--border)",
                       cursor: "pointer",
                     }}
                   />
@@ -159,10 +161,10 @@ export const ModalGerenciarCategorias: React.FC<
                     onClick={editarCategoria}
                     style={{
                       padding: "6px 12px",
-                      background: "#10b981",
+                      background: "var(--primary)",
                       color: "#fff",
                       border: "none",
-                      borderRadius: 6,
+                      borderRadius: 8,
                       cursor: "pointer",
                     }}
                   >
@@ -172,10 +174,10 @@ export const ModalGerenciarCategorias: React.FC<
                     onClick={() => setEditandoCategoria(null)}
                     style={{
                       padding: "6px 12px",
-                      background: "#6b7280",
+                      background: "var(--text-muted)",
                       color: "#fff",
                       border: "none",
-                      borderRadius: 6,
+                      borderRadius: 8,
                       cursor: "pointer",
                     }}
                   >
@@ -191,12 +193,12 @@ export const ModalGerenciarCategorias: React.FC<
                       style={{
                         width: 24,
                         height: 24,
-                        borderRadius: 4,
+                        borderRadius: 6,
                         background: cat.color,
-                        border: "1px solid #e5e7eb",
+                        border: "1px solid var(--border)",
                       }}
                     />
-                    <span style={{ fontSize: 14, fontWeight: 500 }}>
+                    <span style={{ fontSize: "var(--fs-md)", fontWeight: 500 }}>
                       {cat.name}
                     </span>
                     {transacoes.some(
@@ -204,11 +206,11 @@ export const ModalGerenciarCategorias: React.FC<
                     ) && (
                       <span
                         style={{
-                          fontSize: 11,
-                          color: "#f59e0b",
-                          background: "#fef3c7",
+                          fontSize: "var(--fs-2xs)",
+                          color: "var(--warning)",
+                          background: "var(--warning-soft)",
                           padding: "2px 6px",
-                          borderRadius: 12,
+                          borderRadius: 14,
                         }}
                       >
                         em uso
@@ -221,26 +223,26 @@ export const ModalGerenciarCategorias: React.FC<
                       style={{
                         background: "none",
                         border: "none",
-                        fontSize: 18,
+                        fontSize: "var(--fs-xl)",
                         cursor: "pointer",
-                        color: "#6b7280",
+                        color: "var(--text-muted)",
                       }}
                       title="Editar"
                     >
-                      ✏️
+                      <FontAwesomeIcon icon={faPen} style={{ fontSize: "var(--fs-sm)" }} />
                     </button>
                     <button
                       onClick={() => excluirCategoria(cat.id, cat.name)}
                       style={{
                         background: "none",
                         border: "none",
-                        fontSize: 18,
+                        fontSize: "var(--fs-xl)",
                         cursor: "pointer",
-                        color: "#dc2626",
+                        color: "var(--danger)",
                       }}
                       title="Excluir"
                     >
-                      🗑️
+                      <FontAwesomeIcon icon={faTrash} style={{ fontSize: "var(--fs-sm)" }} />
                     </button>
                   </div>
                 </>
@@ -258,10 +260,10 @@ export const ModalGerenciarCategorias: React.FC<
             marginTop: 20,
             width: "100%",
             padding: "10px",
-            background: "#374151",
+            background: "var(--text-secondary)",
             color: "#fff",
             border: "none",
-            borderRadius: 6,
+            borderRadius: 8,
             cursor: "pointer",
           }}
         >

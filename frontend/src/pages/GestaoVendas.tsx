@@ -7,7 +7,6 @@ import {
   faTableCells,
   faUser,
   faArrowRight,
-  faArrowLeft,
   faFilter,
   faRotate,
   faCalendarDays,
@@ -82,7 +81,6 @@ type FiltroStatus =
   | "nao_pagas";
 
 interface GestaoComandasProps {
-  setTela?: (tela: string) => void;
   onAbrirComanda?: (comanda: Comanda) => void;
 }
 
@@ -123,6 +121,25 @@ const formatarData = (date: string) => {
   return `${dia}/${mes}/${ano}`;
 };
 
+const normalizarStatus = (
+  status: string | undefined,
+): Comanda["status"] | undefined => {
+  switch (status) {
+    case undefined:
+      return undefined;
+    case "fechado":
+    case "finalizado":
+      return "fechado";
+    case "pendente":
+      return "pendente";
+    case "cancelado":
+    case "cancelada":
+      return "cancelada";
+    default:
+      return "aberta";
+  }
+};
+
 const normalizarComanda = (order: OrderApi): Comanda => {
   const itens: ItemCarrinho[] = (order.items || []).map((item) => ({
     id: Number(item.id),
@@ -137,17 +154,7 @@ const normalizarComanda = (order: OrderApi): Comanda => {
     preco: Number(item.price),
   }));
 
-  let status: Comanda["status"] = "aberta";
-
-  if (order.status === "fechado") {
-    status = "fechado";
-  } else if (order.status === "pendente") {
-    status = "pendente";
-  } else if (order.status === "cancelado" || order.status === "cancelada") {
-    status = "cancelada";
-  } else if (order.status === "aberto" || order.status === "aberta") {
-    status = "aberta";
-  }
+  const status = normalizarStatus(order.status) ?? "aberta";
 
   return {
     id: order.id,
@@ -164,7 +171,6 @@ const normalizarComanda = (order: OrderApi): Comanda => {
 };
 
 export default function GestaoComandas({
-  setTela,
   onAbrirComanda,
 }: GestaoComandasProps) {
   const [comandas, setComandas] = useState<Comanda[]>([]);
@@ -252,11 +258,11 @@ export default function GestaoComandas({
         } else {
           setErro(
             error.response?.data?.message ||
-              "Não foi possível carregar as comandas.",
+              "Não foi possível carregar os pedidos.",
           );
         }
       } else {
-        setErro("Não foi possível carregar as comandas.");
+        setErro("Não foi possível carregar os pedidos.");
       }
     } finally {
       setLoading(false);
@@ -395,7 +401,7 @@ export default function GestaoComandas({
     } catch (error) {
       console.error("Erro ao criar comanda:", error);
 
-      setErro("Não foi possível criar a comanda.");
+      setErro("Não foi possível criar o pedido.");
     }
   };
 
@@ -443,39 +449,39 @@ export default function GestaoComandas({
     if (comanda.payment_method === "pendente") {
       return {
         label: "Não paga",
-        background: "#fef2f2",
-        color: "#dc2626",
+        background: "var(--danger-soft)",
+        color: "var(--danger)",
       };
     }
 
     if (comanda.status === "aberta") {
       return {
         label: "Aberta",
-        background: "#ecfdf5",
-        color: "#059669",
+        background: "var(--primary-soft)",
+        color: "var(--primary)",
       };
     }
 
     if (comanda.status === "pendente") {
       return {
         label: "Pendente",
-        background: "#fffbeb",
-        color: "#d97706",
+        background: "var(--warning-soft)",
+        color: "var(--warning)",
       };
     }
 
     if (comanda.status === "fechado") {
       return {
         label: "Fechada",
-        background: "#f3f4f6",
-        color: "#6b7280",
+        background: "var(--surface-3)",
+        color: "var(--text-muted)",
       };
     }
 
     return {
       label: "Cancelada",
-      background: "#f3f4f6",
-      color: "#6b7280",
+      background: "var(--surface-3)",
+      color: "var(--text-muted)",
     };
   };
 
@@ -487,7 +493,9 @@ export default function GestaoComandas({
    * Quando uma venda está aberta, entramos na NovaVenda.
    */
   if (mostrarNovaVenda && comandaSelecionada) {
-    const somenteLeitura = comandaSelecionada.status === "fechado";
+    const somenteLeitura =
+      comandaSelecionada.status === "fechado" ||
+      comandaSelecionada.status === "cancelada";
 
     return (
       <NovaVenda
@@ -499,7 +507,10 @@ export default function GestaoComandas({
             return;
           }
 
-          atualizarComanda(comandaSelecionada.id, dados);
+          atualizarComanda(comandaSelecionada.id, {
+            ...dados,
+            status: normalizarStatus(dados.status) ?? comandaSelecionada.status,
+          } as Partial<Comanda>);
         }}
         onFinalizar={() => {
           if (somenteLeitura) {
@@ -519,10 +530,10 @@ export default function GestaoComandas({
   return (
     <div
       style={{
-        minHeight: "100%",
+        minHeight: "var(--page-h)",
         width: "100%",
-        background: "#f8fafc",
-        color: "#111827",
+        background: "var(--bg)",
+        color: "var(--text)",
         boxSizing: "border-box",
         overflowX: "hidden",
       }}
@@ -536,52 +547,6 @@ export default function GestaoComandas({
           boxSizing: "border-box",
         }}
       >
-        {setTela && (
-          <div
-            style={{
-              marginBottom: 14,
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setTela("dashboard")}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 7,
-                padding: "7px 10px",
-                background: "#f8fafc",
-                border: "1px solid #e5e7eb",
-                borderRadius: 7,
-                cursor: "pointer",
-                color: "#6b7280",
-                fontSize: 11,
-                fontWeight: 500,
-                transition: "all 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#ecfdf5";
-                e.currentTarget.style.borderColor = "#a7f3d0";
-                e.currentTarget.style.color = "#059669";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "#f8fafc";
-                e.currentTarget.style.borderColor = "#e5e7eb";
-                e.currentTarget.style.color = "#6b7280";
-              }}
-            >
-              <FontAwesomeIcon
-                icon={faArrowLeft}
-                style={{
-                  fontSize: 10,
-                }}
-              />
-              Voltar ao Dashboard
-            </button>
-          </div>
-        )}
-
         {/* ============================================================
             HEADER
         ============================================================ */}
@@ -604,22 +569,22 @@ export default function GestaoComandas({
             <h1
               style={{
                 margin: 0,
-                fontSize: 20,
+                fontSize: "var(--fs-2xl)",
                 fontWeight: 600,
-                color: "#111827",
+                color: "var(--text)",
               }}
             >
-              Gestão de Comandas
+              Pedidos
             </h1>
 
             <p
               style={{
                 margin: "5px 0 0",
-                fontSize: 12,
-                color: "#6b7280",
+                fontSize: "var(--fs-xs)",
+                color: "var(--text-muted)",
               }}
             >
-              Controle das comandas abertas e mesas em atendimento
+              Acompanhe pedidos abertos e vendas em andamento
             </p>
           </div>
 
@@ -634,14 +599,15 @@ export default function GestaoComandas({
               alignItems: "center",
               justifyContent: "center",
               gap: 6,
-              height: 34,
-              padding: "0 12px",
-              borderRadius: 7,
-              border: "1px solid #a7f3d0",
-              background: "#ecfdf5",
-              color: "#047857",
+              height: 40,
+              padding: "0 18px",
+              borderRadius: 10,
+              border: "1px solid var(--accent)",
+              background: "var(--accent)",
+              color: "#fff",
+              boxShadow: "0 4px 12px -6px rgba(15, 23, 42, 0.45)",
               cursor: "pointer",
-              fontSize: 11,
+              fontSize: "var(--fs-sm)",
               fontWeight: 600,
               whiteSpace: "nowrap",
               flexShrink: 0,
@@ -650,10 +616,10 @@ export default function GestaoComandas({
             <FontAwesomeIcon
               icon={faPlus}
               style={{
-                fontSize: 10,
+                fontSize: "var(--fs-xs)",
               }}
             />
-            Abrir comanda
+            Novo pedido
           </button>
         </div>
 
@@ -663,15 +629,16 @@ export default function GestaoComandas({
         <div
           className="gestao-comandas-filtros"
           style={{
-            background: "#fff",
-            border: "1px solid #e5e7eb",
-            borderRadius: 10,
+            background: "var(--surface)",
+            border: "1px solid var(--border)",
+            borderRadius: 12,
             padding: 10,
             marginBottom: 18,
             display: "flex",
             alignItems: "center",
             gap: 7,
             flexWrap: "wrap",
+            boxShadow: "var(--shadow-card)",
           }}
         >
           {/* ========================================================
@@ -683,15 +650,15 @@ export default function GestaoComandas({
               alignItems: "center",
               gap: 6,
               marginRight: 4,
-              color: "#6b7280",
-              fontSize: 11,
+              color: "var(--text-muted)",
+              fontSize: "var(--fs-2xs)",
               fontWeight: 500,
             }}
           >
             <FontAwesomeIcon
               icon={faFilter}
               style={{
-                fontSize: 10,
+                fontSize: "var(--fs-2xs)",
               }}
             />
             Filtros
@@ -716,16 +683,16 @@ export default function GestaoComandas({
                 gap: 7,
                 height: 32,
                 padding: "0 9px",
-                background: "#fff",
-                border: "1px solid #e5e7eb",
-                borderRadius: 7,
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                borderRadius: 8,
               }}
             >
               <FontAwesomeIcon
                 icon={faCalendarDays}
                 style={{
-                  color: "#059669",
-                  fontSize: 11,
+                  color: "var(--primary)",
+                  fontSize: "var(--fs-2xs)",
                 }}
               />
 
@@ -739,8 +706,8 @@ export default function GestaoComandas({
                   border: "none",
                   outline: "none",
                   background: "transparent",
-                  color: "#374151",
-                  fontSize: 11,
+                  color: "var(--text-secondary)",
+                  fontSize: "var(--fs-2xs)",
                   fontWeight: 500,
                   cursor: loading ? "not-allowed" : "pointer",
                 }}
@@ -756,12 +723,12 @@ export default function GestaoComandas({
                 style={{
                   height: 32,
                   padding: "0 9px",
-                  borderRadius: 7,
-                  border: "1px solid #d1fae5",
-                  background: "#ecfdf5",
-                  color: "#047857",
+                  borderRadius: 8,
+                  border: "1px solid var(--primary-soft)",
+                  background: "var(--primary-soft)",
+                  color: "var(--primary-hover)",
                   cursor: loading ? "not-allowed" : "pointer",
-                  fontSize: 10,
+                  fontSize: "var(--fs-2xs)",
                   fontWeight: 600,
                   opacity: loading ? 0.6 : 1,
                 }}
@@ -779,10 +746,10 @@ export default function GestaoComandas({
               style={{
                 width: 32,
                 height: 32,
-                borderRadius: 7,
-                border: "1px solid #e5e7eb",
-                background: "#fff",
-                color: "#6b7280",
+                borderRadius: 8,
+                border: "1px solid var(--border)",
+                background: "var(--surface)",
+                color: "var(--text-muted)",
                 cursor: loading ? "not-allowed" : "pointer",
                 display: "flex",
                 alignItems: "center",
@@ -794,7 +761,7 @@ export default function GestaoComandas({
                 icon={faRotate}
                 spin={loading}
                 style={{
-                  fontSize: 11,
+                  fontSize: "var(--fs-2xs)",
                 }}
               />
             </button>
@@ -866,17 +833,18 @@ export default function GestaoComandas({
           ========================================================== */}
           <div
             style={{
-              background: "#fff",
-              border: "1px solid #e5e7eb",
-              borderRadius: 10,
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              borderRadius: 12,
               overflow: "hidden",
               minWidth: 0,
+              boxShadow: "var(--shadow-card)",
             }}
           >
             <div
               style={{
                 padding: "16px 18px",
-                borderBottom: "1px solid #f1f5f9",
+                borderBottom: "1px solid var(--surface-3)",
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
@@ -885,25 +853,25 @@ export default function GestaoComandas({
               <FontAwesomeIcon
                 icon={faTableCells}
                 style={{
-                  color: "#059669",
-                  fontSize: 13,
+                  color: "var(--primary)",
+                  fontSize: "var(--fs-sm)",
                 }}
               />
 
               <strong
                 style={{
-                  fontSize: 13,
+                  fontSize: "var(--fs-sm)",
                   fontWeight: 600,
-                  color: "#374151",
+                  color: "var(--text-secondary)",
                 }}
               >
-                Comandas
+                Pedidos
               </strong>
 
               <span
                 style={{
-                  fontSize: 11,
-                  color: "#9ca3af",
+                  fontSize: "var(--fs-2xs)",
+                  color: "var(--text-subtle)",
                 }}
               >
                 {comandasFiltradas.length} encontradas
@@ -912,8 +880,8 @@ export default function GestaoComandas({
               <span
                 style={{
                   marginLeft: "auto",
-                  fontSize: 10,
-                  color: "#9ca3af",
+                  fontSize: "var(--fs-2xs)",
+                  color: "var(--text-subtle)",
                 }}
               >
                 {formatarData(dataFiltro)}
@@ -932,8 +900,8 @@ export default function GestaoComandas({
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: "#9ca3af",
-                    fontSize: 12,
+                    color: "var(--text-subtle)",
+                    fontSize: "var(--fs-xs)",
                   }}
                 >
                   <FontAwesomeIcon
@@ -954,12 +922,12 @@ export default function GestaoComandas({
                     alignItems: "center",
                     justifyContent: "center",
                     textAlign: "center",
-                    color: "#dc2626",
+                    color: "var(--danger)",
                   }}
                 >
                   <span
                     style={{
-                      fontSize: 12,
+                      fontSize: "var(--fs-xs)",
                     }}
                   >
                     {erro}
@@ -971,12 +939,12 @@ export default function GestaoComandas({
                     style={{
                       marginTop: 10,
                       padding: "7px 12px",
-                      borderRadius: 7,
-                      border: "1px solid #e5e7eb",
-                      background: "#fff",
-                      color: "#374151",
+                      borderRadius: 8,
+                      border: "1px solid var(--border)",
+                      background: "var(--surface)",
+                      color: "var(--text-secondary)",
                       cursor: "pointer",
-                      fontSize: 11,
+                      fontSize: "var(--fs-2xs)",
                       fontWeight: 500,
                     }}
                   >
@@ -992,33 +960,33 @@ export default function GestaoComandas({
                     alignItems: "center",
                     justifyContent: "center",
                     textAlign: "center",
-                    color: "#9ca3af",
+                    color: "var(--text-subtle)",
                   }}
                 >
                   <FontAwesomeIcon
                     icon={faCartShopping}
                     style={{
-                      fontSize: 14,
+                      fontSize: "var(--fs-md)",
                       marginBottom: 12,
                     }}
                   />
 
                   <strong
                     style={{
-                      fontSize: 13,
-                      color: "#6b7280",
+                      fontSize: "var(--fs-sm)",
+                      color: "var(--text-muted)",
                     }}
                   >
-                    Nenhuma comanda encontrada
+                    Nenhum pedido encontrado
                   </strong>
 
                   <span
                     style={{
                       marginTop: 5,
-                      fontSize: 11,
+                      fontSize: "var(--fs-2xs)",
                     }}
                   >
-                    Não existem comandas para esse filtro em{" "}
+                    Não existem pedidos para esse filtro em{" "}
                     {formatarData(dataFiltro)}.
                   </span>
                 </div>
@@ -1041,12 +1009,13 @@ export default function GestaoComandas({
                         onClick={() => abrirComandaExistente(comanda)}
                         style={{
                           textAlign: "left",
-                          border: "1px solid #e5e7eb",
-                          borderRadius: 9,
-                          background: "#fff",
+                          border: "1px solid var(--border)",
+                          borderRadius: 12,
+                          background: "var(--surface)",
                           padding: 14,
                           cursor: "pointer",
                           minWidth: 0,
+                          boxShadow: "var(--shadow-card)",
                         }}
                       >
                         <div
@@ -1059,19 +1028,19 @@ export default function GestaoComandas({
                         >
                           <strong
                             style={{
-                              fontSize: 13,
-                              color: "#111827",
+                              fontSize: "var(--fs-sm)",
+                              color: "var(--text)",
                               minWidth: 0,
                             }}
                           >
-                            Comanda #{comanda.numero}
+                            Pedido #{comanda.numero}
                           </strong>
 
                           <FontAwesomeIcon
                             icon={faArrowRight}
                             style={{
-                              color: "#9ca3af",
-                              fontSize: 11,
+                              color: "var(--text-subtle)",
+                              fontSize: "var(--fs-2xs)",
                               flexShrink: 0,
                             }}
                           />
@@ -1083,15 +1052,15 @@ export default function GestaoComandas({
                             alignItems: "center",
                             gap: 6,
                             marginTop: 10,
-                            fontSize: 11,
-                            color: "#6b7280",
+                            fontSize: "var(--fs-2xs)",
+                            color: "var(--text-muted)",
                             minWidth: 0,
                           }}
                         >
                           <FontAwesomeIcon
                             icon={faUser}
                             style={{
-                              fontSize: 10,
+                              fontSize: "var(--fs-2xs)",
                               flexShrink: 0,
                             }}
                           />
@@ -1122,7 +1091,7 @@ export default function GestaoComandas({
                               borderRadius: 20,
                               background: status.background,
                               color: status.color,
-                              fontSize: 9,
+                              fontSize: "var(--fs-2xs)",
                               fontWeight: 600,
                             }}
                           >
@@ -1131,8 +1100,8 @@ export default function GestaoComandas({
 
                           <span
                             style={{
-                              fontSize: 10,
-                              color: "#9ca3af",
+                              fontSize: "var(--fs-2xs)",
+                              color: "var(--text-subtle)",
                             }}
                           >
                             {getQuantidadeItens(comanda)} itens
@@ -1140,8 +1109,8 @@ export default function GestaoComandas({
 
                           <strong
                             style={{
-                              fontSize: 13,
-                              color: "#059669",
+                              fontSize: "var(--fs-sm)",
+                              color: "var(--primary)",
                               whiteSpace: "nowrap",
                             }}
                           >
@@ -1161,17 +1130,18 @@ export default function GestaoComandas({
           ========================================================== */}
           <div
             style={{
-              background: "#fff",
-              border: "1px solid #e5e7eb",
-              borderRadius: 10,
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              borderRadius: 12,
               overflow: "hidden",
               minWidth: 0,
+              boxShadow: "var(--shadow-card)",
             }}
           >
             <div
               style={{
                 padding: "16px 18px",
-                borderBottom: "1px solid #f1f5f9",
+                borderBottom: "1px solid var(--surface-3)",
               }}
             >
               <div
@@ -1184,12 +1154,12 @@ export default function GestaoComandas({
               >
                 <strong
                   style={{
-                    fontSize: 13,
+                    fontSize: "var(--fs-sm)",
                     fontWeight: 600,
-                    color: "#374151",
+                    color: "var(--text-secondary)",
                   }}
                 >
-                  Comandas abertas
+                  Pedidos abertos
                 </strong>
 
                 <span
@@ -1198,12 +1168,12 @@ export default function GestaoComandas({
                     height: 22,
                     padding: "0 6px",
                     borderRadius: 20,
-                    background: "#ecfdf5",
-                    color: "#059669",
+                    background: "var(--primary-soft)",
+                    color: "var(--primary)",
                     display: "inline-flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: 10,
+                    fontSize: "var(--fs-2xs)",
                     fontWeight: 600,
                   }}
                 >
@@ -1224,8 +1194,8 @@ export default function GestaoComandas({
                       width: "100%",
                       padding: "13px 16px",
                       border: "none",
-                      borderBottom: "1px solid #f1f5f9",
-                      background: "#fff",
+                      borderBottom: "1px solid var(--surface-3)",
+                      background: "var(--surface)",
                       cursor: "pointer",
                       textAlign: "left",
                     }}
@@ -1240,18 +1210,18 @@ export default function GestaoComandas({
                     >
                       <strong
                         style={{
-                          fontSize: 12,
-                          color: "#374151",
+                          fontSize: "var(--fs-xs)",
+                          color: "var(--text-secondary)",
                         }}
                       >
-                        Comanda #{comanda.numero}
+                        Pedido #{comanda.numero}
                       </strong>
 
                       <span
                         style={{
-                          fontSize: 12,
+                          fontSize: "var(--fs-xs)",
                           fontWeight: 600,
-                          color: "#059669",
+                          color: "var(--primary)",
                         }}
                       >
                         {formatCurrency(comanda.total)}
@@ -1261,11 +1231,11 @@ export default function GestaoComandas({
                     <div
                       style={{
                         marginTop: 5,
-                        fontSize: 10,
-                        color: "#9ca3af",
+                        fontSize: "var(--fs-2xs)",
+                        color: "var(--text-subtle)",
                       }}
                     >
-                      {comanda.mesa ? `Mesa ${comanda.mesa}` : "Sem mesa"} •{" "}
+                      {comanda.mesa ? `Ponto ${comanda.mesa}` : "Sem ponto"} •{" "}
                       {comanda.cliente || "Consumidor"}
                     </div>
                   </button>
@@ -1347,21 +1317,21 @@ const filtroButtonStyle = (
 ): React.CSSProperties => {
   const cores = {
     green: {
-      border: "#a7f3d0",
-      background: "#ecfdf5",
-      color: "#059669",
+      border: "var(--primary-border)",
+      background: "var(--primary-soft)",
+      color: "var(--primary)",
     },
 
     orange: {
-      border: "#fde68a",
-      background: "#fffbeb",
-      color: "#d97706",
+      border: "var(--warning-border)",
+      background: "var(--warning-soft)",
+      color: "var(--warning)",
     },
 
     red: {
-      border: "#fecaca",
-      background: "#fef2f2",
-      color: "#dc2626",
+      border: "var(--danger-border)",
+      background: "var(--danger-soft)",
+      color: "var(--danger)",
     },
   };
 
@@ -1375,11 +1345,11 @@ const filtroButtonStyle = (
     height: 32,
     padding: "0 10px",
     borderRadius: 20,
-    border: ativo ? `1px solid ${cor.border}` : "1px solid #e5e7eb",
-    background: ativo ? cor.background : "#fff",
-    color: ativo ? cor.color : "#6b7280",
+    border: ativo ? `1px solid ${cor.border}` : "1px solid var(--border)",
+    background: ativo ? cor.background : "var(--surface)",
+    color: ativo ? cor.color : "var(--text-muted)",
     cursor: "pointer",
-    fontSize: 10,
+    fontSize: "var(--fs-2xs)",
     fontWeight: ativo ? 600 : 500,
     whiteSpace: "nowrap",
   };

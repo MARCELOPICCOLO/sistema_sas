@@ -111,7 +111,7 @@ export function ModalUsuario({
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(15, 23, 42, 0.45)",
+        background: "var(--overlay)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -126,10 +126,10 @@ export function ModalUsuario({
           maxWidth: 520,
           maxHeight: "90vh",
           overflowY: "auto",
-          background: "#ffffff",
-          borderRadius: 12,
-          border: "1px solid #e5e7eb",
-          boxShadow: "0 20px 50px rgba(15, 23, 42, 0.15)",
+          background: "var(--surface)",
+          borderRadius: 14,
+          border: "1px solid var(--border)",
+          boxShadow: "var(--shadow-modal)",
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -137,7 +137,7 @@ export function ModalUsuario({
         <div
           style={{
             padding: "20px 22px",
-            borderBottom: "1px solid #e5e7eb",
+            borderBottom: "1px solid var(--border)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -154,12 +154,12 @@ export function ModalUsuario({
               style={{
                 width: 40,
                 height: 40,
-                borderRadius: 9,
-                background: "#ecfdf5",
+                borderRadius: 12,
+                background: "var(--primary-soft)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#059669",
+                color: "var(--primary)",
               }}
             >
               <FontAwesomeIcon
@@ -171,9 +171,9 @@ export function ModalUsuario({
               <h2
                 style={{
                   margin: 0,
-                  fontSize: 17,
+                  fontSize: "var(--fs-xl)",
                   fontWeight: 600,
-                  color: "#111827",
+                  color: "var(--text)",
                 }}
               >
                 {usuarioEditando ? "Editar colaborador" : "Novo colaborador"}
@@ -182,8 +182,8 @@ export function ModalUsuario({
               <p
                 style={{
                   margin: "3px 0 0",
-                  fontSize: 12,
-                  color: "#6b7280",
+                  fontSize: "var(--fs-xs)",
+                  color: "var(--text-muted)",
                 }}
               >
                 {usuarioEditando
@@ -336,8 +336,8 @@ export function ModalUsuario({
                 {telas.length > 0 && (
                   <span
                     style={{
-                      fontSize: 11,
-                      color: "#6b7280",
+                      fontSize: "var(--fs-2xs)",
+                      color: "var(--text-muted)",
                     }}
                   >
                     {telasSelecionadas.length} de {telas.length} selecionadas
@@ -347,10 +347,11 @@ export function ModalUsuario({
 
               <div
                 style={{
-                  border: "1px solid #e5e7eb",
-                  borderRadius: 8,
+                  border: "1px solid var(--border)",
+                  borderRadius: 10,
                   overflow: "hidden",
-                  background: "#ffffff",
+                  background: "var(--surface)",
+                  boxShadow: "var(--shadow-card)",
                 }}
               >
                 {/* CARREGANDO */}
@@ -359,8 +360,8 @@ export function ModalUsuario({
                     style={{
                       padding: 18,
                       textAlign: "center",
-                      fontSize: 13,
-                      color: "#6b7280",
+                      fontSize: "var(--fs-sm)",
+                      color: "var(--text-muted)",
                     }}
                   >
                     Carregando telas...
@@ -373,8 +374,8 @@ export function ModalUsuario({
                     style={{
                       padding: 18,
                       textAlign: "center",
-                      fontSize: 13,
-                      color: "#6b7280",
+                      fontSize: "var(--fs-sm)",
+                      color: "var(--text-muted)",
                     }}
                   >
                     Nenhuma tela disponível.
@@ -397,9 +398,9 @@ export function ModalUsuario({
                           justifyContent: "space-between",
                           borderBottom:
                             index < telas.length - 1
-                              ? "1px solid #f1f5f9"
+                              ? "1px solid var(--surface-3)"
                               : "none",
-                          background: selecionada ? "#f0fdf4" : "#ffffff",
+                          background: selecionada ? "var(--primary-soft)" : "var(--surface)",
                           transition: "background 0.15s ease",
                         }}
                       >
@@ -412,9 +413,9 @@ export function ModalUsuario({
                         >
                           <div
                             style={{
-                              fontSize: 13,
+                              fontSize: "var(--fs-sm)",
                               fontWeight: 500,
-                              color: "#374151",
+                              color: "var(--text-secondary)",
                             }}
                           >
                             {tela.nome}
@@ -424,8 +425,8 @@ export function ModalUsuario({
                             <div
                               style={{
                                 marginTop: 2,
-                                fontSize: 11,
-                                color: "#9ca3af",
+                                fontSize: "var(--fs-2xs)",
+                                color: "var(--text-subtle)",
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",
                                 whiteSpace: "nowrap",
@@ -454,7 +455,7 @@ export function ModalUsuario({
                             height: 23,
                             border: "none",
                             borderRadius: 20,
-                            background: selecionada ? "#059669" : "#d1d5db",
+                            background: selecionada ? "var(--primary)" : "var(--border-strong)",
                             cursor: salvando ? "not-allowed" : "pointer",
                             transition: "background 0.2s ease",
                             padding: 0,
@@ -469,7 +470,7 @@ export function ModalUsuario({
                               width: 17,
                               height: 17,
                               borderRadius: "50%",
-                              background: "#ffffff",
+                              background: "var(--surface)",
                               boxShadow: "0 1px 3px rgba(0, 0, 0, 0.2)",
                               transition: "left 0.2s ease",
                             }}
@@ -486,11 +487,11 @@ export function ModalUsuario({
           <div
             style={{
               padding: "16px 22px",
-              borderTop: "1px solid #e5e7eb",
+              borderTop: "1px solid var(--border)",
               display: "flex",
               justifyContent: "flex-end",
               gap: 10,
-              background: "#fafafa",
+              background: "var(--surface-2)",
             }}
           >
             <button
@@ -534,20 +535,20 @@ export function ModalUsuario({
 const labelStyle: React.CSSProperties = {
   display: "block",
   marginBottom: 7,
-  fontSize: 12,
+  fontSize: "var(--fs-xs)",
   fontWeight: 600,
-  color: "#374151",
+  color: "var(--text-secondary)",
 };
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
   height: 40,
   padding: "0 12px",
-  border: "1px solid #d1d5db",
-  borderRadius: 7,
-  background: "#ffffff",
-  color: "#111827",
-  fontSize: 13,
+  border: "1px solid var(--border-strong)",
+  borderRadius: 8,
+  background: "var(--surface)",
+  color: "var(--text)",
+  fontSize: "var(--fs-sm)",
   outline: "none",
   boxSizing: "border-box",
 };
@@ -557,13 +558,13 @@ const closeButtonStyle: React.CSSProperties = {
   height: 32,
   border: "none",
   background: "transparent",
-  borderRadius: 6,
-  color: "#9ca3af",
+  borderRadius: 8,
+  color: "var(--text-subtle)",
   cursor: "pointer",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  fontSize: 15,
+  fontSize: "var(--fs-md)",
 };
 
 const passwordButtonStyle: React.CSSProperties = {
@@ -575,7 +576,7 @@ const passwordButtonStyle: React.CSSProperties = {
   height: 30,
   border: "none",
   background: "transparent",
-  color: "#9ca3af",
+  color: "var(--text-subtle)",
   cursor: "pointer",
   display: "flex",
   alignItems: "center",
@@ -585,23 +586,23 @@ const passwordButtonStyle: React.CSSProperties = {
 const secondaryButtonStyle: React.CSSProperties = {
   height: 38,
   padding: "0 15px",
-  borderRadius: 7,
-  border: "1px solid #e5e7eb",
-  background: "#ffffff",
-  color: "#6b7280",
+  borderRadius: 8,
+  border: "1px solid var(--border)",
+  background: "var(--surface)",
+  color: "var(--text-muted)",
   cursor: "pointer",
-  fontSize: 13,
+  fontSize: "var(--fs-sm)",
   fontWeight: 500,
 };
 
 const primaryButtonStyle: React.CSSProperties = {
   height: 38,
   padding: "0 16px",
-  borderRadius: 7,
-  border: "1px solid #059669",
-  background: "#059669",
-  color: "#ffffff",
+  borderRadius: 8,
+  border: "1px solid var(--primary)",
+  background: "var(--primary)",
+  color: "var(--surface)",
   cursor: "pointer",
-  fontSize: 13,
+  fontSize: "var(--fs-sm)",
   fontWeight: 500,
 };

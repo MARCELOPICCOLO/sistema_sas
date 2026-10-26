@@ -9,11 +9,15 @@ class Category extends Model
     protected $fillable = [
         'partner_company_id',
         'name',
-        'active'
+        'active',
+    ];
+
+    protected $casts = [
+        'active' => 'boolean',
     ];
 
     public function products()
     {
-        return $this->hasMany(\App\Models\Product::class);
+        return $this->hasMany(Product::class);
     }
 }

@@ -5,16 +5,18 @@ import { HeaderCaixa } from "../../components/HeaderCaixa";
 import { ModalAdicionarCategoria } from "../../components/ModalAdicionarCategoria";
 import { ModalAdicionarSaida } from "../../components/ModalAdicionarSaida";
 import { ModalGerenciarCategorias } from "../../components/ModalGerenciarCategorias";
-import { ModalImportarGastos } from "../../components/ModalImportarGastos";
-import { ModalImportarVendas } from "../../components/ModalImportarVendas";
+import { ModalImportarPlanilha } from "../../components/ModalImportarPlanilha";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faArrowLeft,
-  faTimes,
+  faArrowUp,
   faBars,
+  faFileImport,
+  faTags,
+  faTimes,
   faWallet,
 } from "@fortawesome/free-solid-svg-icons";
+import { notify, confirmar } from "../feedback";
 const API_URL = import.meta.env.VITE_API_URL;
 
 interface ExpenseCategory {
@@ -51,25 +53,12 @@ interface Order {
 interface DailySummary {
   date: string;
   total_vendas: number;
-  total_entradas: number | string;
-  total_saidas: number | string;
-  saldo: number | string;
+  total_entradas: number;
+  total_saidas: number;
+  saldo: number;
 }
 
-interface CaixaProps {
-  setTela?: (tela: string) => void;
-}
-
-interface CSVPreview {
-  data_original?: string;
-  descricao?: string;
-  valor?: string;
-  categoria?: string;
-  cliente?: string;
-  pagamento?: string;
-}
-
-export default function Caixa({ setTela }: CaixaProps) {
+export default function Caixa() {
   // =========================================================
   // ESTADOS
   // =========================================================
@@ -130,15 +119,11 @@ export default function Caixa({ setTela }: CaixaProps) {
 
   const [filtroCategoria, setFiltroCategoria] = useState<number | null>(null);
 
-  const [showModalImportarGastos, setShowModalImportarGastos] = useState(false);
+  const [showModalImportar, setShowModalImportar] = useState(false);
 
-  const [showModalImportarVendas, setShowModalImportarVendas] = useState(false);
 
-  const [importFile, setImportFile] = useState<File | null>(null);
 
-  const [importPreview, setImportPreview] = useState<CSVPreview[]>([]);
 
-  const [importing, setImporting] = useState(false);
 
   // =========================================================
   // CORES
@@ -177,23 +162,6 @@ export default function Caixa({ setTela }: CaixaProps) {
     return token;
   };
 
-  const getAuthHeaders = (json = false): HeadersInit => {
-    const token = getToken();
-
-    const headers: HeadersInit = {
-      Accept: "application/json",
-    };
-
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-
-    if (json) {
-      headers["Content-Type"] = "application/json";
-    }
-
-    return headers;
-  };
 
   // =========================================================
   // RESPONSIVIDADE
@@ -311,9 +279,17 @@ export default function Caixa({ setTela }: CaixaProps) {
 
       const responseData = await response.json();
 
-      const resumo: DailySummary[] = Array.isArray(responseData)
+      const lista: DailySummary[] = Array.isArray(responseData)
         ? responseData
         : responseData.data || [];
+
+      const resumo: DailySummary[] = lista.map((dia) => ({
+        date: dia.date,
+        total_vendas: Number(dia.total_vendas) || 0,
+        total_entradas: Number(dia.total_entradas) || 0,
+        total_saidas: Number(dia.total_saidas) || 0,
+        saldo: Number(dia.saldo) || 0,
+      }));
 
       setResumoDiario(resumo);
 
@@ -396,9 +372,8 @@ export default function Caixa({ setTela }: CaixaProps) {
         : expensesResponseData.data || [];
 
       const entradas: Transaction[] = orders
-        .filter(
-          (order) => order.status === "fechado" || order.status === "pendente",
-        )
+        // Somente vendas pagas entram no caixa (igual ao resumo diário).
+        .filter((order) => order.status === "fechado")
         .map((order) => ({
           id: order.id,
 
@@ -488,7 +463,7 @@ export default function Caixa({ setTela }: CaixaProps) {
 
   const adicionarCategoria = async () => {
     if (!novaCategoria.name.trim()) {
-      alert("Digite o nome da categoria");
+      notify("Digite o nome da categoria");
       return;
     }
 
@@ -496,7 +471,7 @@ export default function Caixa({ setTela }: CaixaProps) {
       const token = getToken();
 
       if (!token) {
-        alert("Sessão expirada. Faça login novamente.");
+        notify("Sessão expirada. Faça login novamente.");
         return;
       }
 
@@ -530,11 +505,11 @@ export default function Caixa({ setTela }: CaixaProps) {
         color: "#6b7280",
       });
 
-      alert("Categoria adicionada com sucesso!");
+      notify("Categoria adicionada com sucesso!");
     } catch (error) {
       console.error("Erro ao adicionar categoria:", error);
 
-      alert(
+      notify(
         error instanceof Error ? error.message : "Erro ao adicionar categoria",
       );
     }
@@ -550,7 +525,7 @@ export default function Caixa({ setTela }: CaixaProps) {
     }
 
     if (!editandoCategoria.name.trim()) {
-      alert("Digite o nome da categoria");
+      notify("Digite o nome da categoria");
       return;
     }
 
@@ -558,7 +533,7 @@ export default function Caixa({ setTela }: CaixaProps) {
       const token = getToken();
 
       if (!token) {
-        alert("Sessão expirada. Faça login novamente.");
+        notify("Sessão expirada. Faça login novamente.");
         return;
       }
 
@@ -589,11 +564,11 @@ export default function Caixa({ setTela }: CaixaProps) {
 
       setEditandoCategoria(null);
 
-      alert("Categoria atualizada com sucesso!");
+      notify("Categoria atualizada com sucesso!");
     } catch (error) {
       console.error("Erro ao editar categoria:", error);
 
-      alert(
+      notify(
         error instanceof Error ? error.message : "Erro ao editar categoria",
       );
     }
@@ -616,7 +591,7 @@ export default function Caixa({ setTela }: CaixaProps) {
       ? `A categoria "${name}" possui gastos associados. Excluir mesmo assim?`
       : `Tem certeza que deseja excluir a categoria "${name}"?`;
 
-    if (!confirm(mensagem)) {
+    if (!(await confirmar(mensagem))) {
       return;
     }
 
@@ -624,7 +599,7 @@ export default function Caixa({ setTela }: CaixaProps) {
       const token = getToken();
 
       if (!token) {
-        alert("Sessão expirada. Faça login novamente.");
+        notify("Sessão expirada. Faça login novamente.");
         return;
       }
 
@@ -639,7 +614,7 @@ export default function Caixa({ setTela }: CaixaProps) {
       if (!response.ok) {
         const error = await response.json().catch(() => null);
 
-        alert(error?.message || "Erro ao excluir categoria");
+        notify(error?.message || "Erro ao excluir categoria");
 
         return;
       }
@@ -650,11 +625,11 @@ export default function Caixa({ setTela }: CaixaProps) {
         setFiltroCategoria(null);
       }
 
-      alert("Categoria excluída com sucesso!");
+      notify("Categoria excluída com sucesso!");
     } catch (error) {
       console.error("Erro ao excluir categoria:", error);
 
-      alert("Erro ao excluir categoria");
+      notify("Erro ao excluir categoria");
     }
   };
 
@@ -664,22 +639,22 @@ export default function Caixa({ setTela }: CaixaProps) {
 
   const adicionarSaida = async () => {
     if (!novaSaida.descricao.trim()) {
-      alert("Preencha a descrição");
+      notify("Preencha a descrição");
       return;
     }
 
     if (novaSaida.valor <= 0) {
-      alert("Digite um valor válido maior que zero");
+      notify("Digite um valor válido maior que zero");
       return;
     }
 
     if (!novaSaida.category_id) {
-      alert("Selecione uma categoria");
+      notify("Selecione uma categoria");
       return;
     }
 
     if (!novaSaida.data) {
-      alert("Selecione uma data");
+      notify("Selecione uma data");
       return;
     }
 
@@ -687,7 +662,7 @@ export default function Caixa({ setTela }: CaixaProps) {
       const token = getToken();
 
       if (!token) {
-        alert("Sessão expirada. Faça login novamente.");
+        notify("Sessão expirada. Faça login novamente.");
         return;
       }
 
@@ -732,11 +707,11 @@ export default function Caixa({ setTela }: CaixaProps) {
         await carregarTransacoesDoDia(novaSaida.data);
       }
 
-      alert("Saída adicionada com sucesso!");
+      notify("Saída adicionada com sucesso!");
     } catch (error) {
       console.error("Erro ao adicionar saída:", error);
 
-      alert(
+      notify(
         error instanceof Error
           ? error.message
           : "Erro ao conectar com o servidor",
@@ -753,12 +728,12 @@ export default function Caixa({ setTela }: CaixaProps) {
     type: string,
     source?: string,
   ) => {
-    if (!confirm("Remover esse lançamento?")) {
+    if (!(await confirmar("Remover esse lançamento?"))) {
       return;
     }
 
     if (type === "entrada" && source === "pdv") {
-      alert("Entradas do PDV não podem ser removidas aqui.");
+      notify("Entradas do PDV não podem ser removidas aqui.");
 
       return;
     }
@@ -767,7 +742,7 @@ export default function Caixa({ setTela }: CaixaProps) {
       const token = getToken();
 
       if (!token) {
-        alert("Sessão expirada. Faça login novamente.");
+        notify("Sessão expirada. Faça login novamente.");
         return;
       }
 
@@ -788,7 +763,7 @@ export default function Caixa({ setTela }: CaixaProps) {
       if (!response.ok) {
         const error = await response.json().catch(() => null);
 
-        alert(error?.message || "Erro ao remover lançamento");
+        notify(error?.message || "Erro ao remover lançamento");
 
         return;
       }
@@ -799,571 +774,20 @@ export default function Caixa({ setTela }: CaixaProps) {
         await carregarTransacoesDoDia(dataTransacao);
       }
 
-      alert("Removido com sucesso!");
+      notify("Removido com sucesso!");
     } catch (error) {
       console.error("Erro ao remover:", error);
 
-      alert("Erro ao conectar com o servidor");
+      notify("Erro ao conectar com o servidor");
     }
   };
 
   // =========================================================
-  // CSV
+  // IMPORTAÇÃO DE PLANILHA (gastos ou vendas)
   // =========================================================
 
-  const parseBrazilianDate = (dateStr: string): string => {
-    if (!dateStr) {
-      return "";
-    }
-
-    const cleanDate = dateStr.trim();
-
-    if (/^\d{4}-\d{2}-\d{2}$/.test(cleanDate)) {
-      return cleanDate;
-    }
-
-    if (cleanDate.includes("/")) {
-      const parts = cleanDate.split("/");
-
-      if (parts.length === 3) {
-        let day = parts[0].padStart(2, "0");
-        let month = parts[1].padStart(2, "0");
-        let year = parts[2];
-
-        if (year.length === 2) {
-          year = `20${year}`;
-        }
-
-        return `${year}-${month}-${day}`;
-      }
-    }
-
-    return cleanDate;
-  };
-
-  const parseBrazilianNumber = (value: string): number => {
-    if (!value) {
-      return 0;
-    }
-
-    let clean = value.replace(/R\$\s*/gi, "").trim();
-
-    if (clean.includes(",")) {
-      clean = clean.replace(/\./g, "");
-      clean = clean.replace(",", ".");
-    }
-
-    const number = parseFloat(clean);
-
-    return isNaN(number) ? 0 : number;
-  };
-
-  // =========================================================
-  // PROCESSAR CSV
-  // =========================================================
-
-  const processCSV = (file: File, callback: (data: CSVPreview[]) => void) => {
-    const reader = new FileReader();
-
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
-
-      if (!text) {
-        callback([]);
-        return;
-      }
-
-      const lines = text.split(/\r?\n/).filter((line) => line.trim());
-
-      if (lines.length === 0) {
-        callback([]);
-        return;
-      }
-
-      const firstLine = lines[0];
-
-      const commaCount = (firstLine.match(/,/g) || []).length;
-
-      const semicolonCount = (firstLine.match(/;/g) || []).length;
-
-      const delimiter = semicolonCount > commaCount ? ";" : ",";
-
-      const parseRow = (line: string): string[] => {
-        const result: string[] = [];
-
-        let inQuotes = false;
-        let currentValue = "";
-
-        for (let i = 0; i < line.length; i++) {
-          const char = line[i];
-
-          if (char === '"') {
-            inQuotes = !inQuotes;
-          } else if (char === delimiter && !inQuotes) {
-            result.push(currentValue.trim());
-
-            currentValue = "";
-          } else {
-            currentValue += char;
-          }
-        }
-
-        result.push(currentValue.trim());
-
-        return result.map((value) =>
-          value.replace(/^"|"$/g, "").replace(/""/g, '"'),
-        );
-      };
-
-      const firstLineLower = firstLine.toLowerCase();
-
-      const hasHeader =
-        firstLineLower.includes("descricao") ||
-        firstLineLower.includes("description") ||
-        firstLineLower.includes("data") ||
-        firstLineLower.includes("valor") ||
-        firstLineLower.includes("cliente") ||
-        firstLineLower.includes("categoria");
-
-      let headers: string[] = [];
-      let startRow = 0;
-
-      if (hasHeader) {
-        headers = parseRow(lines[0]);
-
-        startRow = 1;
-      } else {
-        const firstRow = parseRow(lines[0]);
-
-        if (firstRow.length >= 4) {
-          headers = ["data", "descricao", "valor", "categoria"];
-        } else {
-          headers = ["data", "descricao", "valor"];
-        }
-      }
-
-      const normalizedHeaders = headers.map((header) =>
-        header.toLowerCase().trim(),
-      );
-
-      const dataIndex = normalizedHeaders.findIndex(
-        (header) => header === "data" || header === "date",
-      );
-
-      const descIndex = normalizedHeaders.findIndex(
-        (header) => header === "descricao" || header === "description",
-      );
-
-      const valorIndex = normalizedHeaders.findIndex(
-        (header) =>
-          header === "valor" || header === "amount" || header === "total",
-      );
-
-      const categoriaIndex = normalizedHeaders.findIndex(
-        (header) => header === "categoria" || header === "category",
-      );
-
-      const data: CSVPreview[] = [];
-
-      for (let i = startRow; i < lines.length; i++) {
-        const values = parseRow(lines[i]);
-
-        if (values.length < 3) {
-          continue;
-        }
-
-        const row: CSVPreview = {
-          data_original:
-            dataIndex !== -1 ? values[dataIndex] || "" : values[0] || "",
-
-          descricao:
-            descIndex !== -1 ? values[descIndex] || "" : values[1] || "",
-
-          valor: valorIndex !== -1 ? values[valorIndex] || "" : values[2] || "",
-
-          categoria:
-            categoriaIndex !== -1
-              ? values[categoriaIndex] || ""
-              : values[3] || "",
-        };
-
-        data.push(row);
-      }
-
-      callback(data);
-    };
-
-    reader.readAsText(file, "UTF-8");
-  };
-
-  // =========================================================
-  // PREVIEW GASTOS
-  // =========================================================
-
-  const previewCSV = (file: File) => {
-    processCSV(file, (data) => {
-      setImportPreview(data.slice(0, 5));
-    });
-  };
-
-  // =========================================================
-  // IMPORTAR GASTOS
-  // =========================================================
-
-  const importarGastosCSV = async () => {
-    if (!importFile) {
-      alert("Selecione um arquivo CSV");
-      return;
-    }
-
-    const token = getToken();
-
-    if (!token) {
-      alert("Sessão expirada. Faça login novamente.");
-      return;
-    }
-
-    setImporting(true);
-
-    try {
-      const conteudo = await importFile.text();
-
-      const linhas = conteudo.split(/\r?\n/).filter((linha) => linha.trim());
-
-      if (linhas.length < 2) {
-        alert("Arquivo vazio ou formato inválido");
-        return;
-      }
-
-      const primeiraLinha = linhas[0].toLowerCase();
-
-      const delimiter = primeiraLinha.includes(";") ? ";" : ",";
-
-      let sucesso = 0;
-      let erros = 0;
-
-      const inicio =
-        primeiraLinha.includes("data") ||
-        primeiraLinha.includes("date") ||
-        primeiraLinha.includes("descricao") ||
-        primeiraLinha.includes("description")
-          ? 1
-          : 0;
-
-      for (let i = inicio; i < linhas.length; i++) {
-        const partes = linhas[i]
-          .split(delimiter)
-          .map((item) => item.trim().replace(/^"|"$/g, ""));
-
-        if (partes.length < 3) {
-          erros++;
-          continue;
-        }
-
-        const dataOriginal = partes[0] || "";
-        const descricao = partes[1] || "";
-        const valorRaw = partes[2] || "";
-        const categoriaRaw = partes[3] || "";
-
-        if (!dataOriginal || !descricao || !valorRaw) {
-          erros++;
-          continue;
-        }
-
-        const valor = parseBrazilianNumber(valorRaw);
-
-        if (valor <= 0) {
-          erros++;
-          continue;
-        }
-
-        const dataFormatada = parseBrazilianDate(dataOriginal);
-
-        let categoriaId = 0;
-
-        if (categoriaRaw) {
-          categoriaId = Number(categoriaRaw) || 0;
-        }
-
-        if (!categoriaId) {
-          categoriaId = categorias[0]?.id || 0;
-        }
-
-        if (!categoriaId) {
-          erros++;
-          continue;
-        }
-
-        try {
-          const response = await fetch(`${API_URL}/expenses`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              description: descricao,
-              amount: valor,
-              expense_date: dataFormatada,
-              expense_category_id: categoriaId,
-              type: "saida",
-              notes: "Importado via CSV",
-            }),
-          });
-
-          if (response.ok) {
-            sucesso++;
-          } else {
-            erros++;
-
-            const error = await response.json().catch(() => null);
-
-            console.error("Erro ao importar gasto:", error);
-          }
-        } catch (error) {
-          erros++;
-
-          console.error("Erro na importação:", error);
-        }
-      }
-
-      alert(
-        `Importação finalizada!\n\n` +
-          `✅ Sucesso: ${sucesso}\n` +
-          `❌ Erros: ${erros}`,
-      );
-
-      setShowModalImportarGastos(false);
-      setImportFile(null);
-      setImportPreview([]);
-
-      await fetchResumoDiario();
-    } catch (error) {
-      console.error("Erro ao processar CSV:", error);
-
-      alert("Erro ao processar o arquivo CSV.");
-    } finally {
-      setImporting(false);
-    }
-  };
-
-  // =========================================================
-  // PREVIEW VENDAS
-  // =========================================================
-
-  const previewVendasCSV = (file: File) => {
-    const reader = new FileReader();
-
-    reader.onload = (event) => {
-      const conteudo = event.target?.result as string;
-
-      const linhas = conteudo.split(/\r?\n/).filter((linha) => linha.trim());
-
-      if (linhas.length < 2) {
-        setImportPreview([]);
-        return;
-      }
-
-      const cabecalho = linhas[0]
-        .split(";")
-        .map((col) => col.trim().toLowerCase());
-
-      let idxData = cabecalho.findIndex((h) => h === "data" || h === "date");
-
-      let idxCliente = cabecalho.findIndex(
-        (h) => h === "cliente" || h === "customer" || h === "customer_name",
-      );
-
-      let idxValor = cabecalho.findIndex(
-        (h) => h === "valor" || h === "amount" || h === "total",
-      );
-
-      let idxPagamento = cabecalho.findIndex(
-        (h) => h === "pagamento" || h === "payment" || h === "payment_method",
-      );
-
-      if (idxData === -1) {
-        idxData = 0;
-      }
-
-      if (idxValor === -1) {
-        idxValor = 1;
-      }
-
-      const preview: CSVPreview[] = [];
-
-      for (let i = 1; i < Math.min(linhas.length, 6); i++) {
-        const partes = linhas[i].split(";").map((col) => col.trim());
-
-        preview.push({
-          data_original: partes[idxData] || "",
-
-          cliente:
-            idxCliente !== -1
-              ? partes[idxCliente] || "Venda Rápida"
-              : "Venda Rápida",
-
-          valor: partes[idxValor] || "",
-
-          pagamento:
-            idxPagamento !== -1
-              ? partes[idxPagamento] || "dinheiro"
-              : "dinheiro",
-        });
-      }
-
-      setImportPreview(preview);
-    };
-
-    reader.readAsText(file, "UTF-8");
-  };
-
-  // =========================================================
-  // IMPORTAR VENDAS
-  // =========================================================
-
-  const importarVendasCSV = async () => {
-    if (!importFile) {
-      alert("Selecione um arquivo CSV");
-      return;
-    }
-
-    const token = getToken();
-
-    if (!token) {
-      alert("Sessão expirada. Faça login novamente.");
-      return;
-    }
-
-    setImporting(true);
-
-    try {
-      const conteudo = await importFile.text();
-
-      const linhas = conteudo.split(/\r?\n/).filter((linha) => linha.trim());
-
-      if (linhas.length < 2) {
-        alert("Arquivo vazio ou formato inválido");
-        return;
-      }
-
-      const cabecalho = linhas[0]
-        .split(";")
-        .map((col) => col.trim().toLowerCase());
-
-      let idxData = cabecalho.findIndex((h) => h === "data" || h === "date");
-
-      let idxCliente = cabecalho.findIndex(
-        (h) => h === "cliente" || h === "customer" || h === "customer_name",
-      );
-
-      let idxValor = cabecalho.findIndex(
-        (h) => h === "valor" || h === "amount" || h === "total",
-      );
-
-      let idxPagamento = cabecalho.findIndex(
-        (h) => h === "pagamento" || h === "payment" || h === "payment_method",
-      );
-
-      if (idxData === -1) {
-        idxData = 0;
-      }
-
-      if (idxValor === -1) {
-        idxValor = 1;
-      }
-
-      let sucesso = 0;
-      let erros = 0;
-
-      for (let i = 1; i < linhas.length; i++) {
-        const partes = linhas[i].split(";").map((col) => col.trim());
-
-        if (partes.length < 2) {
-          erros++;
-          continue;
-        }
-
-        const dataOriginal = partes[idxData] || "";
-
-        const cliente =
-          idxCliente !== -1
-            ? partes[idxCliente] || "Venda Rápida"
-            : "Venda Rápida";
-
-        const valorRaw = partes[idxValor] || "";
-
-        const pagamento =
-          idxPagamento !== -1 ? partes[idxPagamento] || "dinheiro" : "dinheiro";
-
-        if (!dataOriginal || !valorRaw) {
-          erros++;
-          continue;
-        }
-
-        const valorNumerico = parseBrazilianNumber(valorRaw);
-
-        if (valorNumerico <= 0) {
-          erros++;
-          continue;
-        }
-
-        const dataFormatada = parseBrazilianDate(dataOriginal);
-
-        try {
-          const response = await fetch(`${API_URL}/orders`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              table_id: 1,
-              customer_name: cliente,
-              status: "fechado",
-              total: valorNumerico,
-              payment_method: pagamento.toLowerCase(),
-              closed_at: dataFormatada,
-            }),
-          });
-
-          if (response.ok) {
-            sucesso++;
-          } else {
-            erros++;
-
-            const error = await response.json().catch(() => null);
-
-            console.error("Erro API:", error);
-          }
-        } catch (error) {
-          erros++;
-
-          console.error("Erro ao importar venda:", error);
-        }
-      }
-
-      alert(
-        `Importação de vendas finalizada!\n\n` +
-          `✅ Sucesso: ${sucesso}\n` +
-          `❌ Erros: ${erros}`,
-      );
-
-      setShowModalImportarVendas(false);
-      setImportFile(null);
-      setImportPreview([]);
-
-      await fetchResumoDiario();
-    } catch (error) {
-      console.error("Erro ao processar vendas:", error);
-
-      alert("Erro ao processar o arquivo CSV.");
-    } finally {
-      setImporting(false);
-    }
-  };
+  // fetchResumoDiario também limpa os dias expandidos (recarregam ao abrir).
+  const recarregarAposImportacao = () => fetchResumoDiario();
 
   // =========================================================
   // CONTROLES
@@ -1514,26 +938,11 @@ export default function Caixa({ setTela }: CaixaProps) {
         adicionarSaida={adicionarSaida}
       />
 
-      <ModalImportarGastos
-        showModalImportarGastos={showModalImportarGastos}
-        setShowModalImportarGastos={setShowModalImportarGastos}
-        importFile={importFile}
-        setImportFile={setImportFile}
-        importPreview={importPreview}
-        importing={importing}
-        previewCSV={previewCSV}
-        importarGastosCSV={importarGastosCSV}
-      />
-
-      <ModalImportarVendas
-        showModalImportarVendas={showModalImportarVendas}
-        setShowModalImportarVendas={setShowModalImportarVendas}
-        importFile={importFile}
-        setImportFile={setImportFile}
-        importPreview={importPreview}
-        importing={importing}
-        previewCSV={previewVendasCSV}
-        importarVendasCSV={importarVendasCSV}
+      <ModalImportarPlanilha
+        aberto={showModalImportar}
+        onFechar={() => setShowModalImportar(false)}
+        categorias={categorias}
+        onImportado={recarregarAposImportacao}
       />
     </>
   );
@@ -1547,25 +956,23 @@ export default function Caixa({ setTela }: CaixaProps) {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "280px 1fr",
+          gridTemplateColumns: "auto 1fr",
           height: "100%",
-          background: "#f8fafc",
+          background: "var(--surface-2)",
         }}
       >
         <SidebarCaixa
           setShowModalSaida={setShowModalSaida}
           setShowModalGerenciar={setShowModalGerenciar}
-          setShowModalImportarGastos={setShowModalImportarGastos}
-          setShowModalImportarVendas={setShowModalImportarVendas}
-          onVoltarDashboard={setTela ? () => setTela("dashboard") : undefined}
+          onImportar={() => setShowModalImportar(true)}
         />
 
         <div
           style={{
             padding: "20px",
             overflowY: "auto",
-            height: "100vh",
-            background: "#f8fafc",
+            height: "var(--page-h)",
+            background: "var(--bg)",
           }}
         >
           <HeaderCaixa
@@ -1616,8 +1023,8 @@ export default function Caixa({ setTela }: CaixaProps) {
   return (
     <div
       style={{
-        background: "#f8fafc",
-        minHeight: "100vh",
+        background: "var(--bg)",
+        minHeight: "var(--page-h)",
       }}
     >
       {/* HEADER */}
@@ -1625,11 +1032,11 @@ export default function Caixa({ setTela }: CaixaProps) {
       <div
         style={{
           padding: "16px",
-          background: "#ffffff",
+          background: "var(--surface)",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          borderBottom: "1px solid #e5e7eb",
+          borderBottom: "1px solid var(--border)",
         }}
       >
         <div
@@ -1643,8 +1050,8 @@ export default function Caixa({ setTela }: CaixaProps) {
             style={{
               width: 36,
               height: 36,
-              background: "#f3f4f6",
-              borderRadius: 8,
+              background: "var(--surface-3)",
+              borderRadius: 10,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -1654,8 +1061,8 @@ export default function Caixa({ setTela }: CaixaProps) {
             <FontAwesomeIcon
               icon={faWallet}
               style={{
-                fontSize: 18,
-                color: "#16a34a",
+                fontSize: "var(--fs-xl)",
+                color: "var(--primary)",
               }}
             />
           </div>
@@ -1663,9 +1070,9 @@ export default function Caixa({ setTela }: CaixaProps) {
           <h1
             style={{
               margin: 0,
-              fontSize: 18,
+              fontSize: "var(--fs-xl)",
               fontWeight: 600,
-              color: "#111827",
+              color: "var(--text)",
             }}
           >
             Caixa
@@ -1675,43 +1082,16 @@ export default function Caixa({ setTela }: CaixaProps) {
         <button
           onClick={() => setShowMobileMenu(true)}
           style={{
-            background: "#ffffff",
-            border: "1px solid #e5e7eb",
-            borderRadius: 8,
+            background: "var(--surface)",
+            border: "1px solid var(--border)",
+            borderRadius: 10,
             padding: "8px 12px",
             cursor: "pointer",
-            color: "#374151",
+            color: "var(--text-secondary)",
+            boxShadow: "var(--shadow-card)",
           }}
         >
           <FontAwesomeIcon icon={faBars} />
-        </button>
-      </div>
-
-      {/* VOLTAR */}
-
-      <div
-        style={{
-          padding: "12px 16px",
-        }}
-      >
-        <button
-          onClick={() => setTela && setTela("dashboard")}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            width: "100%",
-            padding: "10px 16px",
-            background: "#ffffff",
-            border: "1px solid #e5e7eb",
-            borderRadius: 8,
-            cursor: "pointer",
-            color: "#374151",
-            fontSize: 14,
-          }}
-        >
-          <FontAwesomeIcon icon={faArrowLeft} />
-          Voltar ao Dashboard
         </button>
       </div>
 
@@ -1726,20 +1106,21 @@ export default function Caixa({ setTela }: CaixaProps) {
               left: 0,
               right: 0,
               bottom: 0,
-              background: "rgba(0,0,0,0.35)",
+              background: "var(--overlay)",
               zIndex: 1000,
             }}
             onClick={() => setShowMobileMenu(false)}
           />
 
           <div
+            className="sidebar-dark"
             style={{
               position: "fixed",
               top: 0,
               left: 0,
               bottom: 0,
               width: "280px",
-              background: "#ffffff",
+              background: "var(--surface)",
               zIndex: 1001,
               padding: "20px",
               overflowY: "auto",
@@ -1758,9 +1139,9 @@ export default function Caixa({ setTela }: CaixaProps) {
                 style={{
                   background: "transparent",
                   border: "none",
-                  fontSize: 20,
+                  fontSize: "var(--fs-2xl)",
                   cursor: "pointer",
-                  color: "#333",
+                  color: "var(--text)",
                 }}
               >
                 <FontAwesomeIcon icon={faTimes} />
@@ -1782,9 +1163,9 @@ export default function Caixa({ setTela }: CaixaProps) {
                 padding: "12px 16px",
                 background: "transparent",
                 border: "none",
-                borderRadius: 8,
+                borderRadius: 10,
                 cursor: "pointer",
-                color: "#374151",
+                color: "var(--text-secondary)",
                 marginBottom: 12,
                 textAlign: "left",
               }}
@@ -1793,14 +1174,14 @@ export default function Caixa({ setTela }: CaixaProps) {
                 style={{
                   width: 32,
                   height: 32,
-                  background: "#f3f4f6",
-                  borderRadius: 8,
+                  background: "var(--surface-3)",
+                  borderRadius: 10,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                📤
+                <FontAwesomeIcon icon={faArrowUp} style={{ color: "var(--primary)" }} />
               </div>
 
               <span>Nova Saída</span>
@@ -1821,9 +1202,9 @@ export default function Caixa({ setTela }: CaixaProps) {
                 padding: "12px 16px",
                 background: "transparent",
                 border: "none",
-                borderRadius: 8,
+                borderRadius: 10,
                 cursor: "pointer",
-                color: "#374151",
+                color: "var(--text-secondary)",
                 marginBottom: 12,
                 textAlign: "left",
               }}
@@ -1832,24 +1213,24 @@ export default function Caixa({ setTela }: CaixaProps) {
                 style={{
                   width: 32,
                   height: 32,
-                  background: "#f3f4f6",
-                  borderRadius: 8,
+                  background: "var(--surface-3)",
+                  borderRadius: 10,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                🏷️
+                <FontAwesomeIcon icon={faTags} style={{ color: "var(--primary)" }} />
               </div>
 
               <span>Categorias</span>
             </button>
 
-            {/* IMPORTAR GASTOS */}
+            {/* IMPORTAR PLANILHA */}
 
             <button
               onClick={() => {
-                setShowModalImportarGastos(true);
+                setShowModalImportar(true);
                 setShowMobileMenu(false);
               }}
               style={{
@@ -1860,9 +1241,9 @@ export default function Caixa({ setTela }: CaixaProps) {
                 padding: "12px 16px",
                 background: "transparent",
                 border: "none",
-                borderRadius: 8,
+                borderRadius: 10,
                 cursor: "pointer",
-                color: "#374151",
+                color: "var(--text-secondary)",
                 marginBottom: 12,
                 textAlign: "left",
               }}
@@ -1871,55 +1252,17 @@ export default function Caixa({ setTela }: CaixaProps) {
                 style={{
                   width: 32,
                   height: 32,
-                  background: "#f3f4f6",
-                  borderRadius: 8,
+                  background: "var(--surface-3)",
+                  borderRadius: 10,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                📥
+                <FontAwesomeIcon icon={faFileImport} style={{ color: "var(--primary)" }} />
               </div>
 
-              <span>Importar Gastos</span>
-            </button>
-
-            {/* IMPORTAR VENDAS */}
-
-            <button
-              onClick={() => {
-                setShowModalImportarVendas(true);
-                setShowMobileMenu(false);
-              }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                width: "100%",
-                padding: "12px 16px",
-                background: "transparent",
-                border: "none",
-                borderRadius: 8,
-                cursor: "pointer",
-                color: "#374151",
-                textAlign: "left",
-              }}
-            >
-              <div
-                style={{
-                  width: 32,
-                  height: 32,
-                  background: "#f3f4f6",
-                  borderRadius: 8,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                📤
-              </div>
-
-              <span>Importar Vendas</span>
+              <span>Importar planilha</span>
             </button>
           </div>
         </>

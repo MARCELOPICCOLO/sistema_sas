@@ -34,13 +34,13 @@ export function CabecalhoEquipe({
           style={{
             width: 44,
             height: 44,
-            borderRadius: 10,
-            background: "#ecfdf5",
-            color: "#059669",
+            borderRadius: 12,
+            background: "var(--primary-soft)",
+            color: "var(--primary)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 19,
+            fontSize: "var(--fs-xl)",
           }}
         >
           <FontAwesomeIcon icon={faUsers} />
@@ -50,9 +50,9 @@ export function CabecalhoEquipe({
           <h1
             style={{
               margin: 0,
-              fontSize: 20,
+              fontSize: "var(--fs-2xl)",
               fontWeight: 600,
-              color: "#111827",
+              color: "var(--text)",
             }}
           >
             {titulo}
@@ -60,8 +60,8 @@ export function CabecalhoEquipe({
           <p
             style={{
               margin: "4px 0 0",
-              fontSize: 13,
-              color: "#6b7280",
+              fontSize: "var(--fs-sm)",
+              color: "var(--text-muted)",
             }}
           >
             {subtitulo}

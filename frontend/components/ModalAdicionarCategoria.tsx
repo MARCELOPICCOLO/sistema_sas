@@ -39,7 +39,7 @@ export const ModalAdicionarCategoria: React.FC<
         left: 0,
         right: 0,
         bottom: 0,
-        background: "rgba(0,0,0,0.5)",
+        background: "var(--overlay)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -49,22 +49,22 @@ export const ModalAdicionarCategoria: React.FC<
     >
       <div
         style={{
-          background: "#fff",
-          borderRadius: 12,
+          background: "var(--surface)",
+          borderRadius: 14,
           padding: 24,
           width: "90%",
           maxWidth: 450,
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ margin: "0 0 20px 0", fontSize: 20 }}>Nova Categoria</h2>
+        <h2 style={{ margin: "0 0 20px 0", fontSize: "var(--fs-2xl)" }}>Nova Categoria</h2>
 
         <div style={{ marginBottom: 16 }}>
           <label
             style={{
               display: "block",
               marginBottom: 8,
-              fontSize: 14,
+              fontSize: "var(--fs-md)",
               fontWeight: 500,
             }}
           >
@@ -80,9 +80,9 @@ export const ModalAdicionarCategoria: React.FC<
             style={{
               width: "100%",
               padding: "10px",
-              borderRadius: 6,
-              border: "1px solid #e5e7eb",
-              fontSize: 14,
+              borderRadius: 8,
+              border: "1px solid var(--border)",
+              fontSize: "var(--fs-md)",
             }}
             autoFocus
           />
@@ -93,7 +93,7 @@ export const ModalAdicionarCategoria: React.FC<
             style={{
               display: "block",
               marginBottom: 8,
-              fontSize: 14,
+              fontSize: "var(--fs-md)",
               fontWeight: 500,
             }}
           >
@@ -119,9 +119,9 @@ export const ModalAdicionarCategoria: React.FC<
                   background: cor,
                   border:
                     novaCategoria.color === cor
-                      ? "2px solid #10b981"
-                      : "1px solid #e5e7eb",
-                  borderRadius: 8,
+                      ? "2px solid var(--primary)"
+                      : "1px solid var(--border)",
+                  borderRadius: 10,
                   cursor: "pointer",
                 }}
               />
@@ -136,8 +136,8 @@ export const ModalAdicionarCategoria: React.FC<
             style={{
               width: "100%",
               padding: "8px",
-              borderRadius: 6,
-              border: "1px solid #e5e7eb",
+              borderRadius: 8,
+              border: "1px solid var(--border)",
               cursor: "pointer",
             }}
           />
@@ -149,12 +149,13 @@ export const ModalAdicionarCategoria: React.FC<
             style={{
               flex: 1,
               padding: "10px",
-              borderRadius: 8,
-              border: "1px solid #e5e7eb",
-              background: "#fff",
-              color: "#374151",
-              fontWeight: "bold",
+              borderRadius: 10,
+              border: "1px solid var(--border)",
+              background: "var(--surface)",
+              color: "var(--text-secondary)",
+              fontWeight: 700,
               cursor: "pointer",
+              boxShadow: "var(--shadow-card)",
             }}
           >
             Cancelar
@@ -164,11 +165,11 @@ export const ModalAdicionarCategoria: React.FC<
             style={{
               flex: 1,
               padding: "10px",
-              borderRadius: 8,
+              borderRadius: 10,
               border: "none",
-              background: "#10b981",
+              background: "var(--primary)",
               color: "#fff",
-              fontWeight: "bold",
+              fontWeight: 700,
               cursor: "pointer",
             }}
           >

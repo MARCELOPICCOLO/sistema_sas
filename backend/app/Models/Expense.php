@@ -12,19 +12,16 @@ class Expense extends Model
         'amount',
         'expense_date',
         'expense_category_id',
-        'notes'
+        'notes',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
-        'expense_date' => 'date'
+        'expense_date' => 'date:Y-m-d',
     ];
 
     public function category()
     {
-        return $this->belongsTo(
-            ExpenseCategory::class,
-            'expense_category_id'
-        );
+        return $this->belongsTo(ExpenseCategory::class, 'expense_category_id');
     }
 }

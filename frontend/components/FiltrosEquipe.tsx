@@ -21,9 +21,9 @@ export function FiltrosEquipe({
   return (
     <div
       style={{
-        background: "#ffffff",
-        border: "1px solid #e5e7eb",
-        borderRadius: 10,
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        borderRadius: 12,
         marginBottom: 12,
         padding: isMobile ? "12px" : "14px 16px",
         display: "flex",
@@ -31,6 +31,7 @@ export function FiltrosEquipe({
         gap: 10,
         alignItems: isMobile ? "stretch" : "center",
         flexWrap: isMobile ? "nowrap" : "wrap",
+        boxShadow: "var(--shadow-card)",
       }}
     >
       <div
@@ -47,8 +48,8 @@ export function FiltrosEquipe({
             left: 12,
             top: "50%",
             transform: "translateY(-50%)",
-            color: "#9ca3af",
-            fontSize: 12,
+            color: "var(--text-subtle)",
+            fontSize: "var(--fs-xs)",
           }}
         />
 
@@ -61,19 +62,19 @@ export function FiltrosEquipe({
             width: "100%",
             height: 36,
             boxSizing: "border-box",
-            border: "1px solid #e5e7eb",
-            borderRadius: 7,
+            border: "1px solid var(--border)",
+            borderRadius: 8,
             padding: "0 12px 0 34px",
-            fontSize: 13,
-            color: "#374151",
+            fontSize: "var(--fs-sm)",
+            color: "var(--text-secondary)",
             outline: "none",
             transition: "border-color 0.2s ease",
           }}
           onFocus={(e) => {
-            e.currentTarget.style.borderColor = "#10b981";
+            e.currentTarget.style.borderColor = "var(--primary)";
           }}
           onBlur={(e) => {
-            e.currentTarget.style.borderColor = "#e5e7eb";
+            e.currentTarget.style.borderColor = "var(--border)";
           }}
         />
       </div>
@@ -89,20 +90,20 @@ export function FiltrosEquipe({
           height: 36,
           minWidth: isMobile ? "100%" : 150,
           width: isMobile ? "100%" : "auto",
-          border: "1px solid #e5e7eb",
-          borderRadius: 7,
+          border: "1px solid var(--border)",
+          borderRadius: 8,
           padding: "0 10px",
-          fontSize: 13,
-          color: "#374151",
-          background: "#ffffff",
+          fontSize: "var(--fs-sm)",
+          color: "var(--text-secondary)",
+          background: "var(--surface)",
           outline: "none",
           transition: "border-color 0.2s ease",
         }}
         onFocus={(e) => {
-          e.currentTarget.style.borderColor = "#10b981";
+          e.currentTarget.style.borderColor = "var(--primary)";
         }}
         onBlur={(e) => {
-          e.currentTarget.style.borderColor = "#e5e7eb";
+          e.currentTarget.style.borderColor = "var(--border)";
         }}
       >
         <option value="TODOS">Todos os perfis</option>

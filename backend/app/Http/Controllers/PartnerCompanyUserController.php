@@ -3,176 +3,64 @@
 namespace App\Http\Controllers;
 
 use App\Models\PartnerCompanyUser;
-use App\Models\User;
-use App\Services\CurrentCompany;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
+/**
+ * Administração dos vínculos usuário × empresa (somente usuários master).
+ *
+ * A ativação/desativação feita pelos administradores da própria empresa
+ * fica em UserController::toggleStatus.
+ */
 class PartnerCompanyUserController extends Controller
 {
-    /**
-     * Lista todos os vínculos.
-     */
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(PartnerCompanyUser::all());
+        $query = PartnerCompanyUser::with(['user:id,full_name,username,email', 'company:id,corporate_name']);
+
+        if ($request->filled('partner_company_id')) {
+            $query->where('partner_company_id', (int) $request->input('partner_company_id'));
+        }
+
+        return response()->json($query->orderBy('id')->get());
     }
 
-    /**
-     * Cria um novo vínculo.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'partner_company_id' => 'required|exists:partner_companies,id',
-            'user_id'            => 'required|exists:users,id',
+            'partner_company_id' => 'required|integer|exists:partner_companies,id',
+            'user_id'            => [
+                'required', 'integer', 'exists:users,id',
+                Rule::unique('partner_company_users')->where('partner_company_id', $request->input('partner_company_id')),
+            ],
             'role'               => 'required|in:MASTER,ADMIN,USER',
             'active'             => 'boolean',
         ]);
 
-        $partnerCompanyUser = PartnerCompanyUser::create($validated);
-
-        return response()->json($partnerCompanyUser, 201);
+        return response()->json(PartnerCompanyUser::create($validated), 201);
     }
 
-    /**
-     * Exibe um vínculo.
-     */
     public function show(int $id)
     {
-        $partnerCompanyUser = PartnerCompanyUser::findOrFail($id);
-
-        return response()->json($partnerCompanyUser);
+        return response()->json(PartnerCompanyUser::findOrFail($id));
     }
 
-    /**
-     * Atualiza um vínculo.
-     */
     public function update(Request $request, int $id)
     {
-        $partnerCompanyUser = PartnerCompanyUser::findOrFail($id);
+        $vinculo = PartnerCompanyUser::findOrFail($id);
 
-        $validated = $request->validate([
-            'partner_company_id' => 'sometimes|required|exists:partner_companies,id',
-            'user_id'            => 'sometimes|required|exists:users,id',
-            'role'               => 'sometimes|required|in:MASTER,ADMIN,USER',
-            'active'             => 'boolean',
-        ]);
+        $vinculo->update($request->validate([
+            'role'   => 'sometimes|required|in:MASTER,ADMIN,USER',
+            'active' => 'sometimes|boolean',
+        ]));
 
-        $partnerCompanyUser->update($validated);
-
-        return response()->json($partnerCompanyUser);
+        return response()->json($vinculo);
     }
 
-    /**
-     * Remove um vínculo.
-     */
     public function destroy(int $id)
     {
-        $partnerCompanyUser = PartnerCompanyUser::findOrFail($id);
+        PartnerCompanyUser::findOrFail($id)->delete();
 
-        $partnerCompanyUser->delete();
-
-        return response()->json([
-            'message' => 'Vínculo removido com sucesso.'
-        ]);
-    }
-    /**
-     * Alterna o status do usuário na empresa atual.
-     */
-    public function deactivate(int $id)
-    {
-        $usuarioAutenticado = Auth::guard('api')->user();
-
-        if (!$usuarioAutenticado) {
-            return response()->json([
-                'message' => 'Usuário não autenticado.'
-            ], 401);
-        }
-
-        $partnerCompanyId = CurrentCompany::id();
-
-        if (!$partnerCompanyId) {
-            return response()->json([
-                'message' => 'Usuário não está vinculado a uma empresa ativa.'
-            ], 422);
-        }
-
-        try {
-
-            /*
-         * Verifica se o usuário possui vínculo
-         * com a empresa atual.
-         */
-            $usuarioStatus = DB::selectOne(
-                "SELECT id, active
-             FROM partner_company_users
-             WHERE user_id = ?
-             AND partner_company_id = ?",
-                [
-                    $id,
-                    $partnerCompanyId
-                ]
-            );
-
-            if (!$usuarioStatus) {
-                return response()->json([
-                    'message' => 'Usuário não pertence à empresa atual.'
-                ], 404);
-            }
-
-            /*
-         * Alterna o status somente no vínculo
-         * do usuário com a empresa atual.
-         *
-         * true  -> false
-         * false -> true
-         */
-            DB::update(
-                "UPDATE partner_company_users
-             SET active = NOT active
-             WHERE user_id = ?
-             AND partner_company_id = ?",
-                [
-                    $id,
-                    $partnerCompanyId
-                ]
-            );
-
-            /*
-         * Busca o novo status para retornar
-         * ao frontend.
-         */
-            $novoStatus = DB::selectOne(
-                "SELECT active
-             FROM partner_company_users
-             WHERE user_id = ?
-             AND partner_company_id = ?",
-                [
-                    $id,
-                    $partnerCompanyId
-                ]
-            );
-
-            return response()->json([
-                'message' => $novoStatus->active
-                    ? 'Usuário ativado com sucesso.'
-                    : 'Usuário desativado com sucesso.',
-                'active' => (bool) $novoStatus->active
-            ], 200);
-        } catch (\Throwable $e) {
-
-            \Log::error('Erro ao alterar status do usuário.', [
-                'message' => $e->getMessage(),
-                'user_id' => $usuarioAutenticado->id ?? null,
-                'target_user_id' => $id,
-                'partner_company_id' => $partnerCompanyId,
-            ]);
-
-            return response()->json([
-                'message' => 'Não foi possível alterar o status do usuário.'
-            ], 500);
-        }
+        return response()->json(['message' => 'Vínculo removido com sucesso.']);
     }
 }

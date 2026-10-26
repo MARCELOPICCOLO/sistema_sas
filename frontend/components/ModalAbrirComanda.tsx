@@ -1,5 +1,6 @@
 // components/ModalAbrirComanda.tsx
 import React, { useState } from "react";
+import { notify } from "../src/feedback";
 
 interface ModalAbrirComandaProps {
   showModal: boolean;
@@ -30,7 +31,7 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
 
     // Validar número da comanda - obrigatório
     if (numeroComanda === "" || numeroComanda <= 0) {
-      alert("Digite um número de terminal válido (maior que 0)");
+      notify("Digite um número de terminal válido (maior que 0)");
       return;
     }
 
@@ -49,7 +50,7 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
       onClose();
     } catch (error) {
       console.error("Erro ao abrir comanda:", error);
-      alert("Erro ao abrir atendimento");
+      notify("Erro ao abrir atendimento");
     } finally {
       setLoading(false);
     }
@@ -59,11 +60,11 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
     width: "100%",
     boxSizing: "border-box",
     padding: "10px 12px",
-    borderRadius: 7,
-    border: "1px solid #e5e7eb",
-    background: "#f9fafb",
-    color: "#111827",
-    fontSize: 13,
+    borderRadius: 8,
+    border: "1px solid var(--border)",
+    background: "var(--surface-2)",
+    color: "var(--text)",
+    fontSize: "var(--fs-sm)",
     outline: "none",
     transition: "all 0.15s",
   };
@@ -71,9 +72,9 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
   const labelStyle: React.CSSProperties = {
     display: "block",
     marginBottom: 6,
-    fontSize: 12,
+    fontSize: "var(--fs-xs)",
     fontWeight: 600,
-    color: "#6b7280",
+    color: "var(--text-muted)",
   };
 
   return (
@@ -95,13 +96,13 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
     >
       <div
         style={{
-          background: "#fff",
-          borderRadius: 10,
+          background: "var(--surface)",
+          borderRadius: 12,
           padding: 20,
           width: "100%",
           maxWidth: 430,
-          boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
-          border: "1px solid #e5e7eb",
+          boxShadow: "var(--shadow-modal)",
+          border: "1px solid var(--border)",
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -111,25 +112,25 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
             style={{
               marginBottom: 20,
               paddingBottom: 14,
-              borderBottom: "1px solid #f3f4f6",
+              borderBottom: "1px solid var(--surface-3)",
             }}
           >
             <h2
               style={{
                 margin: 0,
-                fontSize: 18,
+                fontSize: "var(--fs-xl)",
                 fontWeight: 600,
-                color: "#111827",
+                color: "var(--text)",
               }}
             >
-              Abrir Comanda
+              Novo pedido
             </h2>
 
             <p
               style={{
                 margin: "4px 0 0",
-                color: "#9ca3af",
-                fontSize: 12,
+                color: "var(--text-subtle)",
+                fontSize: "var(--fs-xs)",
               }}
             >
               Informe os dados do atendimento
@@ -147,7 +148,7 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
             {/* Número do Terminal */}
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>
-                Ponto da Venda <span style={{ color: "#dc2626" }}>*</span>
+                Ponto da Venda <span style={{ color: "var(--danger)" }}>*</span>
               </label>
 
               <input
@@ -166,13 +167,13 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
                 autoFocus
                 style={inputStyle}
                 onFocus={(e) => {
-                  e.currentTarget.style.background = "#fff";
-                  e.currentTarget.style.borderColor = "#10b981";
-                  e.currentTarget.style.boxShadow = "0 0 0 2px #d1fae5";
+                  e.currentTarget.style.background = "var(--surface)";
+                  e.currentTarget.style.borderColor = "var(--primary)";
+                  e.currentTarget.style.boxShadow = "0 0 0 2px var(--primary-soft)";
                 }}
                 onBlur={(e) => {
-                  e.currentTarget.style.background = "#f9fafb";
-                  e.currentTarget.style.borderColor = "#e5e7eb";
+                  e.currentTarget.style.background = "var(--surface-2)";
+                  e.currentTarget.style.borderColor = "var(--border)";
                   e.currentTarget.style.boxShadow = "none";
                 }}
                 onKeyDown={(e) => {
@@ -190,7 +191,7 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
 
             {/* Data */}
             <div style={{ flex: 1 }}>
-              <label style={labelStyle}>Data da Comanda</label>
+              <label style={labelStyle}>Data do pedido</label>
 
               <input
                 type="date"
@@ -198,13 +199,13 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
                 onChange={(e) => setDataComanda(e.target.value)}
                 style={inputStyle}
                 onFocus={(e) => {
-                  e.currentTarget.style.background = "#fff";
-                  e.currentTarget.style.borderColor = "#10b981";
-                  e.currentTarget.style.boxShadow = "0 0 0 2px #d1fae5";
+                  e.currentTarget.style.background = "var(--surface)";
+                  e.currentTarget.style.borderColor = "var(--primary)";
+                  e.currentTarget.style.boxShadow = "0 0 0 2px var(--primary-soft)";
                 }}
                 onBlur={(e) => {
-                  e.currentTarget.style.background = "#f9fafb";
-                  e.currentTarget.style.borderColor = "#e5e7eb";
+                  e.currentTarget.style.background = "var(--surface-2)";
+                  e.currentTarget.style.borderColor = "var(--border)";
                   e.currentTarget.style.boxShadow = "none";
                 }}
               />
@@ -217,8 +218,8 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
               Nome do Cliente{" "}
               <span
                 style={{
-                  color: "#9ca3af",
-                  fontSize: 10,
+                  color: "var(--text-subtle)",
+                  fontSize: "var(--fs-2xs)",
                   fontWeight: 400,
                 }}
               >
@@ -233,13 +234,13 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
               placeholder="Deixe vazio para Venda Rápida"
               style={inputStyle}
               onFocus={(e) => {
-                e.currentTarget.style.background = "#fff";
-                e.currentTarget.style.borderColor = "#10b981";
-                e.currentTarget.style.boxShadow = "0 0 0 2px #d1fae5";
+                e.currentTarget.style.background = "var(--surface)";
+                e.currentTarget.style.borderColor = "var(--primary)";
+                e.currentTarget.style.boxShadow = "0 0 0 2px var(--primary-soft)";
               }}
               onBlur={(e) => {
-                e.currentTarget.style.background = "#f9fafb";
-                e.currentTarget.style.borderColor = "#e5e7eb";
+                e.currentTarget.style.background = "var(--surface-2)";
+                e.currentTarget.style.borderColor = "var(--border)";
                 e.currentTarget.style.boxShadow = "none";
               }}
             />
@@ -247,8 +248,8 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
             <div
               style={{
                 marginTop: 5,
-                fontSize: 13,
-                color: "#9ca3af",
+                fontSize: "var(--fs-sm)",
+                color: "var(--text-subtle)",
               }}
             >
               Se não informado, será usado "Venda Rápida"
@@ -269,20 +270,20 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
               style={{
                 flex: 1,
                 padding: "9px 14px",
-                borderRadius: 7,
-                border: "1px solid #e5e7eb",
-                background: "#fff",
-                color: "#6b7280",
-                fontSize: 12,
+                borderRadius: 8,
+                border: "1px solid var(--border)",
+                background: "var(--surface)",
+                color: "var(--text-muted)",
+                fontSize: "var(--fs-xs)",
                 fontWeight: 600,
                 cursor: "pointer",
                 transition: "all 0.15s",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#f9fafb";
+                e.currentTarget.style.background = "var(--surface-2)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = "#fff";
+                e.currentTarget.style.background = "var(--surface)";
               }}
             >
               Cancelar
@@ -294,27 +295,27 @@ export const ModalAbrirComanda: React.FC<ModalAbrirComandaProps> = ({
               style={{
                 flex: 1,
                 padding: "9px 14px",
-                borderRadius: 7,
+                borderRadius: 8,
                 border: "none",
-                background: loading ? "#d1d5db" : "#10b981",
+                background: loading ? "var(--border-strong)" : "var(--primary)",
                 color: "#fff",
-                fontSize: 12,
+                fontSize: "var(--fs-xs)",
                 fontWeight: 600,
                 cursor: loading ? "not-allowed" : "pointer",
                 transition: "background 0.15s",
               }}
               onMouseEnter={(e) => {
                 if (!loading) {
-                  e.currentTarget.style.background = "#059669";
+                  e.currentTarget.style.background = "var(--primary)";
                 }
               }}
               onMouseLeave={(e) => {
                 if (!loading) {
-                  e.currentTarget.style.background = "#10b981";
+                  e.currentTarget.style.background = "var(--primary)";
                 }
               }}
             >
-              {loading ? "Abrindo..." : "Abrir Comanda"}
+              {loading ? "Abrindo..." : "Criar pedido"}
             </button>
           </div>
         </form>

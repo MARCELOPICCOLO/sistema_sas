@@ -47,7 +47,7 @@ export const ModalAdicionarSaida: React.FC<ModalAdicionarSaidaProps> = ({
         left: 0,
         right: 0,
         bottom: 0,
-        background: "rgba(0,0,0,0.5)",
+        background: "var(--overlay)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -57,15 +57,15 @@ export const ModalAdicionarSaida: React.FC<ModalAdicionarSaidaProps> = ({
     >
       <div
         style={{
-          background: "#fff",
-          borderRadius: 12,
+          background: "var(--surface)",
+          borderRadius: 14,
           padding: 24,
           width: "90%",
           maxWidth: 450,
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ margin: "0 0 20px 0", fontSize: 20 }}>
+        <h2 style={{ margin: "0 0 20px 0", fontSize: "var(--fs-2xl)" }}>
           Nova Saída (Gasto)
         </h2>
 
@@ -74,7 +74,7 @@ export const ModalAdicionarSaida: React.FC<ModalAdicionarSaidaProps> = ({
             style={{
               display: "block",
               marginBottom: 8,
-              fontSize: 14,
+              fontSize: "var(--fs-md)",
               fontWeight: 500,
             }}
           >
@@ -89,9 +89,9 @@ export const ModalAdicionarSaida: React.FC<ModalAdicionarSaidaProps> = ({
             style={{
               width: "100%",
               padding: "10px",
-              borderRadius: 6,
-              border: "1px solid #e5e7eb",
-              fontSize: 14,
+              borderRadius: 8,
+              border: "1px solid var(--border)",
+              fontSize: "var(--fs-md)",
             }}
           />
         </div>
@@ -101,7 +101,7 @@ export const ModalAdicionarSaida: React.FC<ModalAdicionarSaidaProps> = ({
             style={{
               display: "block",
               marginBottom: 8,
-              fontSize: 14,
+              fontSize: "var(--fs-md)",
               fontWeight: 500,
             }}
           >
@@ -117,9 +117,9 @@ export const ModalAdicionarSaida: React.FC<ModalAdicionarSaidaProps> = ({
             style={{
               width: "100%",
               padding: "10px",
-              borderRadius: 6,
-              border: "1px solid #e5e7eb",
-              fontSize: 14,
+              borderRadius: 8,
+              border: "1px solid var(--border)",
+              fontSize: "var(--fs-md)",
             }}
             autoFocus
           />
@@ -130,7 +130,7 @@ export const ModalAdicionarSaida: React.FC<ModalAdicionarSaidaProps> = ({
             style={{
               display: "block",
               marginBottom: 8,
-              fontSize: 14,
+              fontSize: "var(--fs-md)",
               fontWeight: 500,
             }}
           >
@@ -147,9 +147,9 @@ export const ModalAdicionarSaida: React.FC<ModalAdicionarSaidaProps> = ({
             style={{
               width: "100%",
               padding: "10px",
-              borderRadius: 6,
-              border: "1px solid #e5e7eb",
-              fontSize: 14,
+              borderRadius: 8,
+              border: "1px solid var(--border)",
+              fontSize: "var(--fs-md)",
             }}
           >
             <option value={0}>Selecione uma categoria</option>
@@ -166,7 +166,7 @@ export const ModalAdicionarSaida: React.FC<ModalAdicionarSaidaProps> = ({
             style={{
               display: "block",
               marginBottom: 8,
-              fontSize: 14,
+              fontSize: "var(--fs-md)",
               fontWeight: 500,
             }}
           >
@@ -184,7 +184,7 @@ export const ModalAdicionarSaida: React.FC<ModalAdicionarSaidaProps> = ({
                   })
             }
             onChange={(e) => {
-              let value = e.target.value.replace(/\D/g, "");
+              const value = e.target.value.replace(/\D/g, "");
               const cents = parseInt(value, 10);
               if (isNaN(cents)) setNovaSaida({ ...novaSaida, valor: 0 });
               else setNovaSaida({ ...novaSaida, valor: cents / 100 });
@@ -192,9 +192,9 @@ export const ModalAdicionarSaida: React.FC<ModalAdicionarSaidaProps> = ({
             style={{
               width: "100%",
               padding: "10px",
-              borderRadius: 6,
-              border: "1px solid #e5e7eb",
-              fontSize: 14,
+              borderRadius: 8,
+              border: "1px solid var(--border)",
+              fontSize: "var(--fs-md)",
             }}
           />
         </div>
@@ -205,12 +205,13 @@ export const ModalAdicionarSaida: React.FC<ModalAdicionarSaidaProps> = ({
             style={{
               flex: 1,
               padding: "10px",
-              borderRadius: 8,
-              border: "1px solid #e5e7eb",
-              background: "#fff",
-              color: "#374151",
-              fontWeight: "bold",
+              borderRadius: 10,
+              border: "1px solid var(--border)",
+              background: "var(--surface)",
+              color: "var(--text-secondary)",
+              fontWeight: 700,
               cursor: "pointer",
+              boxShadow: "var(--shadow-card)",
             }}
           >
             Cancelar
@@ -220,11 +221,11 @@ export const ModalAdicionarSaida: React.FC<ModalAdicionarSaidaProps> = ({
             style={{
               flex: 1,
               padding: "10px",
-              borderRadius: 8,
+              borderRadius: 10,
               border: "none",
-              background: "#dc2626",
+              background: "var(--danger)",
               color: "#fff",
-              fontWeight: "bold",
+              fontWeight: 700,
               cursor: "pointer",
             }}
           >
